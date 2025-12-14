@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
+import { ObjectId } from "mongodb";
+
+const REFERRAL_PERCENT = 5;
 
 export async function POST(req) {
   try {
@@ -12,10 +15,10 @@ export async function POST(req) {
       );
     }
 
-    const uid = decoded.uid;
-
     const { db } = await getDB();
-    const adminUser = await db.collection("users").findOne({ userId: uid });
+    const adminUser = await db
+      .collection("users")
+      .findOne({ userId: decoded.uid });
 
     if (!adminUser || adminUser.role !== "admin") {
       return NextResponse.json(
@@ -33,46 +36,96 @@ export async function POST(req) {
       );
     }
 
-    const payment = await db
-      .collection("payments")
-      .findOne({ userUid, status: "pending" }, { sort: { createdAt: -1 } });
+    const payment = await db.collection("payments").findOne(
+      { userUid, status: "pending" },
+      { sort: { createdAt: -1 } }
+    );
 
     if (!payment) {
-      return NextResponse.json({ ok: false, error: "No pending payment" });
+      return NextResponse.json({
+        ok: false,
+        error: "No pending payment",
+      });
     }
 
+    /* ================= APPROVE ================= */
     if (action === "approve") {
-      await db
-        .collection("users")
-        .updateOne(
-          { userId: userUid },
-          {
-            $inc: {
-              topupBalance: payment.amount,
-              walletBalance: payment.amount,
-            },
-          }
-        );
-
-      await db
-        .collection("payments")
-        .updateOne(
-          { _id: payment._id },
-          { $set: { status: "approved", updatedAt: new Date() } }
-        );
-
-      return NextResponse.json({ ok: true, message: "Payment approved" });
-    }
-
-    await db
-      .collection("payments")
-      .updateOne(
-        { _id: payment._id },
-        { $set: { status: "rejected", updatedAt: new Date() } }
+      // 1️⃣ Update user balance
+      await db.collection("users").updateOne(
+        { userId: userUid },
+        {
+          $inc: {
+            topupBalance: payment.amount,
+            walletBalance: payment.amount,
+          },
+        }
       );
 
-    return NextResponse.json({ ok: true, message: "Payment rejected" });
+      // 2️⃣ Update payment status
+      await db.collection("payments").updateOne(
+        { _id: payment._id },
+        { $set: { status: "approved", updatedAt: new Date() } }
+      );
+
+      // 3️⃣ REFERRAL COMMISSION
+      const user = await db
+        .collection("users")
+        .findOne({ userId: userUid });
+
+      if (user?.referredBy) {
+        const referrer = await db
+          .collection("users")
+          .findOne({ userId: user.referredBy });
+
+        if (referrer) {
+          const commission =
+            (payment.amount * REFERRAL_PERCENT) / 100;
+
+          // 💰 add commission
+          await db.collection("users").updateOne(
+            { userId: referrer.userId },
+            {
+              $inc: {
+                walletBalance: commission,
+                "referralStats.totalReferIncome": commission,
+              },
+            }
+          );
+
+          // 📜 save referral history
+          await db.collection("referral_history").insertOne({
+            referrerId: referrer.userId,
+            referredUserId: userUid,
+            topupId: new ObjectId(payment._id),
+            topupAmount: payment.amount,
+            commissionPercent: REFERRAL_PERCENT,
+            commissionAmount: commission,
+            createdAt: new Date(),
+          });
+        }
+      }
+
+      return NextResponse.json({
+        ok: true,
+        message: "Payment approved & commission added",
+      });
+    }
+
+    /* ================= REJECT ================= */
+    await db.collection("payments").updateOne(
+      { _id: payment._id },
+      { $set: { status: "rejected", updatedAt: new Date() } }
+    );
+
+    return NextResponse.json({
+      ok: true,
+      message: "Payment rejected",
+    });
   } catch (error) {
-    return NextResponse.json({ ok: false, error: error.message });
+    console.error(error);
+    return NextResponse.json({
+      ok: false,
+      error: error.message,
+    });
   }
 }

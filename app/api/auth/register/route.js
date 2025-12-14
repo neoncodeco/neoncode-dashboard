@@ -1,48 +1,126 @@
 import getDB from "@/lib/mongodb";
+import crypto from "crypto";
 
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { uid, email, name, photo } = body;
+    const { uid, email, name, photo, referralCode } = body;
 
     if (!uid) {
       return Response.json(
-        { error: "UID required" },
+        { ok: false, error: "UID required" },
         { status: 400 }
       );
     }
 
     const { db } = await getDB();
 
-    await db.collection("users").updateOne(
-      { userId: uid }, // 🔥 IMPORTANT: match ticket system
-      {
-        // ⬇️ only first time insert
-        $setOnInsert: {
-          userId: uid,
-          role: "user",
-          walletBalance: 0,
-          topupBalance: 0,
-          createdAt: new Date(),
-        },
+    /* ================= CHECK EXISTING USER ================= */
+    const existingUser = await db
+      .collection("users")
+      .findOne({ userId: uid });
 
-        // ⬇️ update anytime
-        $set: {
-          email: email || "",
-          name: name || "User",
-          photo: photo || "https://i.ibb.co/kgp65LMf/profile-avater.png",
-          updatedAt: new Date(),
+    // 👉 If user already exists, just update basic info
+    if (existingUser) {
+      await db.collection("users").updateOne(
+        { userId: uid },
+        {
+          $set: {
+            email: email || existingUser.email,
+            name: name || existingUser.name,
+            photo:
+              photo ||
+              existingUser.photo ||
+              "https://i.ibb.co/kgp65LMf/profile-avater.png",
+            updatedAt: new Date(),
+          },
         }
+      );
+
+      return Response.json({ ok: true, existing: true });
+    }
+
+    /* ================= REFERRAL VALIDATION (NEW USER ONLY) ================= */
+    let referredByUser = null;
+
+    if (referralCode) {
+      referredByUser = await db.collection("users").findOne({
+        referralCode: referralCode.trim().toUpperCase(),
+      });
+
+      if (!referredByUser) {
+        return Response.json(
+          { ok: false, error: "Invalid referral code" },
+          { status: 400 }
+        );
+      }
+
+      if (referredByUser.userId === uid) {
+        return Response.json(
+          { ok: false, error: "You cannot use your own referral code" },
+          { status: 400 }
+        );
+      }
+    }
+
+    /* ================= GENERATE UNIQUE REFERRAL CODE ================= */
+    let myReferralCode;
+    let exists = true;
+
+    while (exists) {
+      myReferralCode = crypto
+        .randomBytes(4)
+        .toString("hex")
+        .toUpperCase();
+
+      exists = await db
+        .collection("users")
+        .findOne({ referralCode: myReferralCode });
+    }
+
+    /* ================= CREATE NEW USER ================= */
+    await db.collection("users").insertOne({
+      userId: uid,
+      role: "user",
+
+      walletBalance: 0,
+      topupBalance: 0,
+
+      referralCode: myReferralCode,
+      referredBy: referredByUser ? referredByUser.userId : null,
+
+      referralStats: {
+        totalReferIncome: 0,
+        totalReferrers: 0,
+        totalPayout: 0,
       },
-      { upsert: true }
-    );
 
-    return Response.json({ ok: true });
+      email: email || "",
+      name: name || "User",
+      photo:
+        photo || "https://i.ibb.co/kgp65LMf/profile-avater.png",
 
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    /* ================= INCREASE REFERRER COUNT ================= */
+    if (referredByUser) {
+      await db.collection("users").updateOne(
+        { userId: referredByUser.userId },
+        {
+          $inc: {
+            "referralStats.totalReferrers": 1,
+          },
+        }
+      );
+    }
+
+    return Response.json({ ok: true, created: true });
   } catch (e) {
-    console.error("Error in register:", e);
+    console.error("Register error:", e);
     return Response.json(
-      { error: "Server error" },
+      { ok: false, error: "Server error" },
       { status: 500 }
     );
   }
