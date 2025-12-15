@@ -44,7 +44,7 @@ export async function GET(req, { params }) {
         userId: user.userId,
         email: user.email,
         role: user.role,
-
+        permissions: user.permissions,
         walletBalance: user.walletBalance ?? 0,
         topupBalance: user.topupBalance ?? 0,
 

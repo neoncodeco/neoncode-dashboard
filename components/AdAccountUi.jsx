@@ -100,7 +100,7 @@ const AdAccountUi = () => {
                   <td className="px-6 py-4">
                     <span
                       className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                        account.status === "approved"
+                        account.status === "active"
                           ? "bg-green-100 text-green-700"
                           : account.status === "pending"
                           ? "bg-yellow-100 text-yellow-700"

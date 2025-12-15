@@ -20,15 +20,19 @@ export async function POST(req) {
          .collection("users")
          .findOne({ userId: decoded.uid });
    
-       if (!admin || admin.role !== "admin") {
+       if (!admin || admin.role !== "admin" && admin.role !== "manager") {
          return NextResponse.json(
            { ok: false, error: "Forbidden" },
            { status: 403 }
          );
        }
 
+    const { requestId, action } = await req.json();
+
+
     const request = await db.collection("referral_withdraw_requests")
       .findOne({ _id: new ObjectId(requestId) });
+
 
     if (!request || request.status !== "pending") {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });

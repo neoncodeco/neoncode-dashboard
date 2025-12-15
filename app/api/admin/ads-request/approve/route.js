@@ -5,25 +5,32 @@ import { ObjectId } from "mongodb";
 
 export async function PUT(req) {
   try {
+    /* ========= AUTH ========= */
     const decoded = await verifyToken(req);
-
     if (!decoded) {
       return NextResponse.json(
-        { message: "Unauthorized: Invalid token" },
+        { message: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    // Optional: Only allow admin
-    if (!decoded?.isAdmin) {
+    /* ========= DB ========= */
+    const { db } = await getDB();
+
+    /* ========= ROLE CHECK ========= */
+    const admin = await db.collection("users").findOne({
+      userId: decoded.uid,
+    });
+
+    if (!admin || (admin.role !== "admin" && admin.role !== "manager")) {
       return NextResponse.json(
-        { message: "Forbidden: Admin only" },
+        { message: "Forbidden" },
         { status: 403 }
       );
     }
 
-    const body = await req.json();
-    const { id, status, MetaAccountID } = body;
+    /* ========= BODY ========= */
+    const { id, status, MetaAccountID } = await req.json();
 
     if (!id) {
       return NextResponse.json(
@@ -32,18 +39,18 @@ export async function PUT(req) {
       );
     }
 
-    const { db } = await getDB();
-
     const updateData = {};
-
     if (status) updateData.status = status;
-    if (MetaAccountID) updateData.MetaAccountID = MetaAccountID;
+    if (MetaAccountID !== undefined)
+      updateData.MetaAccountID = MetaAccountID;
 
-    const updated = await db.collection("adAccountRequests").findOneAndUpdate(
-      { _id: new ObjectId(id) },
-      { $set: updateData },
-      { returnDocument: "after" }
-    );
+    const updated = await db
+      .collection("adAccountRequests")
+      .findOneAndUpdate(
+        { _id: new ObjectId(id) },
+        { $set: updateData },
+        { returnDocument: "after" }
+      );
 
     if (!updated.value) {
       return NextResponse.json(

@@ -99,6 +99,8 @@ export async function POST(req) {
     /* ---------- CREATE WITHDRAW REQUEST ---------- */
     await db.collection("referral_withdraw_requests").insertOne({
       userId: decoded.uid,
+      userName: user.name,
+      userEmail: user.email,
       amount,
       method,
       account,

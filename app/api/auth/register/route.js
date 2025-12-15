@@ -16,9 +16,7 @@ export async function POST(req) {
     const { db } = await getDB();
 
     /* ================= CHECK EXISTING USER ================= */
-    const existingUser = await db
-      .collection("users")
-      .findOne({ userId: uid });
+    const existingUser = await db.collection("users").findOne({ userId: uid });
 
     // 👉 If user already exists, just update basic info
     if (existingUser) {
@@ -68,10 +66,7 @@ export async function POST(req) {
     let exists = true;
 
     while (exists) {
-      myReferralCode = crypto
-        .randomBytes(4)
-        .toString("hex")
-        .toUpperCase();
+      myReferralCode = crypto.randomBytes(4).toString("hex").toUpperCase();
 
       exists = await db
         .collection("users")
@@ -83,6 +78,13 @@ export async function POST(req) {
       userId: uid,
       role: "user",
 
+      permissions: {
+        projectsAccess: false,
+        transactionsAccess: false,
+        affiliateAccess: false,
+        metaAdAccess: false,
+      }, 
+      
       walletBalance: 0,
       topupBalance: 0,
 
@@ -97,8 +99,7 @@ export async function POST(req) {
 
       email: email || "",
       name: name || "User",
-      photo:
-        photo || "https://i.ibb.co/kgp65LMf/profile-avater.png",
+      photo: photo || "https://i.ibb.co/kgp65LMf/profile-avater.png",
 
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -119,9 +120,6 @@ export async function POST(req) {
     return Response.json({ ok: true, created: true });
   } catch (e) {
     console.error("Register error:", e);
-    return Response.json(
-      { ok: false, error: "Server error" },
-      { status: 500 }
-    );
+    return Response.json({ ok: false, error: "Server error" }, { status: 500 });
   }
 }

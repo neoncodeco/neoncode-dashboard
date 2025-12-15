@@ -1,5 +1,3 @@
-
-// app/api/admin/users/list/route.js
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
@@ -7,14 +5,40 @@ import { verifyToken } from "@/lib/verifyToken";
 export async function GET(req) {
   try {
     const decoded = await verifyToken(req);
-    if (!decoded) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    if (decoded.role !== "admin") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    if (!decoded) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const { db } = await getDB();
-    const users = await db.collection("users").find({}).sort({ createdAt: -1 }).toArray();
-    return NextResponse.json({ ok: true, count: users.length, data: users });
+
+    // 🔐 only admin can see user list
+    const admin = await db
+      .collection("users")
+      .findOne({ userId: decoded.uid });
+
+    if (!admin || admin.role !== "admin") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const users = await db
+      .collection("users")
+      .find(
+        {},
+        {
+          projection: {
+            password: 0,
+          },
+        }
+      )
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    return NextResponse.json({ ok: true, users });
   } catch (err) {
-    console.error("admin users list error:", err);
-    return NextResponse.json({ message: "Server error", error: err.message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500 }
+    );
   }
 }

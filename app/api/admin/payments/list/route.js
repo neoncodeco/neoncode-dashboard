@@ -12,9 +12,9 @@ export async function GET(req) {
     const uid = decoded.uid;
 
     const { db } = await getDB();
-    const user = await db.collection("users").findOne({ userId:uid });
+    const admin = await db.collection("users").findOne({ userId:uid });
 
-    if (user.role !== "admin") {
+    if (!admin || admin.role !== "admin" && admin.role !== "manager") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

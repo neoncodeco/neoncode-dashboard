@@ -21,6 +21,9 @@ export default function Home() {
     // 3️⃣ User আছে কিন্তু role এখনো load হয়নি
     if (loadingRole || !role) return;
 
+    if (role !== "admin" && role !== "manager") {
+      router.replace("/unauthorized");
+    }
     // 4️⃣ Role-based redirect
     if (role === "admin" || role === "manager") {
       router.replace("/admin-dashboard/overview");

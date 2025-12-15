@@ -31,9 +31,9 @@ const UserSidebar = () => {
 
   const menuItems = [
     { name: "Overview", icon: LayoutDashboard, href: "/user-dashboard/overview" },
+    { name: "Meta Ads Account", icon: LayoutDashboard, href: "/user-dashboard/meta-ads-account" },
     { name: "Projects", icon: LayoutGrid, href: "/user-dashboard/projects" },
     { name: "Tasks", icon: CheckSquare, href: "/user-dashboard/tasks" },
-    { name: "Add Account", icon: UserPlus, href: "/user-dashboard/add-account" },
     {
       name: "Payment Methods",
       icon: CreditCard,
@@ -50,6 +50,7 @@ const UserSidebar = () => {
       href: "/user-dashboard/support",
     },
     { name: "Affiliate", icon: Share2, href: "/user-dashboard/affiliate" },
+    { name: "Profile", icon: UserPlus, href: "/user-dashboard/profile" }
   ];
 
   const renderMenu = () => (
