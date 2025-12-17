@@ -16,7 +16,7 @@ export async function GET(req) {
       .collection("users")
       .findOne({ userId: decoded.uid });
 
-    if (!admin || admin.role !== "admin") {
+    if (!admin || admin.role !== "admin" && admin.role !== "manager") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

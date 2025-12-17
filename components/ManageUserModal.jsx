@@ -1,42 +1,46 @@
-
 "use client";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
-import {  useState } from "react";
+import { useState } from "react";
 
 export default function ManageUserModal({ user, onClose, onUpdated }) {
+  const { token } = useFirebaseAuth();
 
-  const {token} = useFirebaseAuth();
+  /* ================= STATE ================= */
 
-  const [role, setRole] = useState(user.role);
+  const [role, setRole] = useState(user.role || "user");
+
   const [permissions, setPermissions] = useState(
     user.permissions || {
-        projectsAccess: false,
-        TransactionsAccess: false,
-        AffiliateAccess: false,
-        MetaAdAccess: false,
-      }
+      projectsAccess: false,
+      transactionsAccess: false,
+      affiliateAccess: false,
+      metaAdAccess: false,
+    }
   );
 
-  console.log( "user data from modal" ,  user , permissions);
-  
-
   const [loading, setLoading] = useState(false);
+
+  /* ================= HELPERS ================= */
 
   const toggle = (key) => {
     setPermissions((p) => ({ ...p, [key]: !p[key] }));
   };
 
+  /* ================= SUBMIT ================= */
+
   const submit = async () => {
     setLoading(true);
+
     const res = await fetch("/api/admin/users/update", {
       method: "POST",
-      headers: { "Content-Type": "application/json",
-       Authorization: `Bearer ${token}`,
-       },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({
-        userId: user._id,
+        userId: user.userId, // ✅ FIXED (Firebase UID)
         role,
-        permissions,
+        permissions: role === "admin" ? null : permissions,
       }),
     });
 
@@ -49,6 +53,8 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
       alert("Update failed");
     }
   };
+
+  /* ================= UI ================= */
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
@@ -72,39 +78,41 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
           ))}
         </div>
 
-        {/* PERMISSIONS */}
-        <div>
-          <h3 className="font-bold text-gray-800 mb-3">
-            Access Permissions
-          </h3>
+        {/* PERMISSIONS (only for non-admin) */}
+        {role !== "admin" && (
+          <div>
+            <h3 className="font-bold text-gray-800 mb-3">
+              Access Permissions
+            </h3>
 
-          {[
-            ["projectsAccess", "Projects Access"],
-            ["transactionsAccess", "Transactions Access"],
-            ["affiliateAccess", "Affiliate Access"],
-            ["metaAdAccess", "Meta Ad Access"],
-          ].map(([key, label]) => (
-            <div
-              key={key}
-              className="flex justify-between items-center py-2"
-            >
-              <span className="text-sm text-gray-700">{label}</span>
-
-              <button
-                onClick={() => toggle(key)}
-                className={`w-12 h-6 rounded-full relative transition ${
-                  permissions[key] ? "bg-black" : "bg-gray-300"
-                }`}
+            {[
+              ["projectsAccess", "Projects Access"],
+              ["transactionsAccess", "Transactions Access"],
+              ["affiliateAccess", "Affiliate Access"],
+              ["metaAdAccess", "Meta Ad Access"],
+            ].map(([key, label]) => (
+              <div
+                key={key}
+                className="flex justify-between items-center py-2"
               >
-                <span
-                  className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${
-                    permissions[key] ? "right-0.5" : "left-0.5"
+                <span className="text-sm text-gray-700">{label}</span>
+
+                <button
+                  onClick={() => toggle(key)}
+                  className={`w-12 h-6 rounded-full relative transition ${
+                    permissions[key] ? "bg-black" : "bg-gray-300"
                   }`}
-                />
-              </button>
-            </div>
-          ))}
-        </div>
+                >
+                  <span
+                    className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${
+                      permissions[key] ? "right-0.5" : "left-0.5"
+                    }`}
+                  />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* ACTIONS */}
         <div className="flex justify-end gap-3 pt-4">

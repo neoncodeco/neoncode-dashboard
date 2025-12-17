@@ -1,5 +1,6 @@
 import getDB from "@/lib/mongodb";
 import crypto from "crypto";
+import { adminAuth } from "@/lib/firebaseAdmin";
 
 export async function POST(req) {
   try {
@@ -34,6 +35,11 @@ export async function POST(req) {
           },
         }
       );
+
+      // 🔐 Ensure Firebase custom claim exists
+      await adminAuth.setCustomUserClaims(uid, {
+        role: existingUser.role || "user",
+      });
 
       return Response.json({ ok: true, existing: true });
     }
@@ -83,8 +89,8 @@ export async function POST(req) {
         transactionsAccess: false,
         affiliateAccess: false,
         metaAdAccess: false,
-      }, 
-      
+      },
+
       walletBalance: 0,
       topupBalance: 0,
 
@@ -105,6 +111,11 @@ export async function POST(req) {
       updatedAt: new Date(),
     });
 
+    /* ================= SET FIREBASE CUSTOM CLAIM ================= */
+    await adminAuth.setCustomUserClaims(uid, {
+      role: "user",
+    });
+
     /* ================= INCREASE REFERRER COUNT ================= */
     if (referredByUser) {
       await db.collection("users").updateOne(
@@ -120,6 +131,9 @@ export async function POST(req) {
     return Response.json({ ok: true, created: true });
   } catch (e) {
     console.error("Register error:", e);
-    return Response.json({ ok: false, error: "Server error" }, { status: 500 });
+    return Response.json(
+      { ok: false, error: "Server error" },
+      { status: 500 }
+    );
   }
 }

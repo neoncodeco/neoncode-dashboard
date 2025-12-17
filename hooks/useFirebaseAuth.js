@@ -37,10 +37,16 @@ export default function useFirebaseAuth() {
       }
 
       try {
-        const tk = await firebaseUser.getIdToken();
+        // 🔥 FORCE TOKEN REFRESH (important for first login / role update)
+        const tk = await firebaseUser.getIdToken(true);
         setUser(firebaseUser);
         setToken(tk);
 
+        // 🔐 READ ROLE FROM CUSTOM CLAIM
+        const tokenResult = await firebaseUser.getIdTokenResult();
+        setRole(tokenResult.claims?.role || "user");
+
+        // 📦 FETCH USER DATA FROM DB (non-security data)
         const res = await fetch(`/api/users/${firebaseUser.uid}`, {
           headers: {
             Authorization: `Bearer ${tk}`,
@@ -53,7 +59,6 @@ export default function useFirebaseAuth() {
 
         const data = await res.json();
         setUserData(data.data);
-        setRole(data?.data?.role);
       } catch (e) {
         console.error("AUTH ERROR:", e);
         setRole(null);
@@ -67,6 +72,8 @@ export default function useFirebaseAuth() {
 
     return () => unsub();
   }, []);
+
+  /* ================= AUTH ACTIONS ================= */
 
   const googleLogin = async () => {
     setLoading(true);
@@ -99,6 +106,9 @@ export default function useFirebaseAuth() {
     }
   };
 
+  console.log("this is your role " ,  role );
+
+
   const logout = async () => {
     await signOut(auth);
     setUser(null);
@@ -113,7 +123,7 @@ export default function useFirebaseAuth() {
     userData,
     authReady,
     token,
-    role,
+    role,              
     loading,
     loadingRole,
     login,
