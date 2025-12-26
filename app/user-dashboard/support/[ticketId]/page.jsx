@@ -1,373 +1,211 @@
 "use client";
-
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth"; // Custom hook for auth
-import { Send, Paperclip, X, Lock } from "lucide-react"; // Using Lucide icons for a modern touch
+import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import { Send, X, Lock, ChevronLeft, ShieldCheck, Image as ImageIcon, Loader2 } from "lucide-react";
 
-/**
- * Renders the chat interface for a single support ticket.
- * Allows the user to view messages, send new messages, and attach screenshots.
- */
-export default function UserChatView() {
-  // --- Hooks and State ---
+export default function UserChatView({ ticketIdFromProps, onBack }) {
   const { token, user } = useFirebaseAuth();
-  const { ticketId } = useParams();
+  const params = useParams();
+  const messagesEndRef = useRef(null);
+
+  const rawId = ticketIdFromProps || params.ticketId;
+  const ticketId = typeof rawId === 'object' ? (rawId.ticketId || rawId.$oid || rawId.toString()) : rawId;
 
   const [ticket, setTicket] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [messageText, setMessageText] = useState("");
   const [attachedScreenshot, setAttachedScreenshot] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);
-
-  // --- Helpers ---
-
-  /** Scrolls the message container to the bottom. */
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  /** Checks if the message sender is the current logged-in user. */
-  const isMessageMine = useCallback((senderId) => senderId === user?.uid, [user]);
-
-  // --- API Handlers ---
-
-  /** Fetches the latest ticket data from the API. */
   const loadTicketData = useCallback(async () => {
-    if (!token) return;
+    if (!token || !ticketId || ticketId === "null") {
+      setLoading(false);
+      return;
+    }
     try {
       const res = await fetch(`/api/support/ticket/${ticketId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!res.ok) {
-        // Handle non-200 responses if needed, e.g., redirect or show error
-        console.error("Failed to load ticket data", res.status);
-        setTicket(null); // Clear ticket on error
-        return;
-      }
-
       const json = await res.json();
-      setTicket(json.data);
-    } catch (error) {
-      console.error("Error fetching ticket:", error);
+      if (res.ok) setTicket(json.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   }, [token, ticketId]);
 
-  /** Uploads a screenshot file and returns the uploaded data. */
-  const uploadScreenshot = async (file) => {
+  useEffect(() => { loadTicketData(); }, [loadTicketData]);
+
+  useEffect(() => {
+    if (ticket?.messages) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [ticket?.messages]);
+
+  // ইমেজ আপলোড হ্যান্ডলার
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
     setIsUploading(true);
+    const fd = new FormData();
+    fd.append("image", file);
 
     try {
-      const fd = new FormData();
-      fd.append("image", file); // Assuming the API expects "image" as the field name
-
       const res = await fetch("/api/upload/screenshot", {
         method: "POST",
         body: fd,
       });
-
       const data = await res.json();
-      return data;
-    } catch (error) {
-      console.error("Error uploading screenshot:", error);
-      return null;
+      setAttachedScreenshot(data); // সরাসরি API থেকে আসা ডাটা সেট হবে
+    } catch (err) {
+      console.error("Upload error:", err);
     } finally {
       setIsUploading(false);
     }
   };
 
-  /** Handles file input change, uploads the file, and sets the state. */
-  const handleFileSelect = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // Reset the input value to allow the same file to be selected again
-    e.target.value = null;
-
-    const uploaded = await uploadScreenshot(file);
-    if (uploaded && uploaded.url) {
-      setAttachedScreenshot(uploaded);
-    }
-  };
-
-  /** Sends the message (text and/or attached screenshot) to the API. */
   const sendMessage = async () => {
-    const textToSend = messageText.trim();
-    if (!textToSend && !attachedScreenshot) return;
-
+    if ((!messageText.trim() && !attachedScreenshot) || isSending) return;
     setIsSending(true);
-
     try {
-      await fetch("/api/support/ticket/message", {
+      const res = await fetch("/api/support/ticket/message", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           ticketId,
-          text: textToSend,
+          text: messageText,
           screenshots: attachedScreenshot ? [attachedScreenshot] : [],
         }),
       });
-
-      // Clear input and attachment after successful send
-      setMessageText("");
-      setAttachedScreenshot(null);
-      // Reload messages to show the new one
-      await loadTicketData();
-    } catch (error) {
-      console.error("Error sending message:", error);
-      // Optional: Show an error notification to the user
-    } finally {
-      setIsSending(false);
-    }
+      if (res.ok) {
+        setMessageText("");
+        setAttachedScreenshot(null);
+        loadTicketData();
+      }
+    } catch (err) { console.error(err); }
+    finally { setIsSending(false); }
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
+  if (loading) return (
+    <div className="h-full flex flex-col items-center justify-center space-y-3 bg-white">
+      <div className="w-8 h-8 border-4 border-[#10B981] border-t-transparent rounded-full animate-spin"></div>
+      <p className="text-gray-400 text-sm animate-pulse font-medium">Loading conversation...</p>
+    </div>
+  );
 
-  // --- Effects ---
-
-  // 1. Initial load of ticket data
-  useEffect(() => {
-    if (token) {
-      loadTicketData();
-    }
-  }, [token, loadTicketData]);
-
-  // 2. Scroll to bottom whenever messages update
-  useEffect(() => {
-    // Only scroll if there are messages
-    if (ticket?.messages.length) {
-      scrollToBottom();
-    }
-  }, [ticket?.messages]);
-
-  // --- Render (Loading State) ---
-
-  if (!ticket) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-slate-50 text-gray-500">
-        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        Loading support chat...
-      </div>
-    );
-  }
-
-  // --- Render (Main View) ---
-
-  const isClosed = ticket.status === "closed";
-  const canSend = (messageText.trim() || attachedScreenshot) && !isSending && !isUploading;
+  if (!ticket) return (
+    <div className="h-full flex flex-col items-center justify-center p-5 bg-white">
+      <p className="text-gray-400 text-sm font-medium">Conversation not found.</p>
+      <button onClick={onBack} className="mt-4 text-[#10B981] font-bold underline">Go Back</button>
+    </div>
+  );
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50">
-      
-      {/* ================= Header (Ticket Info) ================= */}
-      <div className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto p-4">
-          <h1 className="text-xl font-bold text-gray-800 truncate">
-            🎫 Ticket: {ticket.subject}
-          </h1>
-          <p
-            className={`text-sm font-medium mt-1 ${
-              isClosed ? "text-red-500" : "text-emerald-600"
-            }`}
-          >
-            Status: **{ticket.status.toUpperCase()}**
-          </p>
+    <div className="flex flex-col h-full bg-white lg:bg-[#F8FAFC]">
+      {/* Header */}
+      <div className="px-4 py-[22px] bg-white flex items-center justify-between sticky top-0 z-10 shadow-sm ">
+        <div className="flex items-center gap-3 overflow-hidden">
+          <button onClick={onBack} className="lg:hidden p-1.5 hover:bg-gray-100 rounded-full transition">
+            <ChevronLeft size={24} className="text-gray-600" />
+          </button>
+          <div className="overflow-hidden">
+            <h2 className="font-bold text-gray-800 text-sm md:text-xl truncate leading-tight">{ticket.subject}</h2>
+            <p className="text-[10px] md:text-xs text-gray-400 font-medium tracking-tight uppercase">Ticket ID: {ticketId.toString().slice(-6)}</p>
+          </div>
+        </div>
+        <div className={`shrink-0 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+          ticket.status === 'open' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+        }`}>
+          {ticket.status}
         </div>
       </div>
 
-      {/* ================= Messages Area ================= */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
-        <div className="max-w-5xl mx-auto space-y-6">
-          {ticket.messages.map((m, i) => {
-            const mine = isMessageMine(m.senderId);
-            const roleColor = 
-              m.senderRole === "admin"
-                ? "bg-red-100 text-red-700 border-red-300"
-                : m.senderRole === "support"
-                ? "bg-purple-100 text-purple-700 border-purple-300"
-                : "bg-blue-100 text-blue-700 border-blue-300";
-
-            return (
-              <div
-                key={i}
-                className={`flex ${mine ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`flex gap-3 max-w-[75%] ${
-                    mine ? "flex-row-reverse" : ""
-                  }`}
-                >
-                  
-                  {/* --- Avatar --- */}
-                  <div className="flex-shrink-0 pt-1">
-                    <img
-                      src={m.senderPhoto || "/avatar.png"}
-                      alt={`${m.senderName}'s avatar`}
-                      className="w-9 h-9 rounded-full object-cover shadow border border-gray-200"
-                    />
-                  </div>
-
-                  {/* --- Message Content (Name/Role ABOVE bubble) --- */}
-                  <div className="flex flex-col">
-                    {/* Name and Role Header */}
-                    <div className={`flex items-center text-[10px]  ${mine ? "justify-end" : "justify-start"}`}>
-                        <span className="font-semibold text-green-700">
-                            {m.senderName || "Unknown"}
-                        </span>
-                        <span className={`text-[11px]  text-purple-700 font-semibold  `}>
-                           ( {m.senderRole})
-                        </span>
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+        {ticket.messages.map((m, i) => {
+          const isMine = m.senderId === user?.uid;
+          return (
+            <div key={i} className={`flex w-full ${isMine ? "justify-end" : "justify-start"}`}>
+              <div className={`flex flex-col max-w-[85%] md:max-w-[70%] ${isMine ? "items-end" : "items-start"}`}>
+                <div className="flex items-center gap-2 mb-1.5 px-1">
+                  {!isMine && <div className="bg-gray-200 p-1 rounded-full"><ShieldCheck size={10} className="text-gray-600" /></div>}
+                  <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tighter">
+                    {isMine ? "You" : m.senderName}
+                  </span>
+                  {!isMine && <span className="text-[9px] bg-[#10B981] text-white px-1.5 py-0.5 rounded font-black uppercase tracking-widest">{m.senderRole}</span>}
+                </div>
+                <div className={`relative p-3 md:p-4 rounded-2xl text-sm leading-relaxed shadow-sm transition-all duration-200 ${
+                  isMine ? "bg-[#10B981] text-white rounded-tr-none" : "bg-white border border-gray-100 text-gray-800 rounded-tl-none"
+                }`}>
+                  <p className="whitespace-pre-wrap">{m.text}</p>
+                  {m.screenshots?.map((img, idx) => (
+                    <div key={idx} className="mt-3 overflow-hidden rounded-xl border border-black/5">
+                      <img src={img.url} className="max-h-60 md:max-h-80 w-auto object-cover" alt="attachment" />
                     </div>
-
-                    {/* Text bubble */}
-                    {m.text?.trim() && (
-                      <div
-                        className={`px-4 py-3 rounded-2xl shadow-md text-sm whitespace-pre-wrap ${
-                          mine
-                            ? "bg-blue-600 text-white rounded-br-none"
-                            : "bg-white border border-gray-200 text-gray-800 rounded-tl-none"
-                        }`}
-                      >
-                        {m.text}
-                      </div>
-                    )}
-
-                    {/* Screenshots */}
-                    {m.screenshots?.length > 0 && (
-                      <div
-                        className={`flex gap-2 mt-2 ${
-                          mine ? "justify-end" : ""
-                        }`}
-                      >
-                        {m.screenshots.map((img, idx) => (
-                          <a
-                            key={idx}
-                            href={img.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title="View Screenshot"
-                            className="block"
-                          >
-                            <img
-                              src={img.url}
-                              alt={`Screenshot ${idx + 1}`}
-                              className="w-72 h-full rounded-lg object-cover border border-gray-300 shadow-sm hover:opacity-90 transition"
-                            />
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  ))}
                 </div>
               </div>
-            );
-          })}
-
-          <div ref={messagesEndRef} />
-        </div>
+            </div>
+          );
+        })}
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* ================= Input/Footer ================= */}
-      {isClosed ? (
-        // Closed Ticket Footer
-        <div className="bg-red-50 border-t border-red-200 text-red-700 text-center py-4 font-semibold flex items-center justify-center gap-2">
-          <Lock size={18} />
-          <span>This ticket is closed and cannot receive new messages.</span>
-        </div>
-      ) : (
-        // Active Ticket Input Area
-        <div className="bg-white border-t shadow-inner">
-          <div className="max-w-5xl mx-auto p-4 space-y-2">
-            
+      {/* Input Section */}
+      <div className="p-3 md:p-5 bg-white border-t border-gray-100">
+        {ticket.status !== "closed" ? (
+          <div className="max-w-4xl mx-auto space-y-3">
             {/* Screenshot Preview */}
             {attachedScreenshot && (
-              <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl p-3">
-                <img
-                  src={attachedScreenshot.url}
-                  alt="Attached screenshot preview"
-                  className="w-16 h-12 rounded-md object-cover border border-blue-300"
-                />
-                <span className="text-sm text-blue-800 flex-1 font-medium">
-                  Screenshot attached: {attachedScreenshot.name || "Image.png"}
-                </span>
-                <button
-                  onClick={() => setAttachedScreenshot(null)}
-                  className="text-red-600 text-xs font-semibold hover:text-red-700 transition"
-                  title="Remove attachment"
-                >
-                  <X size={16} className="inline-block mr-1" />
-                  Remove
+              <div className="relative inline-block animate-in fade-in slide-in-from-bottom-2">
+                <div className="w-20 h-20 border-2 border-[#10B981] rounded-xl overflow-hidden shadow-md">
+                  <img src={attachedScreenshot.url} className="w-full h-full object-cover" alt="preview" />
+                </div>
+                <button onClick={() => setAttachedScreenshot(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition">
+                  <X size={14}/>
                 </button>
               </div>
             )}
 
-            {/* Input Row */}
-            <div className="flex items-end gap-2">
-              {/* Attach Button */}
-              <button
-                onClick={() => fileInputRef.current.click()}
-                disabled={isSending || isUploading}
-                className="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 border border-gray-300 transition disabled:opacity-50"
-                title="Attach screenshot (Max 5MB)"
-              >
-                <Paperclip size={20} />
-              </button>
+            <div className="flex items-end gap-2 bg-gray-50 p-2 rounded-2xl border border-gray-100 focus-within:border-[#10B981] transition-all">
+              {/* Image Upload Button */}
+              <label className="p-2.5 text-gray-400 hover:text-[#10B981] cursor-pointer transition-colors">
+                {isUploading ? <Loader2 size={20} className="animate-spin" /> : <ImageIcon size={20} />}
+                <input type="file" hidden accept="image/*" onChange={handleImageUpload} disabled={isUploading} />
+              </label>
 
-              {/* Hidden File Input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileSelect}
-              />
-
-              {/* Textarea Input */}
-              <textarea
-                value={messageText}
+              <textarea 
+                value={messageText} 
                 onChange={(e) => setMessageText(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder="Type your message here..."
+                placeholder="Type your message..."
+                className="flex-1 bg-transparent border-none p-2 text-sm md:text-base focus:ring-0 outline-none resize-none min-h-[44px] max-h-32"
                 rows={1}
-                className="flex-1 min-h-[44px] max-h-40 px-4 py-3 border border-gray-300 rounded-xl resize-none focus:ring-2 focus:ring-blue-500 outline-none transition"
+                onInput={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
               />
-
-              {/* Send Button */}
-              <button
-                onClick={sendMessage}
-                disabled={!canSend}
-                className="w-11 h-11 flex-shrink-0 bg-blue-600 text-white rounded-full font-semibold shadow-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                title="Send Message"
+              
+              <button 
+                onClick={sendMessage} 
+                disabled={isSending || isUploading || (!messageText.trim() && !attachedScreenshot)} 
+                className={`p-3 rounded-xl transition-all ${
+                  isSending || isUploading || (!messageText.trim() && !attachedScreenshot)
+                  ? "bg-gray-200 text-gray-400"
+                  : "bg-[#10B981] text-white shadow-lg hover:scale-105 active:scale-95"
+                }`}
               >
-                {isUploading ? (
-                  // Simple loading spinner for uploading
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                ) : (
-                  <Send size={20} />
-                )}
+                {isSending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
               </button>
             </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="p-4 bg-gray-50 border border-dashed border-gray-200 rounded-2xl text-gray-500 text-xs text-center font-semibold flex items-center justify-center gap-3">
+             <Lock size={16}/> This conversation is closed
+          </div>
+        )}
+      </div>
     </div>
   );
 }

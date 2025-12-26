@@ -32,15 +32,15 @@ const UserSidebar = () => {
   const menuItems = [
     { name: "Overview", icon: LayoutDashboard, href: "/user-dashboard/overview" },
     { name: "Meta Ads Account", icon: LayoutDashboard, href: "/user-dashboard/meta-ads-account" },
-    { name: "Projects", icon: LayoutGrid, href: "/user-dashboard/projects" },
-    { name: "Tasks", icon: CheckSquare, href: "/user-dashboard/tasks" },
+    // { name: "Projects", icon: LayoutGrid, href: "/user-dashboard/projects" },
+    // { name: "Tasks", icon: CheckSquare, href: "/user-dashboard/tasks" },
     {
       name: "Payment Methods",
       icon: CreditCard,
       href: "/user-dashboard/payment-methods",
     },
     {
-      name: "Payment History",
+      name: "History",
       icon: History,
       href: "/user-dashboard/payment-history",
     },
@@ -89,7 +89,7 @@ const UserSidebar = () => {
         </div>
         <button
           onClick={() => setIsMobileOpen(true)}
-          className="p-2 bg-white/10 rounded-lg text-white"
+          className="p-2 bg-white rounded-lg text-white"
         >
           <Menu size={24} />
         </button>
@@ -188,7 +188,7 @@ const UserSidebar = () => {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-[#1a350e] p-5 rounded-2xl text-center border border-[#2f5e18]">
+          {/* <div className="bg-[#1a350e] p-5 rounded-2xl text-center border border-[#2f5e18]">
             <h3 className="text-white font-bold mb-1">Upgrade to Pro</h3>
             <p className="text-xs text-gray-300 mb-4">
               Get 1 month free and unlock
@@ -198,10 +198,10 @@ const UserSidebar = () => {
                 Upgrade
               </button>
             </Link>
-          </div>
+          </div> */}
 
-          <div className="pt-4 border-t border-[#2f5e18] space-y-3">
-            <Link href="/help">
+          <div className="pt-4  border-t border-[#2f5e18] space-y-3">
+            <Link href="/">
               <div className="flex items-center gap-3 text-gray-300 hover:text-white text-sm">
                 <HelpCircle size={18} />
                 Help & Information
@@ -211,14 +211,14 @@ const UserSidebar = () => {
             {user ? (
               <div
                 onClick={() => setShowLogoutModal(true)}
-                className="flex items-center gap-3 text-gray-300 hover:text-red-400 text-sm cursor-pointer"
+                className="flex items-center gap-3 pt-4 text-gray-300 hover:text-red-400 text-sm cursor-pointer"
               >
                 <LogOut size={18} />
                 Log out
               </div>
             ) : (
               <Link href="/login">
-                <div className="flex items-center gap-3 text-gray-300 hover:text-white text-sm">
+                <div className="flex items-center gap-3 pt-4 text-gray-300 hover:text-white text-sm">
                   <LogOut size={18} />
                   Log in
                 </div>
@@ -226,6 +226,8 @@ const UserSidebar = () => {
             )}
           </div>
         </div>
+
+        
       </div>
 
       {/* Logout Modal */}
