@@ -39,12 +39,12 @@ const AdminSidebar = () => {
       href: "/admin-dashboard/users",
       adminOnly: true,
     },
-    {
-      name: "Manage Projects",
-      icon: FolderKanban,
-      href: "/admin-dashboard/projects",
-      permissionKey: "projectsAccess",
-    },
+    // {
+    //   name: "Manage Projects",
+    //   icon: FolderKanban,
+    //   href: "/admin-dashboard/projects",
+    //   permissionKey: "projectsAccess",
+    // },
     {
       name: "Meta Ads",
       icon: FolderKanban,

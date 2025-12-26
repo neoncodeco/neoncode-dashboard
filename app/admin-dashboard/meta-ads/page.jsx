@@ -9,8 +9,10 @@ import {
   AlertTriangle,
   Loader2,
   ExternalLink,
+  RefreshCcw
 } from "lucide-react";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import Swal from "sweetalert2"; // SweetAlert ইম্পোর্ট
 
 /* -------- STATUS UI -------- */
 const getStatusClasses = (status) => {
@@ -40,16 +42,13 @@ const getStatusClasses = (status) => {
 
 export default function AdminAdAccountApprove() {
   const { token } = useFirebaseAuth();
-
   const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false); // Global action loading state
+  const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [metaIdMap, setMetaIdMap] = useState({});
 
-  /* -------- LOAD DATA -------- */
   const load = async () => {
-    setInitialLoading(true);
     try {
       const res = await fetch("/api/admin/ads-request/list", {
         headers: { Authorization: `Bearer ${token}` },
@@ -59,7 +58,7 @@ export default function AdminAdAccountApprove() {
         setData(json.data || []);
       }
     } catch (error) {
-       console.error("Error loading data:", error);
+      console.error("Error loading data:", error);
     } finally {
       setInitialLoading(false);
     }
@@ -69,265 +68,158 @@ export default function AdminAdAccountApprove() {
     if (token) load();
   }, [token]);
 
-  /* -------- APPROVE -------- */
-  const approve = async (id) => {
-    const MetaAccountID = metaIdMap[id];
-    
-    // Ensure Meta ID is provided and is a valid format (e.g., purely digits, often 15-18 digits)
-    if (!MetaAccountID || MetaAccountID.trim() === "" || !/^\d+$/.test(MetaAccountID.trim())) {
-      return alert("Valid Meta Ad Account ID (only digits) is required for approval.");
+  /* -------- UNIVERSAL UPDATE FUNCTION -------- */
+  const handleAction = async (id, newStatus) => {
+    const MetaAccountID = metaIdMap[id] !== undefined 
+      ? metaIdMap[id] 
+      : data.find(item => item._id === id)?.MetaAccountID;
+
+    // Validation
+    if (newStatus === "active" && (!MetaAccountID || !/^\d+$/.test(MetaAccountID.toString().trim()))) {
+      return Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: 'Valid Meta Ad Account ID (only digits) is required!',
+      });
     }
 
-    if (!confirm("Approve this ad account request?")) return;
+    // SweetAlert Confirmation
+    const result = await Swal.fire({
+      title: `Confirm ${newStatus}?`,
+      text: `Do you want to set this request to ${newStatus}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#4f46e5',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, update it!'
+    });
+
+    if (!result.isConfirmed) return;
 
     setLoading(true);
     try {
-        const res = await fetch("/api/admin/ads-request/approve", {
-            method: "PUT",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ id, status: "active", MetaAccountID: MetaAccountID.trim() }),
+      const res = await fetch("/api/admin/ads-request/approve", {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          id: id, // নিশ্চিত করুন এই ID টি সঠিক
+          status: newStatus, 
+          MetaAccountID: MetaAccountID?.toString().trim() || ""
+        }),
+      });
+
+      const json = await res.json();
+
+      if (res.ok) {
+        Swal.fire('Updated!', `Request is now ${newStatus}.`, 'success');
+        setMetaIdMap(prev => {
+          const newMap = { ...prev };
+          delete newMap[id];
+          return newMap;
         });
-        if (res.ok) {
-            // Clear the specific input field on success
-             setMetaIdMap(prev => { 
-                const newMap = {...prev};
-                delete newMap[id];
-                return newMap;
-            });
-            alert("Request approved successfully.");
-        } else {
-             const json = await res.json();
-             alert(`Approval failed: ${json.error || "Unknown error"}`);
-        }
+        load(); 
+      } else {
+        // এরর মেসেজ হ্যান্ডলিং
+        Swal.fire('Error', json.message || "Something went wrong", 'error');
+      }
     } catch (error) {
-        alert("An unexpected error occurred during approval.");
+      Swal.fire('Error', 'Server connection failed', 'error');
     } finally {
-        setLoading(false);
-        load();
+      setLoading(false);
     }
   };
 
-  /* -------- REJECT -------- */
-  const reject = async (id) => {
-    if (!confirm("Reject this ad account request?")) return;
-
-    setLoading(true);
-    try {
-        const res = await fetch("/api/admin/ads-request/approve", {
-            method: "PUT",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ id, status: "rejected" }),
-        });
-        if (!res.ok) {
-             const json = await res.json();
-             alert(`Rejection failed: ${json.error || "Unknown error"}`);
-        } else {
-            alert("Request rejected successfully.");
-        }
-    } catch (error) {
-        alert("An unexpected error occurred during rejection.");
-    } finally {
-        setLoading(false);
-        load();
-    }
-  };
-
-  /* -------- FILTER -------- */
   const filtered = useMemo(() => {
     const s = search.toLowerCase();
     return data.filter(
       (d) =>
         d.accountName?.toLowerCase().includes(s) ||
-        d.userEmail?.toLowerCase().includes(s)
+        d.userEmail?.toLowerCase().includes(s) ||
+        d.bmId?.includes(s)
     );
   }, [data, search]);
 
   if (initialLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px] text-lg text-blue-600">
-        <Loader2 className="animate-spin mr-2 w-6 h-6" />
-        Loading Ad Account Requests...
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-indigo-600 font-bold">
+        <Loader2 className="animate-spin mb-4 w-10 h-10" />
+        <p className="animate-pulse">Loading Ad Account Requests...</p>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 space-y-6">
-      
-      {/* ================= HEADER & SEARCH ================= */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200 pb-4">
-        <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">
-          Ad Account Approval Panel
-        </h1>
-        
-        {/* Search Input */}
-        <div className="relative w-full md:max-w-xs">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-4">
+        <h1 className="text-3xl font-black tracking-tight text-slate-900">Ad Account Panel</h1>
+        <div className="relative w-full md:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-            placeholder="Search name or email"
+            className="w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none text-black"
+            placeholder="Search..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
       </div>
 
-      {/* ================= TABLE ================= */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-lg overflow-x-auto">
+      <div className="bg-white border rounded-2xl shadow-sm overflow-x-auto">
         <table className="min-w-full text-sm divide-y divide-gray-100">
-          <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+          <thead className="bg-slate-50 text-[11px] uppercase font-bold text-slate-500">
             <tr>
-              <th className="p-4 pl-6 text-left font-semibold w-[200px]">Account Details</th>
-              <th className="p-4 text-center font-semibold">BM ID</th>
-              <th className="p-4 text-center font-semibold">Budget</th>
-              <th className="p-4 text-center font-semibold">Timezone</th>
-              <th className="p-4 text-center font-semibold">Start Date</th>
-              <th className="p-4 text-center font-semibold">Facebook Page</th>
-              <th className="p-4 text-center font-semibold w-[180px]">Meta Ad Account ID</th> {/* Increased width */}
-              <th className="p-4 text-center font-semibold">Status</th>
-              <th className="p-4 text-right pr-6 font-semibold">Action</th>
+              <th className="p-4 pl-6 text-left">Details</th>
+              <th className="p-4 text-center">BM ID</th>
+              <th className="p-4 text-center">Budget</th>
+              <th className="p-4 text-center w-[200px]">Meta ID</th>
+              <th className="p-4 text-center">Status</th>
+              <th className="p-4 text-right pr-6">Actions</th>
             </tr>
           </thead>
-
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-50">
             {filtered.map((r) => {
-              const isPending = r.status === "pending";
               const st = getStatusClasses(r.status);
-
               return (
-                <tr key={r._id} className="hover:bg-gray-50 transition duration-100">
-                  
-                  {/* Account Details */}
+                <tr key={r._id} className="hover:bg-slate-50/50 transition duration-150">
                   <td className="p-4 pl-6">
-                    <p className="font-semibold text-gray-900 truncate">{r.accountName || "N/A"}</p>
-                    <p className="text-xs text-gray-500 truncate">{r.userEmail || "N/A"}</p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Req: {new Date(r.createdAt).toLocaleDateString()}
-                    </p>
+                    <p className="font-bold text-slate-900 truncate">{r.accountName}</p>
+                    <p className="text-xs text-slate-500 truncate">{r.userEmail}</p>
                   </td>
-
-                  {/* BM ID */}
-                  <td className="p-4 text-center font-mono text-gray-700">{r.bmId || "—"}</td>
-                  
-                  {/* Monthly Budget */}
-                  <td className="p-4 text-center font-bold text-gray-900">
-                    ${r.monthlyBudget?.toLocaleString('en-US') || "0"}
-                  </td>
-                  
-                  {/* Timezone */}
-                  <td className="p-4 text-center text-gray-600">{r.timezone || "—"}</td>
-                  
-                  {/* Start Date */}
-                  <td className="p-4 text-center text-gray-600">{r.startDate || "—"}</td>
-
-                  {/* Facebook Page Link */}
+                  <td className="p-4 text-center font-mono text-slate-600">{r.bmId || "—"}</td>
+                  <td className="p-4 text-center font-black text-slate-900">${r.monthlyBudget}</td>
                   <td className="p-4 text-center">
-                    {r.facebookPage ? (
-                      <a
-                        href={r.facebookPage}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 transition inline-flex items-center gap-1 font-medium"
-                      >
-                        View <ExternalLink size={14} />
-                      </a>
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
+                    <input
+                      className="border border-gray-200 px-3 py-2 rounded-xl w-full max-w-[170px] text-sm font-mono text-black focus:border-indigo-500 outline-none transition-all"
+                      placeholder="Meta ID"
+                      defaultValue={r.MetaAccountID || ""}
+                      onChange={(e) => setMetaIdMap({ ...metaIdMap, [r._id]: e.target.value.trim() })}
+                    />
                   </td>
-
-                  {/* Meta Ad Account ID Input/Display (Wider Field) */}
                   <td className="p-4 text-center">
-                    {isPending ? (
-                      <input
-                        className="border border-gray-300 px-3 py-1.5 rounded-lg w-[160px] text-sm font-mono focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="16-Digit Meta ID"
-                        value={metaIdMap[r._id] || ""}
-                        onChange={(e) =>
-                          setMetaIdMap({
-                            ...metaIdMap,
-                            [r._id]: e.target.value.trim(), // Trim whitespace
-                          })
-                        }
-                      />
-                    ) : (
-                      <span className="font-mono text-gray-700 break-all w-[160px] inline-block">
-                        {r.MetaAccountID || "—"}
-                      </span>
-                    )}
-                  </td>
-
-                  {/* Status Badge */}
-                  <td className="p-4 text-center">
-                    <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ring-1 ring-inset ${st.bg}`}
-                    >
-                      {st.icon}
-                      {r.status?.charAt(0).toUpperCase() + r.status?.slice(1)}
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase ring-1 ${st.bg}`}>
+                      {st.icon} {r.status}
                     </span>
                   </td>
-
-                  {/* Action Buttons */}
                   <td className="p-4 text-right pr-6">
-                    {isPending ? (
-                      <div className="flex justify-end gap-2">
-                        {/* Approve Button */}
-                        <button
-                          title="Approve Request"
-                          disabled={loading || !metaIdMap[r._id]}
-                          onClick={() => approve(r._id)}
-                          className={`p-2 rounded-full transition duration-150 ${
-                            loading || !metaIdMap[r._id]
-                              ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                              : "bg-green-50 text-green-600 hover:bg-green-100 ring-1 ring-green-300"
-                          }`}
-                        >
-                          <CheckCircle size={18} />
-                        </button>
-                        
-                        {/* Reject Button */}
-                        <button
-                          title="Reject Request"
-                          disabled={loading}
-                          onClick={() => reject(r._id)}
-                          className={`p-2 rounded-full transition duration-150 ${
-                            loading
-                              ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                              : "bg-red-50 text-red-600 hover:bg-red-100 ring-1 ring-red-300"
-                          }`}
-                        >
-                          <XCircle size={18} />
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-gray-400">
-                        {r.status === "active" ? "Approved" : "Reviewed"}
-                      </span>
-                    )}
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => handleAction(r._id, "active")} className="p-2.5 rounded-xl bg-green-50 text-green-600 hover:bg-green-600 hover:text-white border border-green-100 transition-all">
+                        <CheckCircle size={18} />
+                      </button>
+                      <button onClick={() => handleAction(r._id, "rejected")} className="p-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-100 transition-all">
+                        <XCircle size={18} />
+                      </button>
+                      <button onClick={() => handleAction(r._id, "pending")} className="p-2.5 rounded-xl bg-slate-50 text-slate-500 hover:bg-slate-600 hover:text-white border border-slate-200 transition-all">
+                        <RefreshCcw size={18} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-
-        {/* EMPTY STATE */}
-        {filtered.length === 0 && (
-          <div className="p-8 text-center bg-gray-50">
-            <p className="text-base font-medium text-gray-600">
-              No ad account requests found.
-            </p>
-            <p className="text-sm text-gray-400 mt-1">
-                Requests will appear here when users submit their BM IDs.
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

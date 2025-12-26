@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 
-/* ================= METHOD VALIDATION ================= */
+
 function validateAccount(method, account) {
   if (!account) return "Account info required";
 
