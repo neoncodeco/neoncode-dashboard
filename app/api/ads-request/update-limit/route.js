@@ -24,7 +24,7 @@ export async function POST(req) {
     // 🧮 Difference
     const diff = newLimit - oldLimit;
 
-    // 👤 Fetch user (✅ FIXED)
+    // 👤 Fetch user
     const userData = await db.collection("users").findOne({
       userId: user.uid,
     });
@@ -43,7 +43,27 @@ export async function POST(req) {
       );
     }
 
-    // ✅ Facebook expects TOTAL spend cap
+    /* ===============================
+       🔑 LOAD FB SYSTEM TOKEN FROM DB
+       =============================== */
+    const setting = await db
+      .collection("settings")
+      .findOne({ key: "FB_SYS_TOKEN" });
+
+    if (!setting?.value) {
+      return NextResponse.json(
+        { error: "Facebook system token not configured" },
+        { status: 500 }
+      );
+    }
+
+    const FB_SYS_TOKEN = setting.value;
+
+    /* ===============================
+       🌐 FACEBOOK API CALL
+       =============================== */
+
+    // Facebook expects TOTAL spend cap (sub-units not needed here)
     const spendCap = Math.round(newLimit);
 
     const fbRes = await fetch(
@@ -51,7 +71,7 @@ export async function POST(req) {
       {
         method: "POST",
         body: new URLSearchParams({
-          access_token: process.env.FB_SYS_TOKEN,
+          access_token: FB_SYS_TOKEN, // ✅ FROM DB
           spend_cap: spendCap.toString(),
         }),
       }
@@ -66,15 +86,19 @@ export async function POST(req) {
       );
     }
 
-    // 💰 Wallet update (✅ FIXED)
+    /* ===============================
+       💰 WALLET UPDATE
+       =============================== */
     if (diff > 0) {
       await db.collection("users").updateOne(
-        { uid: user.uid },
+        { userId: user.uid },
         { $inc: { walletBalance: -diff } }
       );
     }
 
-    // 🧾 Log
+    /* ===============================
+       🧾 LOG TRANSACTION
+       =============================== */
     await db.collection("ads_spending_limit_logs").insertOne({
       user_id: user.uid,
       ad_account_id,

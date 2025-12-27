@@ -1,52 +1,28 @@
-
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 
-export async function POST(req) {
+export async function GET(req) {
   try {
-    const { trx_id, reason } = await req.json();
+    const { searchParams } = new URL(req.url);
+    const invoiceId = searchParams.get("invoice_id"); // এখন এটি আর null হবে না
 
-    if (!trx_id) {
-      return NextResponse.json(
-        { ok: false, error: "trx_id missing" },
-        { status: 400 }
+    console.log("Extracted Tracking ID:", invoiceId);
+
+    if (invoiceId) {
+      const { db } = await getDB();
+      
+      const result = await db.collection("payments").updateOne(
+        { trx_id: invoiceId, status: "pending" }, 
+        { $set: { status: "cancelled", updatedAt: new Date() } }
       );
+      
+      console.log("DB Update Result:", result.modifiedCount > 0 ? "Success" : "Already Cancelled");
     }
 
-    const { db } = await getDB();
-
-    // 1) Update payment status to canceled in DB
-    const payment = await db.collection("payments").findOne({ trx_id });
-    if (!payment) {
-      return NextResponse.json(
-        { ok: false, error: "Transaction not found" },
-        { status: 404 }
-      );
-    }
-
-    await db.collection("payments").updateOne(
-      { trx_id },
-      {
-        $set: {
-          status: "canceled",
-          cancelReason: reason || "User requested cancellation",
-          updatedAt: new Date(),
-        },
-      }
-    );
-
-    // 2) Optionally notify UddoktaPay (if they trigger your cancel URL)
-    // For local development, this URL can just update your DB, as we already did.
-
-    return NextResponse.json({
-      ok: true,
-      message: "Payment canceled successfully",
-      trx_id,
-    });
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    return NextResponse.redirect(new URL("/user-dashboard/payment-methods/cancel", baseUrl).toString(), 303);
+    
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.redirect(new URL("/user-dashboard/payment-methods", req.url));
   }
 }

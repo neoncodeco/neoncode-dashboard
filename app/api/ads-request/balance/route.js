@@ -1,13 +1,15 @@
-
 import { NextResponse } from "next/server";
 import { verifyToken } from "@/lib/verifyToken";
+import getDB from "@/lib/mongodb";
 
 export async function GET(req) {
   try {
+    // 🔐 Verify user
     const user = await verifyToken(req);
     if (!user)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    // 🔎 Query param
     const { searchParams } = new URL(req.url);
     const adAccountId = searchParams.get("ad_account_id");
 
@@ -17,11 +19,27 @@ export async function GET(req) {
         { status: 400 }
       );
 
+    // 🟢 Load System Token from DB
+    const { db } = await getDB();
+    const setting = await db
+      .collection("settings")
+      .findOne({ key: "FB_SYS_TOKEN" });
+
+    if (!setting?.value) {
+      return NextResponse.json(
+        { error: "Facebook system token not configured" },
+        { status: 500 }
+      );
+    }
+
+    const FB_SYS_TOKEN = setting.value;
+
+    // 🌐 Facebook API Call
     const fbRes = await fetch(
       `https://graph.facebook.com/v18.0/act_${adAccountId}?fields=spend_cap,amount_spent,account_status`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.FB_SYS_TOKEN}`,
+          Authorization: `Bearer ${FB_SYS_TOKEN}`, // ✅ DB token
         },
       }
     );
@@ -47,7 +65,7 @@ export async function GET(req) {
       status: fbData.account_status,
     });
   } catch (err) {
-    console.error(err);
+    console.error("FB API ERROR:", err);
     return NextResponse.json(
       { error: "Server error" },
       { status: 500 }

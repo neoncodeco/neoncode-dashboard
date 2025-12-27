@@ -5,7 +5,7 @@ import { useState } from "react";
 import Swal from "sweetalert2";
 import { ArrowLeft } from "lucide-react";
 
-// Props: token, setMethod, inputStyle, labelStyle
+
 export default function UddoktaPayForm({ token, setMethod }) {
   const [amount, setAmount] = useState("");
 
@@ -13,7 +13,7 @@ export default function UddoktaPayForm({ token, setMethod }) {
     "w-full border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg p-3 transition duration-150 ease-in-out bg-white text-gray-800 placeholder-gray-400";
   const labelStyle = "text-sm font-semibold text-gray-700 block mb-1";
 
-  // ✅ UddoktaPay payment Logic
+
   const handleUddoktaPay = async () => {
     if (!amount) return Swal.fire("Error", "Amount required", "error");
     if (!token) return Swal.fire("Error", "You must login first", "error");

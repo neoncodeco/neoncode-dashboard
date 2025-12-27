@@ -15,20 +15,20 @@ export async function POST(req) {
 
     const { db } = await getDB();
 
-    // 1) Save callback data first
-    await db.collection("payments").updateOne(
-      { trx_id },
-      {
-        $set: {
-          callbackReceived: true,
-          callbackData: body,
-          updatedAt: new Date(),
-        },
-      },
-      { upsert: true }
-    );
+    // ১. পেমেন্ট রেকর্ডটি ডাটাবেজ থেকে খুঁজে বের করা
+    const paymentDoc = await db.collection("payments").findOne({ trx_id });
 
-    // 2) VERIFY PAYMENT FROM PAYMENTLY (UddoktaPay v2)
+    if (!paymentDoc) {
+      console.error(`Payment record not found for trx_id: ${trx_id}`);
+      return NextResponse.json({ ok: false, error: "Record not found" }, { status: 404 });
+    }
+
+    // ২. যদি পেমেন্ট অলরেডি 'paid' হয়ে থাকে, তবে আবার প্রসেস করার দরকার নেই (Double Credit Protection)
+    if (paymentDoc.status === "paid") {
+      return NextResponse.json({ ok: true, message: "Already processed" });
+    }
+
+    // ৩. PAYMENTLY (UddoktaPay v2) থেকে পেমেন্ট ভেরিফাই করা
     const verifyRes = await fetch(
       "https://gorilladigital.paymently.io/api/verify-payment",
       {
@@ -45,44 +45,57 @@ export async function POST(req) {
 
     const verifyData = await verifyRes.json();
 
-    // 3) Payment status check
-    let finalStatus = "failed";
-
+    // ৪. পেমেন্ট স্ট্যাটাস চেক (COMPLETED কিনা)
     if (
       verifyData?.success === true &&
       verifyData?.payment?.status === "COMPLETED"
     ) {
-      finalStatus = "paid";
-
-      // 4) Update user balance
-      const paymentDoc = await db.collection("payments").findOne({ trx_id });
-      if (paymentDoc && paymentDoc.userUid) {
+      // ৫. ইউজারের ব্যালেন্স আপডেট করা (শুধুমাত্র একবার হবে)
+      if (paymentDoc.userUid) {
         const amount = Number(paymentDoc.amount) || 0;
-        await db.collection("users").updateOne(
-          { uid: paymentDoc.userUid }, // userUid অনুযায়ী match
+        
+        // ট্রানজেকশন সেফটি নিশ্চিত করতে আপডেট করা
+        const userUpdate = await db.collection("users").updateOne(
+          { uid: paymentDoc.userUid },
           {
-            $inc: {
-              balance: amount,
-            },
+            $inc: { balance: amount },
           }
         );
+
+        console.log(`Balance added: ${amount} to User: ${paymentDoc.userUid}`);
       }
+
+      // ৬. পেমেন্ট স্ট্যাটাস 'paid' হিসেবে আপডেট করা
+      await db.collection("payments").updateOne(
+        { trx_id },
+        {
+          $set: {
+            status: "paid",
+            verifyResponse: verifyData,
+            callbackData: body,
+            updatedAt: new Date(),
+          },
+        }
+      );
+
+      return NextResponse.json({ ok: true, status: "paid" });
+    } else {
+      // পেমেন্ট ফেইল হলে বা কমপ্লিট না হলে
+      await db.collection("payments").updateOne(
+        { trx_id },
+        {
+          $set: {
+            status: "failed",
+            verifyResponse: verifyData,
+            updatedAt: new Date(),
+          },
+        }
+      );
+      return NextResponse.json({ ok: true, status: "failed" });
     }
 
-    // 5) Update DB payment status
-    await db.collection("payments").updateOne(
-      { trx_id },
-      {
-        $set: {
-          status: finalStatus,
-          verifyResponse: verifyData,
-          updatedAt: new Date(),
-        },
-      }
-    );
-
-    return NextResponse.json({ ok: true, status: finalStatus });
   } catch (error) {
+    console.error("Webhook Error:", error.message);
     return NextResponse.json(
       { ok: false, error: error.message },
       { status: 500 }

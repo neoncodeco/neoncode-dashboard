@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 
-// টোকেনটি গেট (GET) করার জন্য
 export async function GET(req) {
   try {
     const decoded = await verifyToken(req);
