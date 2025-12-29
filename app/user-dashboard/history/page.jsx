@@ -27,7 +27,7 @@ const HistoryPage = () => {
       }
     };
     fetchHistory();
-  }, []);
+  }, [token]);
 
   const getStatusStyle = (status) => {
     switch (status?.toLowerCase()) {
