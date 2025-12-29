@@ -1,165 +1,215 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Camera, 
-  User, 
-  Mail, 
-  Lock, 
-  Shield, 
-  Check, 
+  Camera, User, Mail, Phone, Save, Loader2, 
+  CheckCircle, Wallet, Gift, Shield, 
+  ArrowRight, Globe, CreditCard
 } from 'lucide-react';
+import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 
-export default function AddAccountPage() {
-  const [role, setRole] = useState('Member');
-  const [permissions, setPermissions] = useState({
-    dashboard: true,
-    projects: true,
-    tasks: true,
-    payments: false,
+export default function FullProfilePage() {
+  const { userData, token } = useFirebaseAuth();
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [status, setStatus] = useState({ type: '', message: '' });
+
+  // মেইন স্টেট
+  const [formData, setFormData] = useState({
+    name: '',
+    photo: '',
   });
 
-  // টগল পারমিশন ফাংশন
-  const togglePermission = (key) => {
-    setPermissions({ ...permissions, [key]: !permissions[key] });
+  // পেমেন্ট মেথডসের জন্য আলাদা স্টেট
+  const [paymentMethods, setPaymentMethods] = useState({});
+
+  useEffect(() => {
+    if (userData) {
+      setFormData({
+        name: userData.name || '',
+        photo: userData.photo || '',
+      });
+      // ডাটাবেস থেকে সব পেমেন্ট মেথড লোড করা (bkash, nagad, etc.)
+      setPaymentMethods(userData.payoutMethods || {});
+    }
+  }, [userData]);
+
+  // ইমেজ আপলোড (ImgBB)
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    const uploadData = new FormData();
+    uploadData.append("image", file);
+
+    try {
+      const res = await fetch("/api/upload/screenshot", { method: "POST", body: uploadData });
+      const data = await res.json();
+      if (data.url) {
+        setFormData(prev => ({ ...prev, photo: data.url }));
+        setStatus({ type: 'success', message: 'Image uploaded! Save to apply.' });
+      }
+    } catch (err) {
+      setStatus({ type: 'error', message: 'Upload failed' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // পেমেন্ট ইনপুট হ্যান্ডলার (ডাইনামিক)
+  const handlePaymentChange = (methodKey, value) => {
+    setPaymentMethods(prev => ({
+      ...prev,
+      [methodKey]: { ...prev[methodKey], number: value }
+    }));
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setStatus({ type: '', message: '' });
+
+    try {
+      const res = await fetch("/api/update-profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...formData,
+          payoutMethods: paymentMethods 
+        }),
+      });
+
+      if (res.ok) {
+        setStatus({ type: 'success', message: 'Profile updated successfully!' });
+      } else {
+        setStatus({ type: 'error', message: 'Update failed' });
+      }
+    } catch (error) {
+      setStatus({ type: 'error', message: 'Error occurred!' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-8">
-      
-      {/* --- ১. হেডার সেকশন --- */}
-      <div className="pt-16 md:pt-0">
-        <h1 className="text-2xl font-bold text-gray-800">Add New Account</h1>
-        <p className="text-gray-500 text-sm mt-1">Create a new user profile and assign permissions.</p>
+    <div className="min-h-screen text-black pb-20">
+      {/* Header Banner */}
+      <div className="h-48 md:h-64 bg-gradient-to-r from-indigo-600 to-purple-700 relative">
+        <div className="absolute -bottom-16 left-6 md:left-12 flex items-end gap-6">
+          <div className="relative group">
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-3xl bg-white p-1 shadow-2xl overflow-hidden border-4 border-white">
+              {formData.photo ? (
+                <img src={formData.photo} alt="Profile" className="w-full h-full object-cover rounded-2xl" />
+              ) : (
+                <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-2xl text-gray-300"><User size={50} /></div>
+              )}
+              {uploading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-2xl"><Loader2 className="text-white animate-spin" /></div>}
+            </div>
+            <label className="absolute bottom-2 right-2 p-2 bg-indigo-600 text-white rounded-xl shadow-lg cursor-pointer hover:scale-110 transition">
+              <Camera size={18} />
+              <input type="file" className="hidden" onChange={handleImageUpload} />
+            </label>
+          </div>
+          <div className="mb-4 hidden md:block text-black font-medium">
+            <h1 className="text-3xl font-black drop-shadow-md">{formData.name || "User"}</h1>
+            <p className=" flex items-center gap-2 mt-1 opacity-80"><Mail size={14} /> {userData?.email}</p>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* --- ২. বাম পাশ: প্রোফাইল ছবি আপলোড --- */}
-        <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm text-center">
-                <div className="relative w-32 h-32 mx-auto mb-4 group cursor-pointer">
-                    <div className="w-full h-full rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden group-hover:border-green-400 transition-colors">
-                        <User size={48} className="text-gray-300 group-hover:text-green-400 transition" />
-                    </div>
-                    <div className="absolute bottom-0 right-0 p-2 bg-black text-white rounded-full shadow-lg cursor-pointer hover:bg-gray-800 transition">
-                        <Camera size={16} />
-                    </div>
-                </div>
-                <h3 className="font-bold text-gray-700">Profile Photo</h3>
-                <p className="text-xs text-gray-400 mt-1">Upload a photo for the user profile.</p>
+      <div className="max-w-7xl mx-auto px-4 md:px-12 mt-24 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Sidebar Info */}
+        <div className="lg:col-span-4 space-y-6">
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+            <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2"><Shield size={18} className="text-indigo-600"/> Account Info</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between p-3 bg-gray-50 rounded-2xl text-sm">
+                <span className="text-gray-500">Referral Code</span>
+                <span className="font-black text-indigo-600">{userData?.referralCode}</span>
+              </div>
+              <div className="flex justify-between p-3 bg-gray-50 rounded-2xl text-sm">
+                <span className="text-gray-500">Joined On</span>
+                <span className="font-medium">{userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString() : 'N/A'}</span>
+              </div>
             </div>
-
-            {/* রোল সিলেকশন কার্ড */}
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                <label className="text-sm font-bold text-gray-700 mb-3 block">Account Role</label>
-                <div className="space-y-2">
-                    {['Admin', 'Manager', 'Member'].map((r) => (
-                        <div 
-                            key={r}
-                            onClick={() => setRole(r)}
-                            className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
-                                role === r 
-                                ? 'border-green-500 bg-green-50' 
-                                : 'border-gray-200 hover:border-gray-300'
-                            }`}
-                        >
-                            <span className={`text-sm font-medium ${role === r ? 'text-green-700' : 'text-gray-600'}`}>{r}</span>
-                            {role === r && <Check size={16} className="text-green-600" />}
-                        </div>
-                    ))}
-                </div>
-            </div>
+          </div>
         </div>
 
-        {/* --- ৩. ডান পাশ: ইনফরমেশন ফর্ম --- */}
-        <div className="lg:col-span-2 space-y-6">
+        {/* Main Form */}
+        <div className="lg:col-span-8">
+          <form onSubmit={handleUpdate} className="bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-gray-100 space-y-10">
             
-            {/* পার্সোনাল ইনফো */}
-            <div className="bg-white p-6 md:p-8 rounded-2xl border border-gray-100 shadow-sm space-y-5">
-                <h3 className="font-bold text-gray-800 border-b border-gray-100 pb-3">Personal Information</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold text-gray-500 uppercase">First Name</label>
-                        <div className="relative">
-                            <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input type="text" placeholder="John" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-green-500 focus:bg-white transition" />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Last Name</label>
-                        <div className="relative">
-                            <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input type="text" placeholder="Doe" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-green-500 focus:bg-white transition" />
-                        </div>
-                    </div>
-                </div>
-
+            {/* Personal Info Section */}
+            <section>
+              <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                <User size={20} className="text-indigo-600" /> General Settings
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-500 uppercase">Email Address</label>
-                    <div className="relative">
-                        <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input type="email" placeholder="john.doe@example.com" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-green-500 focus:bg-white transition" />
-                    </div>
+                  <label className="text-xs font-bold text-gray-500 uppercase ml-1">Full Name</label>
+                  <input 
+                    type="text" 
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:border-indigo-500 transition outline-none" 
+                  />
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Password</label>
-                        <div className="relative">
-                            <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input type="password" placeholder="••••••••" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-green-500 focus:bg-white transition" />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Confirm Password</label>
-                        <div className="relative">
-                            <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input type="password" placeholder="••••••••" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-green-500 focus:bg-white transition" />
-                        </div>
-                    </div>
+                <div className="space-y-2 opacity-60">
+                  <label className="text-xs font-bold text-gray-500 uppercase ml-1">Email (Private)</label>
+                  <input type="email" value={userData?.email || ''} readOnly className="w-full px-5 py-3.5 bg-gray-100 border border-gray-200 rounded-2xl cursor-not-allowed outline-none" />
                 </div>
-            </div>
+              </div>
+            </section>
 
-            {/* অ্যাক্সেস কন্ট্রোল (পারমিশন) */}
-            <div className="bg-white p-6 md:p-8 rounded-2xl border border-gray-100 shadow-sm space-y-5">
-                <h3 className="font-bold text-gray-800 border-b border-gray-100 pb-3">Access Permissions</h3>
-                
-                <div className="space-y-3">
-                    {Object.keys(permissions).map((key) => (
-                        <div key={key} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-gray-100 rounded-lg text-gray-500">
-                                    <Shield size={18} />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-bold text-gray-700 capitalize">{key} Access</p>
-                                    <p className="text-xs text-gray-400">Allow user to view and edit {key}.</p>
-                                </div>
-                            </div>
-                            
-                            {/* টগল বাটন */}
-                            <div 
-                                onClick={() => togglePermission(key)}
-                                className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors duration-300 ${permissions[key] ? 'bg-black' : 'bg-gray-200'}`}
-                            >
-                                <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${permissions[key] ? 'translate-x-6' : 'translate-x-0'}`}></div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
+            {/* Dynamic Payment Methods Section */}
+            <section>
+              <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                <CreditCard size={20} className="text-pink-600" /> Payout Methods
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {Object.keys(paymentMethods).length > 0 ? (
+                  Object.keys(paymentMethods).map((key) => (
+                    <div key={key} className="space-y-2">
+                      <label className="text-xs font-bold text-gray-500 uppercase ml-1">{key} Number</label>
+                      <div className="relative">
+                        <span className="absolute left-5 top-1/2 -translate-y-1/2 font-bold text-pink-500 text-xs uppercase">{key}</span>
+                        <input 
+                          type="text" 
+                          placeholder={`Enter ${key} number`}
+                          value={paymentMethods[key]?.number || ''}
+                          onChange={(e) => handlePaymentChange(key, e.target.value)}
+                          className="w-full pl-20 pr-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:border-pink-500 transition outline-none" 
+                        />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-400 italic">No payment methods found in database.</p>
+                )}
+              </div>
+            </section>
 
-            {/* অ্যাকশন বাটনস */}
-            <div className="flex flex-col-reverse md:flex-row items-center justify-end gap-4 pt-4">
-                <button className="w-full md:w-auto px-6 py-3 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 transition">
-                    Cancel
-                </button>
-                <button className="w-full md:w-auto px-8 py-3 rounded-xl text-sm font-bold text-black bg-[#D8FF30] hover:bg-[#cbf028] shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5">
-                    Add Account
-                </button>
+            {/* Submit Bar */}
+            <div className="pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="text-sm">
+                {status.message && (
+                  <p className={`flex items-center gap-2 font-medium ${status.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                    {status.type === 'success' && <CheckCircle size={18} />} {status.message}
+                  </p>
+                )}
+              </div>
+              <button 
+                type="submit"
+                disabled={loading || uploading}
+                className="w-full md:w-auto flex items-center justify-center gap-3 px-12 py-4 rounded-2xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition transform hover:-translate-y-1 active:scale-95"
+              >
+                {loading ? <Loader2 className="animate-spin" /> : <Save size={20} />}
+                Save Changes
+              </button>
             </div>
-
+          </form>
         </div>
       </div>
     </div>

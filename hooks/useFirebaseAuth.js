@@ -106,9 +106,6 @@ export default function useFirebaseAuth() {
     }
   };
 
-  console.log("this is your role " ,  role );
-
-
   const logout = async () => {
     await signOut(auth);
     setUser(null);

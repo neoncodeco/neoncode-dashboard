@@ -41,12 +41,13 @@ const getStatusClasses = (status) => {
 };
 
 export default function AdminAdAccountApprove() {
-  const { token } = useFirebaseAuth();
+  const { token , user , userData} = useFirebaseAuth();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [metaIdMap, setMetaIdMap] = useState({});
+
 
   const load = async () => {
     try {

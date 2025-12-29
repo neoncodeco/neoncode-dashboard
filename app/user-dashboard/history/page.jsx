@@ -5,7 +5,6 @@ import React, { useEffect, useState } from "react";
 const HistoryPage = () => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const { token } = useFirebaseAuth();
 
   useEffect(() => {
@@ -18,7 +17,6 @@ const HistoryPage = () => {
           },
         });
         const data = await res.json();
-        console.log("History data:", data);
         if (data.ok) setHistory(data.data);
       } catch (err) {
         console.error("Failed to load history");
@@ -33,81 +31,93 @@ const HistoryPage = () => {
     switch (status?.toLowerCase()) {
       case "approved":
       case "active":
-        return "bg-green-100 text-green-700";
+        return "bg-green-50 text-green-600 border-green-200";
       case "pending":
       case "open":
-        return "bg-yellow-100 text-yellow-700";
+        return "bg-amber-50 text-amber-600 border-amber-200";
       case "rejected":
-        return "bg-red-100 text-red-700";
+        return "bg-red-50 text-red-600 border-red-200";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "bg-gray-50 text-gray-600 border-gray-200";
     }
   };
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="p-10 text-center text-white">Loading History...</div>
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+        <p className="mt-4 text-gray-500 font-medium">Loading History...</p>
+      </div>
     );
+  }
 
   return (
-    <div className="p-4 md:p-10 bg-slate-900 min-h-screen">
-      <h1 className="text-2xl font-bold text-white mb-6">Activity History</h1>
+    <div className=" mx-auto p-6 md:p-10 ">
+      {/* Header Section */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Activity History</h1>
+        <p className="text-gray-500 mt-2">View and manage your recent activities and their status.</p>
+      </div>
 
-      <div className="overflow-x-auto bg-slate-800 rounded-xl shadow-lg border border-slate-700">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-slate-700 text-slate-400 uppercase text-sm">
-              <th className="p-4">Date</th>
-              <th className="p-4">Type</th>
-              <th className="p-4">Title/Subject</th>
-              <th className="p-4">Status</th>
-            </tr>
-          </thead>
-          <tbody className="text-slate-300">
-            {history.length > 0 ? (
-              history.map((item) => (
-                <tr
-                  key={item._id}
-                  className="border-b border-slate-700 hover:bg-slate-750 transition-colors"
-                >
-                  <td className="p-4 text-sm">
-                    {new Date(
-                      item.createdAt || item.updatedAt
-                    ).toLocaleDateString()}
-                  </td>
-                  <td className="p-4">
-                    <span className="text-xs font-semibold px-2 py-1 bg-slate-700 rounded text-slate-300">
-                      {item.type?.replace("_", " ")}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <div className="font-medium">{item.title}</div>
-                    {item.description && (
-                      <div className="text-xs text-slate-500 truncate w-48">
-                        {item.description}
+      {/* Table Container */}
+      <div className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-gray-50/50 border-b border-gray-100">
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Activity Details</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {history.length > 0 ? (
+                history.map((item) => (
+                  <tr key={item._id} className="hover:bg-blue-50/30 transition-all duration-200">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-600 font-medium">
+                        {new Date(item.createdAt || item.updatedAt).toLocaleDateString('en-US', {
+                          month: 'short', day: 'numeric', year: 'numeric'
+                        })}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                        {item.type?.replace("_", " ")}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-semibold text-gray-800">{item.title}</div>
+                      {item.description && (
+                        <div className="text-xs text-gray-400 mt-0.5 line-clamp-1 max-w-xs">
+                          {item.description}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${getStatusStyle(item.status)}`}>
+                        <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-current"></span>
+                        {item.status?.toUpperCase()}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="py-20 text-center">
+                    <div className="flex flex-col items-center">
+                      <div className="bg-gray-50 p-4 rounded-full mb-3">
+                         <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                       </div>
-                    )}
-                  </td>
-                  <td className="p-4">
-                    <span
-                      className={`text-xs px-2.5 py-1 rounded-full font-bold ${getStatusStyle(
-                        item.status
-                      )}`}
-                    >
-                      {item.status?.toUpperCase()}
-                    </span>
+                      <p className="text-gray-400 font-medium">No history records found.</p>
+                    </div>
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="4" className="p-10 text-center text-slate-500">
-                  No history found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
