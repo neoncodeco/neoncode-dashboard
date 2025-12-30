@@ -89,7 +89,7 @@ const UserSidebar = () => {
         </div>
         <button
           onClick={() => setIsMobileOpen(true)}
-          className="p-2 bg-white rounded-lg text-white"
+          className="p-2  rounded-lg text-white"
         >
           <Menu size={24} />
         </button>
