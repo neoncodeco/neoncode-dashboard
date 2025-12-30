@@ -13,7 +13,7 @@
     "clsx": "^2.1.1",
     "firebase": "^12.7.0",
     "firebase-admin": "^13.6.0",
-    "framer-motion": "^12.23.25",
+    "framer-motion": "^12.23.26",
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.556.0",
     "mongodb": "^7.0.0",
