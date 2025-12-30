@@ -1,20 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search, Shield, Trash2, Download } from "lucide-react";
+import { Search, Shield, Trash2, Download, UserCheck, UserX, Clock } from "lucide-react";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import ManageUserModal from "@/components/ManageUserModal";
-
 
 /* ================= STATUS COLOR ================= */
 const statusColor = (status) => {
   switch (status?.toLowerCase()) {
     case "inactive":
-      return "bg-red-50 text-red-600 ring-red-600/20";
+      return "bg-red-50 text-red-600 ring-red-600/20 border-red-100";
     case "pending":
-      return "bg-yellow-50 text-yellow-600 ring-yellow-600/20";
+      return "bg-amber-50 text-amber-600 ring-amber-600/20 border-amber-100";
     default:
-      return "bg-green-50 text-green-600 ring-green-600/20";
+      return "bg-emerald-50 text-emerald-600 ring-emerald-600/20 border-emerald-100";
   }
 };
 
@@ -27,30 +26,16 @@ export default function AllUsersPage() {
   const [selectedUser, setSelectedUser] = useState(null);
 
   /* ================= LOAD USERS ================= */
-
   const loadUsers = async () => {
     if (!token) return;
-
     setLoading(true);
     try {
       const res = await fetch("/api/admin/users/list", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
       const json = await res.json();
-
-      if (!res.ok) {
-        throw new Error(json?.error || "Failed to load users");
-      }
-
-      // ✅ ensure firebase UID exists
-      setUsers(
-        Array.isArray(json.users)
-          ? json.users.filter((u) => u.userId)
-          : []
-      );
+      if (!res.ok) throw new Error(json?.error || "Failed to load users");
+      setUsers(Array.isArray(json.users) ? json.users.filter((u) => u.userId) : []);
     } catch (err) {
       console.error("LOAD USERS ERROR:", err);
     } finally {
@@ -63,12 +48,9 @@ export default function AllUsersPage() {
   }, [token]);
 
   /* ================= FILTER ================= */
-
   const filteredUsers = useMemo(() => {
     if (!search) return users;
-
     const q = search.toLowerCase();
-
     return users.filter(
       (u) =>
         u.email?.toLowerCase().includes(q) ||
@@ -77,135 +59,155 @@ export default function AllUsersPage() {
     );
   }, [search, users]);
 
-  /* ================= UI ================= */
+  /* ================= EXPORT CSV FUNCTION ================= */
+  const handleExportCSV = () => {
+    if (filteredUsers.length === 0) return;
+
+    const headers = ["Name,Email,Role,Status,Wallet Balance\n"];
+    const rows = filteredUsers.map(u => 
+      `${u.name || 'Unnamed'},${u.email},${u.role || 'user'},${u.status || 'active'},${u.walletBalance || 0}`
+    ).join("\n");
+
+    const blob = new Blob([headers + rows], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `User_List_${new Date().toLocaleDateString()}.csv`;
+    link.click();
+  };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 md:p-8 space-y-8 bg-[#fcfcfc] min-h-screen">
+      
+      {/* HEADER SECTION */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">User Management</h1>
+          <p className="text-gray-500 mt-1">Manage, monitor and export your system users.</p>
+        </div>
 
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">
-          User Management
-        </h1>
-
-        <div className="flex gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={18} />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search users..."
-              className="pl-9 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              placeholder="Search by name or email..."
+              className="pl-10 pr-4 py-2.5 w-full sm:w-72 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-black/5 focus:border-black transition-all shadow-sm"
             />
           </div>
 
           <button
-            disabled
-            title="CSV export coming soon"
-            className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm text-gray-400 cursor-not-allowed"
+            onClick={handleExportCSV}
+            disabled={loading || filteredUsers.length === 0}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-black text-white rounded-xl text-sm font-bold hover:bg-gray-800 transition-all shadow-lg active:scale-95 disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
-            <Download size={16} /> Export CSV
+            <Download size={18} /> Export CSV
           </button>
         </div>
       </div>
 
-      {/* TABLE */}
-      <div className="bg-white rounded-2xl border overflow-hidden shadow-sm">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-gray-600">
-            <tr>
-              <th className="px-5 py-3 text-left">User</th>
-              <th className="px-5 py-3 text-left">Role</th>
-              <th className="px-5 py-3 text-left">Status</th>
-              <th className="px-5 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {loading && (
+      {/* TABLE SECTION */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-xl shadow-black/5 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-gray-50/50 border-b border-gray-100 text-gray-400">
               <tr>
-                <td colSpan="4" className="px-5 py-6 text-center text-gray-400">
-                  Loading users...
-                </td>
+                <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest">User Details</th>
+                <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest">Role & Permissions</th>
+                <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest">Status</th>
+                <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-right">Management</th>
               </tr>
-            )}
+            </thead>
 
-            {!loading && filteredUsers.length === 0 && (
-              <tr>
-                <td colSpan="4" className="px-5 py-6 text-center text-gray-400">
-                  No users found
-                </td>
-              </tr>
-            )}
-
-            {!loading &&
-              filteredUsers.map((u) => (
-                <tr
-                  key={u.userId}   // ✅ Firebase UID
-                  className="border-t hover:bg-gray-50 transition"
-                >
-                  {/* USER */}
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={u.photo || "https://i.ibb.co/kgp65LMf/profile-avater.png"}
-                        className="w-9 h-9 rounded-full"
-                        alt=""
-                      />
-                      <div>
-                        <p className="font-medium text-gray-800">
-                          {u.name || "Unnamed"}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {u.email}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* ROLE */}
-                  <td className="px-5 py-4">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
-                      <Shield size={12} />
-                      {u.role || "user"}
-                    </span>
-                  </td>
-
-                  {/* STATUS */}
-                  <td className="px-5 py-4">
-                    <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ring-1 ring-inset ${statusColor(
-                        u.status || "active"
-                      )}`}
-                    >
-                      {u.status || "Active"}
-                    </span>
-                  </td>
-
-                  {/* ACTIONS */}
-                  <td className="px-5 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => setSelectedUser(u)}
-                        className="p-2.5 text-black bg-gray-100 rounded-lg hover:bg-gray-200"
-                        title="Manage user"
-                      >
-                        <Shield size={16} />
-                      </button>
-
-                      <button
-                        disabled
-                        title="Delete disabled"
-                        className="p-2.5 text-red-400 bg-red-50 rounded-lg cursor-not-allowed"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+            <tbody className="divide-y divide-gray-50">
+              {loading ? (
+                <tr>
+                  <td colSpan="4" className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                        <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-sm text-gray-400 font-medium">Fetching users...</p>
                     </div>
                   </td>
                 </tr>
-              ))}
-          </tbody>
-        </table>
+              ) : filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="px-6 py-12 text-center text-gray-400">
+                    <div className="flex flex-col items-center gap-2">
+                        <Users size={40} className="text-gray-200" />
+                        <p className="font-medium">No users found matching your search</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((u) => (
+                  <tr key={u.userId} className="group hover:bg-gray-50/80 transition-all">
+                    {/* USER DETAILS */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                            <img
+                              src={u.photo || "https://i.ibb.co/kgp65LMf/profile-avater.png"}
+                              className="w-11 h-11 rounded-full border-2 border-white shadow-sm object-cover"
+                              alt=""
+                            />
+                            <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${u.status === 'inactive' ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-900 group-hover:text-black transition-colors">
+                            {u.name || "Unnamed"}
+                          </p>
+                          <p className="text-xs text-gray-400 font-medium">
+                            {u.email}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* ROLE */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <div className={`p-1.5 rounded-lg ${u.role === 'admin' ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600'}`}>
+                            <Shield size={14} />
+                        </div>
+                        <span className="text-sm font-bold text-gray-700 capitalize">
+                          {u.role || "user"}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* STATUS */}
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-tight border ${statusColor(u.status || "active")}`}>
+                        {u.status === 'inactive' ? <UserX size={12}/> : u.status === 'pending' ? <Clock size={12}/> : <UserCheck size={12}/>}
+                        {u.status || "Active"}
+                      </span>
+                    </td>
+
+                    {/* ACTIONS */}
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-3 opacity-100 transition-opacity">
+                        <button
+                          onClick={() => setSelectedUser(u)}
+                          className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-black bg-white border border-gray-200 rounded-lg hover:border-black hover:shadow-sm transition-all"
+                        >
+                          <Shield size={14} /> Manage
+                        </button>
+
+                        <button
+                          disabled
+                          className="p-2 text-red-300 hover:text-red-500 transition-colors cursor-not-allowed"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* MODAL */}

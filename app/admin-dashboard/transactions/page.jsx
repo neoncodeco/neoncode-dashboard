@@ -97,9 +97,9 @@ export default function TransactionsPage() {
         </div>
 
         <div className="flex gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 transition">
+          {/* <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 transition">
             <Calendar size={16} /> Select Date
-          </button>
+          </button> */}
           <button className="flex items-center gap-2 px-4 py-2 bg-[#D8FF30] text-black rounded-lg text-sm font-bold hover:bg-[#cbf028] transition shadow-sm">
             <Download size={16} /> Export Report
           </button>

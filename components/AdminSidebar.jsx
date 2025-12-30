@@ -16,14 +16,17 @@ import {
   ShieldCheck,
   Menu,
   X,
+  MessageCircle,
+  ClipboardList
 } from "lucide-react";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import Swal from "sweetalert2";
 
 const AdminSidebar = () => {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const { role, userData } = useFirebaseAuth();
+  const { role, userData, logout } = useFirebaseAuth();
 
   /* ================= MENU CONFIG ================= */
   const menuItems = [
@@ -52,6 +55,12 @@ const AdminSidebar = () => {
       permissionKey: "metaAdAccess",
     },
     {
+      name: "Meta Logs",
+       icon: ClipboardList,
+      href: "/admin-dashboard/meta-logs",
+      permissionKey: "metaAdAccess",
+    },
+    {
       name: "Transactions",
       icon: Banknote,
       href: "/admin-dashboard/transactions",
@@ -65,7 +74,7 @@ const AdminSidebar = () => {
     },
     {
       name: "Live Chats",
-      icon: LifeBuoy,
+       icon: MessageCircle,
       href: "/admin-dashboard/chats",
       public: true,
     },
@@ -76,7 +85,7 @@ const AdminSidebar = () => {
       permissionKey: "affiliateAccess",
     },
     {
-      name: "Settings",
+      name: "Controls & APIs",
       icon: Settings,
       href: "/admin-dashboard/settings",
       adminOnly: true,
@@ -102,33 +111,61 @@ const AdminSidebar = () => {
     return false;
   };
 
+  /* ================= LOGOUT HANDLER ================= */
+  const HandalLogOut = async () => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you really want to log out?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, log out",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await logout();
+        window.location.href = "/";
+      } catch (error) {
+        console.error("Logout error:", error);
+
+        Swal.fire({
+          icon: "error",
+          title: "Logout Failed",
+          text: "Something went wrong. Please try again.",
+        });
+      }
+    }
+  };
+
   /* ================= MENU RENDER ================= */
   const renderMenu = () => (
     <nav className="space-y-2">
-      {menuItems
-        .filter(canShowMenu)
-        .map((item) => {
-          const isActive = pathname === item.href;
+      {menuItems.filter(canShowMenu).map((item) => {
+        const isActive = pathname === item.href;
 
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              onClick={() => setIsMobileOpen(false)}
+        return (
+          <Link
+            key={item.name}
+            href={item.href}
+            onClick={() => setIsMobileOpen(false)}
+          >
+            <div
+              className={`flex items-center gap-4 px-4 py-3 rounded-xl cursor-pointer transition-all ${
+                isActive
+                  ? "bg-[#D8FF30] text-black font-bold shadow-md"
+                  : "text-gray-400 hover:bg-gray-800 hover:text-white"
+              }`}
             >
-              <div
-                className={`flex items-center gap-4 px-4 py-3 rounded-xl cursor-pointer transition-all ${
-                  isActive
-                    ? "bg-[#D8FF30] text-black font-bold shadow-md"
-                    : "text-gray-400 hover:bg-gray-800 hover:text-white"
-                }`}
-              >
-                <item.icon size={20} />
-                <span className="text-sm">{item.name}</span>
-              </div>
-            </Link>
-          );
-        })}
+              <item.icon size={20} />
+              <span className="text-sm">{item.name}</span>
+            </div>
+          </Link>
+        );
+      })}
     </nav>
   );
 
@@ -204,7 +241,10 @@ const AdminSidebar = () => {
               <div className="flex items-center gap-3 px-4 text-gray-400 hover:text-white text-sm cursor-pointer">
                 <ShieldCheck size={18} /> Admin Profile
               </div>
-              <div className="flex items-center gap-3 px-4 text-gray-400 hover:text-red-400 text-sm cursor-pointer">
+              <div
+                onClick={HandalLogOut}
+                lassName="flex items-center gap-3 px-4 text-gray-400 hover:text-red-400 text-sm cursor-pointer"
+              >
                 <LogOut size={18} /> Logout
               </div>
             </div>
@@ -242,7 +282,10 @@ const AdminSidebar = () => {
           <div className="flex items-center gap-3 px-4 text-gray-400 hover:text-white text-sm cursor-pointer">
             <ShieldCheck size={18} /> Admin Profile
           </div>
-          <div className="flex items-center gap-3 px-4 text-gray-400 hover:text-red-400 text-sm cursor-pointer">
+          <div
+            onClick={HandalLogOut}
+            className="flex items-center gap-3 px-4 text-gray-400 hover:text-red-400 text-sm cursor-pointer"
+          >
             <LogOut size={18} /> Logout
           </div>
         </div>

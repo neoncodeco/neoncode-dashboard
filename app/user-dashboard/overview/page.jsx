@@ -10,6 +10,7 @@ import {
   Zap, ArrowRightLeft, ShieldCheck, Clock,
   Smartphone, Banknote, HelpCircle
 } from 'lucide-react';
+import Link from 'next/link';
 
 const OverviewPage = () => {
   const { userData } = useFirebaseAuth();
@@ -62,9 +63,11 @@ const OverviewPage = () => {
         </div>
         <div className="flex justify-between  items-center gap-3 bg-gray-50 p-1.5 rounded-2xl border border-gray-100">
            <span className="px-4 text-sm font-bold text-gray-600">ID: {userData.userId?.slice(-6)}</span>
-           <button className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2">
+           <Link
+            href="/user-dashboard/payment-methods"
+           className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2">
              <Zap size={16} />Topup
-           </button>
+           </Link>
         </div>
       </div>
 
