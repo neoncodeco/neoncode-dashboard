@@ -10,6 +10,7 @@ const LogoutModal = ({ setShowLogoutModal }) => {
     const handleLogout = () => {
         logout();
         setShowLogoutModal(false);
+        window.location.href = '/login';
     };
 
     return (
