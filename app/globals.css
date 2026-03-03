@@ -1,26 +1,171 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-start: #05070f;
+  --bg-end: #101c37;
+  --glass-bg: rgba(13, 22, 42, 0.62);
+  --glass-border: rgba(212, 175, 55, 0.28);
+  --gold: #d4af37;
+  --text-main: #f5f8ff;
+  --text-soft: #b9c6ea;
+  --danger: #ff6b6b;
+  --success: #4ae1a8;
+  --mx: 50vw;
+  --my: 50vh;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--bg-start);
+  --color-foreground: var(--text-main);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text-main);
+  background:
+    radial-gradient(circle at 12% 18%, rgba(40, 87, 175, 0.28), transparent 42%),
+    radial-gradient(circle at 84% 82%, rgba(212, 175, 55, 0.17), transparent 42%),
+    linear-gradient(135deg, var(--bg-start), var(--bg-end));
+  font-family: var(--font-bangla), "Noto Sans Bengali", sans-serif;
+}
+
+.neon-grid {
+  position: relative;
+}
+
+.neon-grid::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(123, 157, 219, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(123, 157, 219, 0.1) 1px, transparent 1px);
+  background-size: 38px 38px;
+  mask-image: radial-gradient(circle at center, black 30%, transparent 80%);
+}
+
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.22);
+}
+
+.f-number {
+  font-family: var(--font-accent), "Trebuchet MS", sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+input,
+select {
+  outline: none;
+}
+
+input:focus,
+select:focus {
+  border-color: rgba(212, 175, 55, 0.7);
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+.dashboard-shell {
+  background: transparent;
+  position: relative;
+  isolation: isolate;
+}
+
+.dashboard-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(
+      420px circle at var(--mx) var(--my),
+      rgba(212, 175, 55, 0.18),
+      rgba(72, 122, 218, 0.12) 38%,
+      transparent 72%
+    );
+  transition: background 140ms linear;
+}
+
+.dashboard-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.dashboard-content {
+  background: rgba(5, 12, 26, 0.52);
+  border-left: 1px solid rgba(212, 175, 55, 0.16);
+}
+
+.dashboard-content .bg-white,
+.dashboard-content .bg-gray-50,
+.dashboard-content .bg-slate-50,
+.dashboard-content .bg-gray-100,
+.dashboard-content .bg-slate-100 {
+  background: rgba(13, 22, 42, 0.66) !important;
+  border: 1px solid rgba(212, 175, 55, 0.2) !important;
+  box-shadow: 0 12px 30px rgba(4, 10, 24, 0.35) !important;
+}
+
+.dashboard-content .text-black,
+.dashboard-content .text-gray-900,
+.dashboard-content .text-slate-900,
+.dashboard-content .text-gray-800,
+.dashboard-content .text-slate-800 {
+  color: var(--text-main) !important;
+}
+
+.dashboard-content .text-gray-700,
+.dashboard-content .text-gray-600,
+.dashboard-content .text-gray-500,
+.dashboard-content .text-slate-600,
+.dashboard-content .text-slate-500,
+.dashboard-content .text-slate-400 {
+  color: var(--text-soft) !important;
+}
+
+.dashboard-content .border,
+.dashboard-content .border-gray-100,
+.dashboard-content .border-gray-200,
+.dashboard-content .border-slate-100,
+.dashboard-content .border-slate-200 {
+  border-color: rgba(212, 175, 55, 0.16) !important;
+}
+
+.dashboard-content .shadow-sm,
+.dashboard-content .shadow-md,
+.dashboard-content .shadow-lg,
+.dashboard-content .shadow-xl,
+.dashboard-content .shadow-2xl {
+  box-shadow: 0 16px 36px rgba(4, 10, 24, 0.38) !important;
+}
+
+.sidebar-shell {
+  background: rgba(6, 13, 30, 0.9);
+  border-color: rgba(212, 175, 55, 0.18);
+}
+
+.sidebar-link {
+  color: var(--text-soft);
+}
+
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-main);
+}
+
+.sidebar-active {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.08));
+  color: #f8edc2;
+  border: 1px solid rgba(212, 175, 55, 0.35);
 }

@@ -66,8 +66,8 @@ const UserSidebar = () => {
             <div
               className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all mb-2 ${
                 isActive
-                  ? "bg-white text-[#214311] font-bold shadow-md"
-                  : "text-white hover:bg-white/10"
+                  ? "sidebar-active font-bold shadow-md"
+                  : "sidebar-link"
               }`}
             >
               <item.icon size={20} />
@@ -82,7 +82,7 @@ const UserSidebar = () => {
   return (
     <>
       {/* ================= Mobile Header ================= */}
-      <div className="md:hidden fixed top-0 left-0 w-full bg-[#214311] z-50 px-4 py-3 flex justify-between items-center border-b border-[#2f5e18]">
+      <div className="sidebar-shell md:hidden fixed top-0 left-0 w-full z-50 px-4 py-3 flex justify-between items-center border-b">
         <div className="flex items-center gap-2">
           <Image src="/Neon Studio icon.png" alt="Logo" width={24} height={24} />
           <span className="font-bold text-white text-lg">neonstudio</span>
@@ -103,7 +103,7 @@ const UserSidebar = () => {
             onClick={() => setIsMobileOpen(false)}
           />
 
-          <div className="absolute top-0 left-0 w-[80%] max-w-sm h-full bg-[#214311] p-6 flex flex-col overflow-y-auto">
+          <div className="sidebar-shell absolute top-0 left-0 w-[80%] max-w-sm h-full p-6 flex flex-col overflow-y-auto">
             {/* Close */}
             <button
               onClick={() => setIsMobileOpen(false)}
@@ -178,7 +178,7 @@ const UserSidebar = () => {
       )}
 
       {/* ================= Desktop Sidebar ================= */}
-      <div className="hidden md:flex md:w-64 xl:w-72 bg-[#214311] min-h-screen p-6 flex-col justify-between border-r border-[#1a350e]">
+      <div className="sidebar-shell hidden md:flex md:w-64 xl:w-72 min-h-screen p-6 flex-col justify-between border-r">
         <div>
           <div className="flex items-center gap-3 mb-10">
             <Image src="/Neon Studio icon.png" alt="Logo" width={32} height={32} />

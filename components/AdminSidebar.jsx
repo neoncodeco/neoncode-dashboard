@@ -156,8 +156,8 @@ const AdminSidebar = () => {
             <div
               className={`flex items-center gap-4 px-4 py-3 rounded-xl cursor-pointer transition-all ${
                 isActive
-                  ? "bg-[#D8FF30] text-black font-bold shadow-md"
-                  : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                  ? "sidebar-active font-bold shadow-md"
+                  : "sidebar-link"
               }`}
             >
               <item.icon size={20} />
@@ -172,7 +172,7 @@ const AdminSidebar = () => {
   return (
     <>
       {/* ================= MOBILE HEADER ================= */}
-      <div className="md:hidden fixed top-0 left-0 w-full bg-[#111827] z-50 border-b border-gray-800 px-4 py-3 flex justify-between items-center shadow-md">
+      <div className="sidebar-shell md:hidden fixed top-0 left-0 w-full z-50 border-b px-4 py-3 flex justify-between items-center shadow-md">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center">
             <Image
@@ -204,7 +204,7 @@ const AdminSidebar = () => {
             onClick={() => setIsMobileOpen(false)}
           ></div>
 
-          <div className="absolute top-0 left-0 w-[80%] max-w-sm h-full bg-[#111827] shadow-2xl p-6 flex flex-col justify-between border-r border-gray-800">
+          <div className="sidebar-shell absolute top-0 left-0 w-[80%] max-w-sm h-full shadow-2xl p-6 flex flex-col justify-between border-r">
             <div>
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
@@ -253,7 +253,7 @@ const AdminSidebar = () => {
       )}
 
       {/* ================= DESKTOP SIDEBAR ================= */}
-      <div className="md:w-64 xl:w-72 bg-[#111827] min-h-screen hidden md:flex flex-col justify-between p-6 border-r border-gray-800">
+      <div className="sidebar-shell md:w-64 xl:w-72 min-h-screen hidden md:flex flex-col justify-between p-6 border-r">
         <div>
           <div className="flex items-center gap-3 mb-10">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg">
