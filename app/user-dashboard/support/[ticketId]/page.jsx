@@ -60,7 +60,13 @@ export default function UserChatView({ ticketIdFromProps, onBack }) {
         body: fd,
       });
       const data = await res.json();
-      setAttachedScreenshot(data); // সরাসরি API থেকে আসা ডাটা সেট হবে
+      if (!res.ok || !data?.url) {
+        throw new Error(data?.error || "Image upload failed");
+      }
+      setAttachedScreenshot({
+        url: data.url,
+        ...(data.deleteUrl ? { deleteUrl: data.deleteUrl } : {}),
+      }); // সরাসরি API থেকে আসা ডাটা সেট হবে
     } catch (err) {
       console.error("Upload error:", err);
     } finally {

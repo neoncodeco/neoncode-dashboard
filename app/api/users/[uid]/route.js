@@ -59,6 +59,7 @@ export async function GET(req, { params }) {
 
         name: user.name,
         photo: user.photo,
+        coverPhoto: user.coverPhoto ?? "",
         payoutMethods: user.payoutMethods ?? {},
 
         createdAt: user.createdAt,

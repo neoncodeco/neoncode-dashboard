@@ -52,7 +52,7 @@ export default function AffiliatePage() {
   };
 
   return (
-    <div className="p-4 lg:p-10 space-y-12 max-auto bg-[#fafafa] min-h-screen">
+    <div className="p-4 lg:p-10 space-y-12 mx-auto min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.2),transparent_40%),linear-gradient(180deg,#081227_0%,#0f2040_100%)]">
       
       {/* ================= HEADER ================= */}
       <div className="pt-16 md:pt-0 flex flex-col md:flex-row justify-between items-start gap-5 border-b pb-6 border-gray-200">

@@ -12,7 +12,7 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, photo, payoutMethods } = await req.json();
+    const { name, photo, coverPhoto, payoutMethods } = await req.json();
      const { db } = await getDB();
     const result = await db.collection("users").updateOne(
       { userId: decoded.uid }, 
@@ -20,6 +20,7 @@ export async function POST(req) {
         $set: {
           name: name,
           photo: photo,
+          coverPhoto: coverPhoto,
           payoutMethods: payoutMethods,
           updatedAt: new Date(),
         },

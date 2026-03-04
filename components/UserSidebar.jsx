@@ -18,16 +18,26 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import LogoutModal from "./LogoutModal";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 
 const UserSidebar = () => {
   const pathname = usePathname();
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const { user } = useFirebaseAuth();
+  const { user, logout } = useFirebaseAuth();
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await logout("/login");
+    } catch (e) {
+      console.error("Logout failed:", e);
+      setIsLoggingOut(false);
+    }
+  };
 
   const menuItems = [
     { name: "Overview", icon: LayoutDashboard, href: "/user-dashboard/overview" },
@@ -154,14 +164,11 @@ const UserSidebar = () => {
 
                 {user ? (
                   <div
-                    onClick={() => {
-                      setIsMobileOpen(false);
-                      setShowLogoutModal(true);
-                    }}
+                    onClick={handleLogout}
                     className="flex items-center gap-3 text-gray-300 hover:text-red-400 text-sm cursor-pointer"
                   >
                     <LogOut size={18} />
-                    Log out
+                    {isLoggingOut ? "Logging out..." : "Log out"}
                   </div>
                 ) : (
                   <Link href="/login" onClick={() => setIsMobileOpen(false)}>
@@ -210,11 +217,11 @@ const UserSidebar = () => {
 
             {user ? (
               <div
-                onClick={() => setShowLogoutModal(true)}
+                onClick={handleLogout}
                 className="flex items-center gap-3 pt-4 text-gray-300 hover:text-red-400 text-sm cursor-pointer"
               >
                 <LogOut size={18} />
-                Log out
+                {isLoggingOut ? "Logging out..." : "Log out"}
               </div>
             ) : (
               <Link href="/login">
@@ -230,10 +237,6 @@ const UserSidebar = () => {
         
       </div>
 
-      {/* Logout Modal */}
-      {showLogoutModal && (
-        <LogoutModal setShowLogoutModal={setShowLogoutModal} />
-      )}
     </>
   );
 };

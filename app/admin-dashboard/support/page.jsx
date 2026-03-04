@@ -55,7 +55,15 @@ export default function AdminSupportLayout() {
     try {
       const res = await fetch("/api/upload/screenshot", { method: "POST", body: fd });
       const data = await res.json();
-      setScreenshot(data);
+      if (!res.ok || !data?.url) {
+        throw new Error(data?.error || "Image upload failed");
+      }
+      setScreenshot({
+        url: data.url,
+        ...(data.deleteUrl ? { deleteUrl: data.deleteUrl } : {}),
+      });
+    } catch (err) {
+      console.error("Upload error:", err);
     } finally { setIsUploading(false); }
   };
 
@@ -82,16 +90,16 @@ export default function AdminSupportLayout() {
   };
 
   return (
-    <div className="flex h-screen bg-white lg:bg-gray-50 overflow-hidden text-black pt-16 md:pt-0 lg:pt-0">
+    <div className="flex h-screen bg-transparent overflow-hidden text-white pt-16 md:pt-0 lg:pt-0">
       
-      <div className={`${selectedTicket ? "hidden lg:flex" : "flex"} w-full  lg:w-[350px] bg-white border-r flex-col shrink-0 h-full`}>
-        <div className="p-5 border-b bg-white">
+      <div className={`${selectedTicket ? "hidden lg:flex" : "flex"} w-full lg:w-[350px] bg-[#0f1d38] border-r border-[#2c4167] flex-col shrink-0 h-full`}>
+        <div className="p-5 border-b border-[#2c4167] bg-[#0f1d38]">
           <h1 className="text-2xl font-black tracking-tight mb-4 text-indigo-600">Support Panel</h1>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input 
               placeholder="Search conversations..." 
-              className="w-full pl-10 pr-4 py-3 bg-gray-100 border-none rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-inner"
+              className="w-full pl-10 pr-4 py-3 bg-[#132546] border border-[#2c4167] rounded-2xl text-sm text-gray-100 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-inner"
             />
           </div>
         </div>
@@ -104,14 +112,14 @@ export default function AdminSupportLayout() {
               <div
                 key={t._id}
                 onClick={() => selectTicket(t._id)}
-                className={`p-5  cursor-pointer transition-all gap-3 bg-gray-100 flex items-center gap-4 ${selectedTicket?._id === t._id ? "bg-indigo-50 border-r-4 border-r-indigo-600 shadow-sm" : ""}`}
+                className={`p-5 cursor-pointer transition-all gap-3 bg-[#14284d] flex items-center gap-4 ${selectedTicket?._id === t._id ? "bg-[#1b2f57] border-r-4 border-r-indigo-500 shadow-sm" : "hover:bg-[#1a315d]"}`}
               >
                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${t.status === 'open' ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
                   <MessageSquare size={20} />
                 </div>
                 <div className="flex-1 overflow-hidden">
                   <div className="flex justify-between items-start mb-0.5">
-                    <h3 className={`text-sm font-extrabold truncate ${selectedTicket?._id === t._id ? "text-indigo-700" : "text-gray-800"}`}>{t.subject}</h3>
+                    <h3 className={`text-sm font-extrabold truncate ${selectedTicket?._id === t._id ? "text-indigo-300" : "text-gray-100"}`}>{t.subject}</h3>
                   </div>
                   <div className="flex justify-between items-center">
                     <p className="text-[12px] text-gray-400 font-medium truncate uppercase tracking-tighter">User: {t.userId?.slice(-6)}</p>
@@ -128,23 +136,23 @@ export default function AdminSupportLayout() {
 
       {/* --- RIGHT SIDE: CHAT VIEW --- */}
       {/* মোবাইলে এবং ট্যাবলেটে (lg এর নিচে) টিকেট সিলেক্ট না থাকলে এটি লুকানো থাকবে */}
-      <div className={`${!selectedTicket ? "hidden lg:flex" : "flex"} flex-1 flex-col bg-slate-50 h-full relative`}>
+      <div className={`${!selectedTicket ? "hidden lg:flex" : "flex"} flex-1 flex-col bg-[#0c1830] h-full relative`}>
         {selectedTicket ? (
           <>
             {/* Header: Back Button visible on Mobile & Tablet (lg:hidden) */}
-            <div className="px-5 py-4 bg-white flex items-center justify-between shadow-sm z-10">
+            <div className="px-5 py-4 bg-[#0f1d38] border-b border-[#2c4167] flex items-center justify-between shadow-sm z-10">
               <div className="flex items-center gap-3">
                 <button 
                   onClick={() => setSelectedTicket(null)} 
-                  className="lg:hidden p-2.5 -ml-2 hover:bg-gray-100 rounded-2xl transition-all text-gray-600 border border-transparent active:scale-90"
+                  className="lg:hidden p-2.5 -ml-2 hover:bg-[#1b2f57] rounded-2xl transition-all text-gray-200 border border-transparent active:scale-90"
                 >
                   <ChevronLeft size={24} strokeWidth={3} />
                 </button>
                 <div>
-                  <h2 className="font-black text-gray-800 text-base lg:text-lg tracking-tight leading-tight">{selectedTicket.subject}</h2>
+                  <h2 className="font-black text-gray-100 text-base lg:text-lg tracking-tight leading-tight">{selectedTicket.subject}</h2>
                   <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                     <span className="text-indigo-600">Official Support</span>
-                    <span className="w-1 h-1 bg-gray-300 rounded-full" />
+                    <span className="w-1 h-1 bg-gray-600 rounded-full" />
                     <span>UID: {selectedTicket.userId}</span>
                   </div>
                 </div>
@@ -166,7 +174,7 @@ export default function AdminSupportLayout() {
                           {isAdmin && <ShieldCheck size={14} className="text-indigo-500 fill-indigo-50" />}
                         </div>
                         <div className={`p-4 md:p-5 rounded-[24px] text-sm md:text-[15px] shadow-sm leading-relaxed border transition-all ${
-                          isAdmin ? "bg-indigo-600 text-white rounded-tr-none border-indigo-500 shadow-indigo-100" : "bg-white border-gray-200 text-gray-800 rounded-tl-none"
+                          isAdmin ? "bg-indigo-600 text-white rounded-tr-none border-indigo-500 shadow-indigo-100" : "bg-[#0f1d38] border-[#2c4167] text-gray-100 rounded-tl-none"
                         }`}>
                           <p className="whitespace-pre-wrap">{m.text}</p>
                           {m.screenshots?.map((img, idx) => (
@@ -184,7 +192,7 @@ export default function AdminSupportLayout() {
             </div>
 
             {/* Admin Input Area */}
-            <div className="p-4 md:p-6 bg-white border-t border-gray-100 shadow-[0_-8px_30px_rgb(0,0,0,0.04)]">
+            <div className="p-4 md:p-6 bg-[#0f1d38] border-t border-[#2c4167] shadow-[0_-8px_30px_rgb(0,0,0,0.2)]">
               <div className="max-w-4xl mx-auto">
                 {selectedTicket.status !== "closed" ? (
                   <div className="space-y-4">
@@ -194,7 +202,7 @@ export default function AdminSupportLayout() {
                         <button onClick={() => setScreenshot(null)} className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-2 shadow-lg border-2 border-white hover:bg-red-600"><X size={12}/></button>
                       </div>
                     )}
-                    <div className="flex items-end gap-3 bg-gray-50 p-3 rounded-[28px] border-2 border-transparent focus-within:border-indigo-600 focus-within:bg-white transition-all shadow-inner">
+                    <div className="flex items-end gap-3 bg-[#132546] p-3 rounded-[28px] border-2 border-[#2c4167] focus-within:border-indigo-500 focus-within:bg-[#152a51] transition-all shadow-inner">
                       <label className="p-3 text-gray-400 hover:text-indigo-600 cursor-pointer active:scale-90 transition-all">
                         {isUploading ? <Loader2 size={24} className="animate-spin" /> : <ImageIcon size={24} />}
                         <input type="file" hidden accept="image/*" onChange={handleFileSelect} />
@@ -212,7 +220,7 @@ export default function AdminSupportLayout() {
                         disabled={isSending || isUploading || (!reply.trim() && !screenshot)}
                         className={`p-4 rounded-2xl shadow-xl transition-all flex items-center justify-center min-w-[56px] ${
                           isSending || isUploading || (!reply.trim() && !screenshot)
-                          ? "bg-gray-100 text-gray-300"
+                          ? "bg-slate-700 text-slate-400"
                           : "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-200 active:scale-95"
                         }`}
                       >
@@ -230,10 +238,10 @@ export default function AdminSupportLayout() {
           </>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-gray-300 p-10 text-center">
-            <div className="w-28 h-28 bg-white shadow-xl rounded-[40px] flex items-center justify-center mb-8 border border-gray-50 animate-bounce transition-all duration-1000">
+            <div className="w-28 h-28 bg-[#0f1d38] shadow-xl rounded-[40px] flex items-center justify-center mb-8 border border-[#2c4167] animate-bounce transition-all duration-1000">
               <MessageSquare size={48} className="text-indigo-100 fill-indigo-50" />
             </div>
-            <h3 className="text-2xl font-black text-gray-800 tracking-tight">Select conversation</h3>
+            <h3 className="text-2xl font-black text-gray-100 tracking-tight">Select conversation</h3>
             <p className="text-xs max-w-[240px] mt-3 font-bold uppercase tracking-widest text-gray-400 leading-loose">Choose a user ticket from the list to start responding.</p>
           </div>
         )}

@@ -7,10 +7,9 @@ const LogoutModal = ({ setShowLogoutModal }) => {
 
     const { logout } = useFirebaseAuth();
 
-    const handleLogout = () => {
-        logout();
+    const handleLogout = async () => {
         setShowLogoutModal(false);
-        window.location.href = '/login';
+        await logout("/login");
     };
 
     return (

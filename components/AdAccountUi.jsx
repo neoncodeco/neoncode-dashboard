@@ -279,8 +279,8 @@ const AdAccountUi = () => {
         </div>
 
         {/* ---------- ২. মেইন টেবিল সেকশন ---------- */}
-        <div className="bg-white text-black rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-5 flex flex-col md:flex-row md:justify-between gap-4 border-b border-gray-50">
+        <div className="bg-[#0d1a34] text-black rounded-3xl shadow-sm border border-[#2b4069] overflow-hidden">
+          <div className="px-6 py-5 flex flex-col md:flex-row md:justify-between gap-4 border-b border-[#24385e]">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gray-900 rounded-lg text-white">
                 <Wallet size={18}/>
@@ -307,7 +307,7 @@ const AdAccountUi = () => {
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50/50 text-[11px] uppercase text-gray-400 font-bold tracking-wider">
+              <thead className="bg-[#101f3d] text-[11px] uppercase text-[#9fb7e7] font-bold tracking-wider">
                 <tr>
                   <th className="px-6 py-4 text-left">Account Name</th>
                   <th className="px-6 py-4 text-left">Meta Ad ID</th>
@@ -319,7 +319,7 @@ const AdAccountUi = () => {
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-[#24385e]">
                 {adAccounts.map((account, i) => {
                   const balance = balances[account.MetaAccountID];
                   const statusMeta = balance && !balance.error ? getAdStatusMeta(balance.status) : null;

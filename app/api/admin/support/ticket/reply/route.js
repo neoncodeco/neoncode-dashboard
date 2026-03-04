@@ -3,6 +3,18 @@ import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import { ObjectId } from "mongodb";
 
+const normalizeScreenshots = (screenshots = []) => {
+  const isValidImgBb = (url) =>
+    typeof url === "string" && /^https?:\/\/(i\.ibb\.co|ibb\.co)\//i.test(url);
+
+  return screenshots
+    .filter((item) => item && isValidImgBb(item.url))
+    .map((item) => ({
+      url: item.url,
+      ...(typeof item.deleteUrl === "string" ? { deleteUrl: item.deleteUrl } : {}),
+    }));
+};
+
 export async function POST(req) {
   try {
     // 1️⃣ Verify Firebase token
@@ -16,6 +28,13 @@ export async function POST(req) {
 
     // 2️⃣ Parse body (NOW includes screenshots)
     const { ticketId, text = "", screenshots = [] } = await req.json();
+    const normalizedScreenshots = normalizeScreenshots(screenshots);
+    if (screenshots.length && normalizedScreenshots.length !== screenshots.length) {
+      return NextResponse.json(
+        { error: "Only ImgBB image URLs are allowed" },
+        { status: 400 }
+      );
+    }
 
     if (!ticketId) {
       return NextResponse.json(
@@ -58,7 +77,7 @@ export async function POST(req) {
             senderRole: staff.role,     // admin / manager
             senderPhoto: staff.photo,
             text: text || "",
-            screenshots,               // ✅ NEW
+            screenshots: normalizedScreenshots,
             createdAt: new Date(),
           },
         },

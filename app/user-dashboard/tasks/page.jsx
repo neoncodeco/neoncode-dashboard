@@ -22,7 +22,7 @@ const allTasksData = [
     status: "In Progress",
     dueDate: "Today",
     time: "4h left",
-    assignee: "U1", // ইমেজ না থাকলে ইনিশিয়াল
+    assignee: "U1", 
   },
   {
     id: 2,

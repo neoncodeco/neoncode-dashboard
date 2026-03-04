@@ -128,11 +128,18 @@ export default function useFirebaseAuth() {
     return true;
   };
 
-  const logout = async () => {
-    await signOut({ redirect: false });
+  const logout = async (callbackUrl = "/login") => {
     setToken("");
     setRole(null);
     setUserData(null);
+    try {
+      await signOut({ redirect: true, callbackUrl });
+    } catch (e) {
+      console.error("SignOut failed:", e);
+      if (typeof window !== "undefined") {
+        window.location.href = callbackUrl;
+      }
+    }
   };
 
   return {

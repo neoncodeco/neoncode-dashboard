@@ -127,8 +127,7 @@ const AdminSidebar = () => {
 
     if (result.isConfirmed) {
       try {
-        await logout();
-        window.location.href = "/";
+        await logout("/");
       } catch (error) {
         console.error("Logout error:", error);
 
@@ -243,7 +242,7 @@ const AdminSidebar = () => {
               </div>
               <div
                 onClick={HandalLogOut}
-                lassName="flex items-center gap-3 px-4 text-gray-400 hover:text-red-400 text-sm cursor-pointer"
+                className="flex items-center gap-3 px-4 text-gray-400 hover:text-red-400 text-sm cursor-pointer"
               >
                 <LogOut size={18} /> Logout
               </div>

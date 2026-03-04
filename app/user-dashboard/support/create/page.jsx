@@ -29,7 +29,14 @@ export default function CreateTicketPage({ onBack, onSuccess }) {
       method: "POST",
       body: fd,
     });
-    return res.json();
+    const data = await res.json();
+    if (!res.ok || !data?.url) {
+      throw new Error(data?.error || "Image upload failed");
+    }
+    return {
+      url: data.url,
+      ...(data.deleteUrl ? { deleteUrl: data.deleteUrl } : {}),
+    };
   };
 
   const submit = async () => {

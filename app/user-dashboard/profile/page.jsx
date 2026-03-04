@@ -8,15 +8,17 @@ import {
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 
 export default function FullProfilePage() {
-  const { userData, token } = useFirebaseAuth();
+  const { userData, token, refreshUser } = useFirebaseAuth();
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [status, setStatus] = useState({ type: '', message: '' });
 
   // মেইন স্টেট
   const [formData, setFormData] = useState({
     name: '',
     photo: '',
+    coverPhoto: '',
   });
 
   // পেমেন্ট মেথডসের জন্য আলাদা স্টেট
@@ -27,17 +29,61 @@ export default function FullProfilePage() {
       setFormData({
         name: userData.name || '',
         photo: userData.photo || '',
+        coverPhoto: userData.coverPhoto || '',
       });
       // ডাটাবেস থেকে সব পেমেন্ট মেথড লোড করা (bkash, nagad, etc.)
       setPaymentMethods(userData.payoutMethods || {});
     }
   }, [userData]);
 
+  const saveProfile = async (nextFormData, nextPaymentMethods, options = {}) => {
+    const { silent = false, successMessage = "Profile updated successfully!" } = options;
+    if (!token) return false;
+    if (!silent) {
+      setLoading(true);
+      setStatus({ type: '', message: '' });
+    }
+
+    try {
+      const res = await fetch("/api/update-profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...nextFormData,
+          payoutMethods: nextPaymentMethods
+        }),
+      });
+
+      if (res.ok) {
+        setStatus({ type: 'success', message: successMessage });
+        await refreshUser();
+        return true;
+      }
+
+      setStatus({ type: 'error', message: 'Update failed' });
+      return false;
+    } catch (error) {
+      setStatus({ type: 'error', message: 'Error occurred!' });
+      return false;
+    } finally {
+      if (!silent) {
+        setLoading(false);
+      }
+    }
+  };
+
   // ইমেজ আপলোড (ImgBB)
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = async (e, target = "photo") => {
     const file = e.target.files[0];
     if (!file) return;
-    setUploading(true);
+    if (target === "cover") {
+      setUploadingCover(true);
+    } else {
+      setUploadingPhoto(true);
+    }
     const uploadData = new FormData();
     uploadData.append("image", file);
 
@@ -45,13 +91,26 @@ export default function FullProfilePage() {
       const res = await fetch("/api/upload/screenshot", { method: "POST", body: uploadData });
       const data = await res.json();
       if (data.url) {
-        setFormData(prev => ({ ...prev, photo: data.url }));
-        setStatus({ type: 'success', message: 'Image uploaded! Save to apply.' });
+        const key = target === "cover" ? "coverPhoto" : "photo";
+        const nextFormData = { ...formData, [key]: data.url };
+        setFormData(nextFormData);
+        await saveProfile(
+          nextFormData,
+          paymentMethods,
+          {
+            silent: true,
+            successMessage: target === "cover" ? "Cover photo updated." : "Profile photo updated."
+          }
+        );
       }
     } catch (err) {
       setStatus({ type: 'error', message: 'Upload failed' });
     } finally {
-      setUploading(false);
+      if (target === "cover") {
+        setUploadingCover(false);
+      } else {
+        setUploadingPhoto(false);
+      }
     }
   };
 
@@ -65,61 +124,50 @@ export default function FullProfilePage() {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setStatus({ type: '', message: '' });
-
-    try {
-      const res = await fetch("/api/update-profile", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...formData,
-          payoutMethods: paymentMethods 
-        }),
-      });
-
-      if (res.ok) {
-        setStatus({ type: 'success', message: 'Profile updated successfully!' });
-      } else {
-        setStatus({ type: 'error', message: 'Update failed' });
-      }
-    } catch (error) {
-      setStatus({ type: 'error', message: 'Error occurred!' });
-    } finally {
-      setLoading(false);
-    }
+    await saveProfile(formData, paymentMethods, { silent: false });
   };
 
   return (
     <div className="min-h-screen text-black pb-20">
       {/* Header Banner */}
-      <div className="h-48 md:h-64 bg-gradient-to-r from-indigo-600 to-purple-700 relative">
-        <div className="absolute -bottom-16 left-6 md:left-12 flex items-end gap-6">
+      <div
+        className="h-56 md:h-72 relative overflow-hidden bg-gradient-to-r from-indigo-700 to-sky-700"
+        style={
+          formData.coverPhoto
+            ? { backgroundImage: `linear-gradient(rgba(2, 6, 23, 0.45), rgba(2, 6, 23, 0.45)), url(${formData.coverPhoto})`, backgroundSize: "cover", backgroundPosition: "center" }
+            : undefined
+        }
+      >
+        <label className="absolute right-4 top-4 px-3 py-2 bg-black/40 text-white rounded-xl shadow-lg cursor-pointer hover:bg-black/60 transition text-xs font-bold">
+          {uploadingCover ? "Uploading..." : "Change Cover"}
+          <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, "cover")} />
+        </label>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 md:px-12 -mt-14 md:-mt-16 relative z-10">
+        <div className="flex flex-col md:flex-row items-start md:items-end gap-4 md:gap-6 mb-8">
           <div className="relative group">
-            <div className="w-32 h-32 md:w-40 md:h-40 rounded-3xl bg-white p-1 shadow-2xl overflow-hidden border-4 border-white">
+            <div className="w-28 h-28 md:w-36 md:h-36 rounded-3xl bg-white p-1 shadow-2xl overflow-hidden border-4 border-white shrink-0">
               {formData.photo ? (
-                <img src={formData.photo} alt="Profile" className="w-full h-full object-cover rounded-2xl" />
+                <img src={formData.photo} alt="Profile" className="w-full h-full object-cover object-center rounded-2xl" />
               ) : (
                 <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-2xl text-gray-300"><User size={50} /></div>
               )}
-              {uploading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-2xl"><Loader2 className="text-white animate-spin" /></div>}
+              {uploadingPhoto && <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-2xl"><Loader2 className="text-white animate-spin" /></div>}
             </div>
             <label className="absolute bottom-2 right-2 p-2 bg-indigo-600 text-white rounded-xl shadow-lg cursor-pointer hover:scale-110 transition">
               <Camera size={18} />
-              <input type="file" className="hidden" onChange={handleImageUpload} />
+              <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, "photo")} />
             </label>
           </div>
-          <div className="mb-4 hidden md:block text-black font-medium">
-            <h1 className="text-3xl font-black drop-shadow-md">{formData.name || "User"}</h1>
-            <p className=" flex items-center gap-2 mt-1 opacity-80"><Mail size={14} /> {userData?.email}</p>
+          <div className="text-white font-medium min-w-0 pb-2">
+            <h1 className="text-2xl md:text-3xl font-black drop-shadow-md truncate">{formData.name || "User"}</h1>
+            <p className="flex items-center gap-2 mt-1 opacity-90 truncate text-sm md:text-base"><Mail size={14} /> {userData?.email}</p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-12 mt-24 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="max-w-7xl mx-auto px-4 md:px-12 grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Sidebar Info */}
         <div className="lg:col-span-4 space-y-6">
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
@@ -202,7 +250,7 @@ export default function FullProfilePage() {
               </div>
               <button 
                 type="submit"
-                disabled={loading || uploading}
+                disabled={loading || uploadingPhoto || uploadingCover}
                 className="w-full md:w-auto flex items-center justify-center gap-3 px-12 py-4 rounded-2xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition transform hover:-translate-y-1 active:scale-95"
               >
                 {loading ? <Loader2 className="animate-spin" /> : <Save size={20} />}

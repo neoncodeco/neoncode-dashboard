@@ -47,7 +47,10 @@ export default function ImageUploader({ onUploadSuccess }) {
         throw new Error(json.error || "Upload failed");
       }
       
-      const screenshot = { url: json.url };
+      const screenshot = {
+        url: json.url,
+        ...(json.deleteUrl ? { deleteUrl: json.deleteUrl } : {}),
+      };
       setUploadedUrl(json.url);
       
       // Pass the uploaded screenshot object to the parent component
