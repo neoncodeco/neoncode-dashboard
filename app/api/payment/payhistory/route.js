@@ -23,14 +23,14 @@ export async function GET(req) {
       .toArray();
 
     // Format response data
-    const formatted = payments.map(p => ({
-      id: p.trx_id,
-      date: p.createdAt.toISOString(),
+    const formatted = payments.map((p) => ({
+      id: p.trx_id || p.trxId || String(p._id),
+      date: (p.createdAt ? new Date(p.createdAt) : new Date()).toISOString(),
       description: p.method === "bank_transfer" ? "Manual Payment" : "Online Payment",
-      amount: p.amount,
-      method: p.method,
-      status: p.status,
-      screenshot: p.screenshot || null
+      amount: Number(p.amount || 0),
+      method: p.method || "unknown",
+      status: p.status || "pending",
+      screenshot: p.screenshotUrl || p.screenshot || null,
     }));
 
     return NextResponse.json({

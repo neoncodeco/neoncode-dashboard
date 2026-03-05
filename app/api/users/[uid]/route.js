@@ -43,6 +43,7 @@ export async function GET(req, { params }) {
       data: {
         userId: user.userId,
         email: user.email,
+        status: user.status ?? "active",
         role: user.role,
         permissions: user.permissions,
         walletBalance: user.walletBalance ?? 0,
@@ -56,13 +57,21 @@ export async function GET(req, { params }) {
           totalReferrers: user.referralStats?.totalReferrers ?? 0,
           totalPayout: user.referralStats?.totalPayout ?? 0,
         },
+        level1DepositCount: user.level1DepositCount ?? 0,
 
         name: user.name,
         photo: user.photo,
         coverPhoto: user.coverPhoto ?? "",
         payoutMethods: user.payoutMethods ?? {},
+        metaAdsConfig: {
+          usdRate: user.metaAdsConfig?.usdRate ?? 150,
+          allowBudgetIncrease: user.metaAdsConfig?.allowBudgetIncrease ?? true,
+          allowTopupAction: user.metaAdsConfig?.allowTopupAction ?? true,
+          remainingBudgetOverride: user.metaAdsConfig?.remainingBudgetOverride ?? null,
+        },
 
         createdAt: user.createdAt,
+        updatedAt: user.updatedAt ?? user.createdAt,
       },
     });
 

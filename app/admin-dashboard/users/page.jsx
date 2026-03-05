@@ -141,7 +141,11 @@ export default function AllUsersPage() {
                 </tr>
               ) : (
                 filteredUsers.map((u) => (
-                  <tr key={u.userId} className="group hover:bg-gray-50/80 transition-all">
+                  <tr
+                    key={u.userId}
+                    className="group hover:bg-gray-50/80 transition-all cursor-pointer"
+                    onClick={() => setSelectedUser(u)}
+                  >
                     {/* USER DETAILS */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
@@ -188,14 +192,18 @@ export default function AllUsersPage() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-3 opacity-100 transition-opacity">
                         <button
-                          onClick={() => setSelectedUser(u)}
-                          className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-black bg-white border border-gray-200 rounded-lg hover:border-black hover:shadow-sm transition-all"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedUser(u);
+                          }}
+                          className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-black  border border-gray-200 rounded-lg hover:border-black hover:shadow-sm transition-all"
                         >
-                          <Shield size={14} /> Manage
+                          <Shield size={14} /> Open Profile
                         </button>
 
                         <button
                           disabled
+                          onClick={(e) => e.stopPropagation()}
                           className="p-2 text-red-300 hover:text-red-500 transition-colors cursor-not-allowed"
                         >
                           <Trash2 size={18} />

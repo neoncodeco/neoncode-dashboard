@@ -87,7 +87,7 @@ const OverviewPage = () => {
         <div className="xl:col-span-8 space-y-8">
           
           {/* Main Chart Card */}
-          <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
+          <div className="bg-white p-8 rounded-[2.5rem]  shadow-sm">
             <div className="flex justify-between items-center mb-10">
               <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3">
                 <ArrowRightLeft className="text-blue-600" /> Activity Analytics
@@ -103,7 +103,7 @@ const OverviewPage = () => {
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
                   <Tooltip 
-                    cursor={{fill: '#f1f5f9'}}
+                 
                     contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
                   />
                   <Bar dataKey="value" radius={[15, 15, 15, 15]} barSize={55}>

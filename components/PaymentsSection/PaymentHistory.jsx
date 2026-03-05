@@ -13,7 +13,7 @@ import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 
 const ROWS_PER_PAGE = 10;
 // এখানে 'All' সহ সমস্ত সম্ভাব্য স্ট্যাটাস অন্তর্ভুক্ত করা হয়েছে।
-const STATUS_OPTIONS = ["All", "approved", "Pending", "rejected"];
+const STATUS_OPTIONS = ["All", "approved", "pending", "failed", "cancelled", "rejected"];
 
 const PaymentHistory = () => {
   const { token } = useFirebaseAuth();

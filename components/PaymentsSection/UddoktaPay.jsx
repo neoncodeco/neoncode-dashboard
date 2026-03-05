@@ -32,7 +32,7 @@ export default function UddoktaPayForm({ token, setMethod }) {
     if (data.ok) {
       window.location.href = data.paymentUrl;
     } else {
-      Swal.fire("Failed", data.message || "Payment init failed", "error");
+      Swal.fire("Failed", data.error || data.message || "Payment init failed", "error");
     }
   };
 

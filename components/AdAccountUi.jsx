@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
   Search,
   RefreshCw,
@@ -25,7 +25,6 @@ import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import IncreaseBudgetModal from "./IncreaseBudgetModal";
 import TopupModal from "./TopupModal";
 
-/* ================= STATUS MAPPER ================= */
 const getAdStatusMeta = (status) => {
   switch (status) {
     case 1:
@@ -46,15 +45,31 @@ const getAdStatusMeta = (status) => {
   }
 };
 
-const AdAccountUi = () => {
+const toMoney = (value) => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+};
+
+const moneyText = (value) => `$${toMoney(value).toFixed(2)}`;
+
+export default function AdAccountUi() {
   const { token, userData } = useFirebaseAuth();
+  const metaAdsConfig = userData?.metaAdsConfig || {};
+  const usdRate = toMoney(metaAdsConfig.usdRate || 150);
+  const allowBudgetIncrease = metaAdsConfig.allowBudgetIncrease !== false;
+  const allowTopupAction = metaAdsConfig.allowTopupAction !== false;
+  const remainingOverride =
+    metaAdsConfig.remainingBudgetOverride === null ||
+    metaAdsConfig.remainingBudgetOverride === undefined
+      ? null
+      : toMoney(metaAdsConfig.remainingBudgetOverride);
 
   const [adAccounts, setAdAccounts] = useState([]);
   const [balances, setBalances] = useState({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("All Accounts");
+  const [searchTerm, setSearchTerm] = useState("");
 
-  /* ---- modal state ---- */
   const [increaseModal, setIncreaseModal] = useState({
     open: false,
     adAccountId: null,
@@ -62,27 +77,35 @@ const AdAccountUi = () => {
   });
   const [topupModal, setTopupModal] = useState(false);
 
-  /* ================= CALCULATE TOTAL REMAINING ================= */
-  // এটি সব অ্যাড অ্যাকাউন্টের বাকি ব্যালেন্স যোগ করবে
+  const filteredAccounts = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return adAccounts;
+    return adAccounts.filter((acc) => {
+      const name = String(acc?.accountName || "").toLowerCase();
+      const id = String(acc?.MetaAccountID || "").toLowerCase();
+      return name.includes(q) || id.includes(q);
+    });
+  }, [adAccounts, searchTerm]);
+
   const totalRemaining = useMemo(() => {
     return Object.values(balances).reduce((acc, curr) => {
-      return acc + (Number(curr?.remaining) || 0);
+      if (!curr || curr.error || curr.loading) return acc;
+      return acc + toMoney(curr.remaining);
     }, 0);
   }, [balances]);
+  const remainingDisplay = remainingOverride !== null ? remainingOverride : totalRemaining;
 
-  /* ================= PREPARE DYNAMIC CHART DATA ================= */
   const performanceData = useMemo(() => {
-    return adAccounts.map((acc) => {
+    return filteredAccounts.map((acc) => {
       const b = balances[acc.MetaAccountID];
       return {
-        name: acc.accountName || acc.MetaAccountID.slice(-5),
-        spend: b?.amountSpent || 0,
-        limit: b?.spendCap || 0,
+        name: acc.accountName || String(acc.MetaAccountID || "").slice(-5),
+        spend: b && !b.error ? toMoney(b.amountSpent) : 0,
+        limit: b && !b.error ? toMoney(b.spendCap) : 0,
       };
     });
-  }, [adAccounts, balances]);
+  }, [filteredAccounts, balances]);
 
-  /* ================= FETCH AD ACCOUNTS ================= */
   useEffect(() => {
     if (!token) return;
 
@@ -92,7 +115,7 @@ const AdAccountUi = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         const json = await res.json();
-        if (json.ok) setAdAccounts(json.data);
+        if (json.ok) setAdAccounts(Array.isArray(json.data) ? json.data : []);
       } catch (err) {
         console.error(err);
       } finally {
@@ -103,34 +126,56 @@ const AdAccountUi = () => {
     fetchData();
   }, [token]);
 
-  /* ================= FETCH BALANCE ================= */
-  const fetchBalance = async (adAccountId) => {
-    if (!adAccountId || balances[adAccountId]) return;
+  const fetchBalance = useCallback(
+    async (adAccountId, force = false) => {
+      if (!adAccountId) return;
+      if (!force && balances[adAccountId] && !balances[adAccountId].error) return;
 
-    try {
-      const res = await fetch(
-        `/api/ads-request/balance?ad_account_id=${adAccountId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const json = await res.json();
+      const cleanAdId = String(adAccountId).replace(/^act_/, "").trim();
+      if (!cleanAdId) return;
 
-      setBalances((prev) => ({
-        ...prev,
-        [adAccountId]: res.ok ? json : { error: json.error },
-      }));
-    } catch (err) {
-      setBalances((prev) => ({
-        ...prev,
-        [adAccountId]: { error: err.message },
-      }));
-    }
-  };
+      setBalances((prev) => ({ ...prev, [adAccountId]: { loading: true } }));
+
+      try {
+        const res = await fetch(`/api/ads-request/balance?ad_account_id=${cleanAdId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json();
+
+        setBalances((prev) => ({
+          ...prev,
+          [adAccountId]: res.ok
+            ? {
+                spendCap: toMoney(json.spendCap),
+                amountSpent: toMoney(json.amountSpent),
+                remaining: toMoney(json.remaining),
+                status: json.status,
+              }
+            : { error: json.error || "Failed to fetch balance" },
+        }));
+      } catch (err) {
+        setBalances((prev) => ({
+          ...prev,
+          [adAccountId]: { error: err.message || "Request failed" },
+        }));
+      }
+    },
+    [balances, token]
+  );
 
   useEffect(() => {
     adAccounts.forEach((acc) => {
       if (acc?.MetaAccountID) fetchBalance(acc.MetaAccountID);
     });
-  }, [adAccounts]);
+  }, [adAccounts, fetchBalance]);
+
+  const refreshBalances = async () => {
+    await Promise.all(
+      adAccounts
+        .filter((acc) => acc?.MetaAccountID)
+        .map((acc) => fetchBalance(acc.MetaAccountID, true))
+    );
+  };
 
   if (loading) {
     return (
@@ -143,14 +188,12 @@ const AdAccountUi = () => {
   return (
     <>
       <div className="space-y-6">
-        {/* --- ৩. ওয়ালেট এবং ব্যালেন্স কার্ডস --- */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {/* Card 1: Wallet Balance */}
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
             <div className="flex justify-between items-start mb-4">
               <div>
                 <p className="text-gray-500 text-sm font-medium mb-1">Wallet Balance</p>
-                <h3 className="text-3xl font-bold text-gray-800"> ${userData?.walletBalance}</h3>
+                <h3 className="text-3xl font-bold text-gray-800">{moneyText(userData?.walletBalance)}</h3>
               </div>
               <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
                 <Wallet size={20} />
@@ -161,12 +204,11 @@ const AdAccountUi = () => {
             </div>
           </div>
 
-          {/* Card 2: USD Rate */}
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
             <div className="flex justify-between items-start mb-4">
               <div>
                 <p className="text-gray-500 text-sm font-medium mb-1">USD Rate</p>
-                <h3 className="text-3xl font-bold text-gray-800">150.00</h3>
+                <h3 className="text-3xl font-bold text-gray-800">{usdRate.toFixed(2)}</h3>
               </div>
               <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
                 <DollarSign size={20} />
@@ -177,12 +219,11 @@ const AdAccountUi = () => {
             </div>
           </div>
 
-          {/* Card 3: Top Up */}
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
             <div className="flex justify-between items-start mb-4">
               <div>
                 <p className="text-gray-500 text-sm font-medium mb-1">Top Up Balance</p>
-                <h3 className="text-3xl font-bold text-gray-800">${userData?.topupBalance}</h3>
+                <h3 className="text-3xl font-bold text-gray-800">{moneyText(userData?.topupBalance)}</h3>
               </div>
               <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
                 <Calendar size={20} />
@@ -193,14 +234,11 @@ const AdAccountUi = () => {
             </div>
           </div>
 
-          {/* Card 4: Remaining (DYNAMIC DATA) */}
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
             <div className="flex justify-between items-start mb-4">
               <div>
                 <p className="text-gray-500 text-sm font-medium mb-1">Remaining</p>
-                <h3 className="text-3xl font-bold text-gray-800">
-                  ${totalRemaining.toFixed(2)}
-                </h3>
+                <h3 className="text-3xl font-bold text-gray-800">{moneyText(remainingDisplay)}</h3>
               </div>
               <div className="p-3 bg-orange-50 text-orange-500 rounded-xl">
                 <CreditCard size={20} />
@@ -212,7 +250,6 @@ const AdAccountUi = () => {
           </div>
         </div>
 
-        {/* ---------- ১. পারফরম্যান্স চার্ট (DYNAMIC) ---------- */}
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
           <div className="flex justify-between items-center mb-8">
             <div className="flex items-center gap-2">
@@ -224,7 +261,7 @@ const AdAccountUi = () => {
                 <p className="text-xs text-gray-500">Real-time spend tracking across all accounts</p>
               </div>
             </div>
-            
+
             <div className="relative">
               <select
                 className="appearance-none bg-gray-50 border border-gray-200 text-gray-700 py-2 pl-4 pr-10 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer"
@@ -247,22 +284,22 @@ const AdAccountUi = () => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 500 }} 
-                  dy={10} 
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 500 }}
+                  dy={10}
                 />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: "#94a3b8", fontSize: 11 }} 
-                  tickFormatter={(val) => `$${val}`} 
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#94a3b8", fontSize: 11 }}
+                  tickFormatter={(val) => `$${val}`}
                 />
                 <Tooltip
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                  formatter={(value) => [`$${value}`, 'Amount Spent']}
+                  contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" }}
+                  formatter={(value) => [`$${value}`, "Amount Spent"]}
                 />
                 <Area
                   type="monotone"
@@ -278,12 +315,11 @@ const AdAccountUi = () => {
           </div>
         </div>
 
-        {/* ---------- ২. মেইন টেবিল সেকশন ---------- */}
         <div className="bg-[#0d1a34] text-black rounded-3xl shadow-sm border border-[#2b4069] overflow-hidden">
           <div className="px-6 py-5 flex flex-col md:flex-row md:justify-between gap-4 border-b border-[#24385e]">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gray-900 rounded-lg text-white">
-                <Wallet size={18}/>
+                <Wallet size={18} />
               </div>
               <h2 className="text-lg font-bold">Ad Accounts List</h2>
             </div>
@@ -293,11 +329,13 @@ const AdAccountUi = () => {
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   placeholder="Search account..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-2 rounded-xl text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 />
               </div>
-              <button 
-                onClick={() => window.location.reload()}
+              <button
+                onClick={refreshBalances}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold hover:bg-black transition-all"
               >
                 <RefreshCw size={14} /> Refresh
@@ -320,47 +358,54 @@ const AdAccountUi = () => {
               </thead>
 
               <tbody className="divide-y divide-[#24385e]">
-                {adAccounts.map((account, i) => {
+                {filteredAccounts.map((account, i) => {
                   const balance = balances[account.MetaAccountID];
-                  const statusMeta = balance && !balance.error ? getAdStatusMeta(balance.status) : null;
-                  const showIncrease = (userData?.walletBalance || 0) > 0;
-                  const showTopup = (userData?.walletBalance || 0) === 0;
+                  const hasError = Boolean(balance?.error);
+                  const isLoadingBalance = !balance || balance.loading;
+                  const statusMeta =
+                    balance && !hasError && !isLoadingBalance ? getAdStatusMeta(balance.status) : null;
+                  const showIncrease = allowBudgetIncrease && (userData?.walletBalance || 0) > 0;
+                  const showTopup = allowTopupAction && (userData?.walletBalance || 0) === 0;
 
                   return (
                     <tr key={i} className="hover:bg-blue-50/30 transition-colors group">
-                      <td className="px-6 py-4 font-bold text-gray-700">
-                        {account.accountName || "N/A"}
-                      </td>
+                      <td className="px-6 py-4 font-bold text-gray-700">{account.accountName || "N/A"}</td>
                       <td className="px-6 py-4 font-mono text-xs text-blue-600 bg-blue-50/50 rounded-lg">
-                        {account.MetaAccountID}
+                        {account.MetaAccountID || "N/A"}
                       </td>
                       <td className="px-6 py-4">
                         {statusMeta ? (
                           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${statusMeta.className}`}>
                             {statusMeta.label}
                           </span>
+                        ) : hasError ? (
+                          <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-700 ring-1 ring-amber-600/20">
+                            Token/Error
+                          </span>
                         ) : (
                           <Loader2 className="animate-spin w-4 h-4 text-gray-300" />
                         )}
                       </td>
                       <td className="px-6 py-4 font-medium text-gray-600">
-                        {balance ? `$${balance.spendCap}` : "—"}
+                        {hasError ? "N/A" : moneyText(balance?.spendCap)}
                       </td>
                       <td className="px-6 py-4 font-bold text-rose-500">
-                        {balance ? `$${balance.amountSpent}` : "—"}
+                        {hasError ? "N/A" : moneyText(balance?.amountSpent)}
                       </td>
                       <td className="px-6 py-4 font-bold text-emerald-600">
-                        {balance ? `$${balance.remaining}` : "—"}
+                        {hasError ? "N/A" : moneyText(balance?.remaining)}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
                           {showIncrease && (
                             <button
-                              onClick={() => setIncreaseModal({
-                                open: true,
-                                adAccountId: account?.MetaAccountID,
-                                oldLimit: balance?.spendCap,
-                              })}
+                              onClick={() =>
+                                setIncreaseModal({
+                                  open: true,
+                                  adAccountId: account?.MetaAccountID,
+                                  oldLimit: balance?.spendCap,
+                                })
+                              }
                               className="px-4 py-2 rounded-xl bg-blue-600 text-white text-[11px] font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all"
                             >
                               Increase Budget
@@ -379,13 +424,20 @@ const AdAccountUi = () => {
                     </tr>
                   );
                 })}
+
+                {filteredAccounts.length === 0 && (
+                  <tr>
+                    <td className="px-6 py-10 text-center text-gray-500" colSpan={7}>
+                      No ad account found for this search.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      {/* ---------- MODALS ---------- */}
       <IncreaseBudgetModal
         open={increaseModal.open}
         adAccountId={increaseModal.adAccountId}
@@ -396,6 +448,4 @@ const AdAccountUi = () => {
       <TopupModal open={topupModal} onClose={() => setTopupModal(false)} />
     </>
   );
-};
-
-export default AdAccountUi;
+}

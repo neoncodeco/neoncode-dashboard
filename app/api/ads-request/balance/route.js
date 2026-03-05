@@ -19,6 +19,14 @@ export async function GET(req) {
         { status: 400 }
       );
 
+    const cleanAdAccountId = String(adAccountId).replace(/^act_/, "").trim();
+    if (!/^\d+$/.test(cleanAdAccountId)) {
+      return NextResponse.json(
+        { error: "Invalid ad_account_id format" },
+        { status: 400 }
+      );
+    }
+
     // 🟢 Load System Token from DB
     const { db } = await getDB();
     const setting = await db
@@ -28,7 +36,7 @@ export async function GET(req) {
     if (!setting?.value) {
       return NextResponse.json(
         { error: "Facebook system token not configured" },
-        { status: 500 }
+        { status: 400 }
       );
     }
 
@@ -36,7 +44,7 @@ export async function GET(req) {
 
     // 🌐 Facebook API Call
     const fbRes = await fetch(
-      `https://graph.facebook.com/v18.0/act_${adAccountId}?fields=spend_cap,amount_spent,account_status`,
+      `https://graph.facebook.com/v18.0/act_${cleanAdAccountId}?fields=spend_cap,amount_spent,account_status`,
       {
         headers: {
           Authorization: `Bearer ${FB_SYS_TOKEN}`, // ✅ DB token
