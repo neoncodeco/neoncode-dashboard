@@ -54,6 +54,14 @@ export async function POST(req) {
       },
       walletBalance: 0,
       topupBalance: 0,
+      freepikCredits: 0,
+      freepikSubscription: {
+        planId: null,
+        planName: null,
+        status: "inactive",
+        purchasedAt: null,
+        expiresAt: null,
+      },
       referralCode: myReferralCode,
       referredBy: referredByUser ? referredByUser.userId : null,
       referralStats: {

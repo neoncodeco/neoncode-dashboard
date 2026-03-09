@@ -48,6 +48,14 @@ export async function GET(req, { params }) {
         permissions: user.permissions,
         walletBalance: user.walletBalance ?? 0,
         topupBalance: user.topupBalance ?? 0,
+        freepikCredits: user.freepikCredits ?? 0,
+        freepikSubscription: user.freepikSubscription ?? {
+          planId: null,
+          planName: null,
+          status: "inactive",
+          purchasedAt: null,
+          expiresAt: null,
+        },
 
         referralCode: user.referralCode ?? null,
         referredBy: user.referredBy ?? null,
