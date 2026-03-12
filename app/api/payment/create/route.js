@@ -16,6 +16,10 @@ const getGatewayApiKey = () => {
   );
 };
 
+const getGatewayBaseUrl = () => {
+  return process.env.UDDOKTAPAY_BASE_URL?.trim() || "";
+};
+
 export async function POST(req) {
   try {
     const decoded = await verifyToken(req);
@@ -24,39 +28,48 @@ export async function POST(req) {
     }
 
     const { amount, reason } = await req.json();
+    const numericAmount = Number(amount);
 
-    if (!amount || !reason) {
+    if (!numericAmount || numericAmount <= 0 || !reason) {
       return NextResponse.json(
-        { ok: false, error: "Amount and reason are required" },
+        { ok: false, error: "Valid amount and reason are required" },
         { status: 400 }
       );
     }
 
     const trackingId = crypto.randomBytes(12).toString("hex");
     const apiKey = getGatewayApiKey();
+    const gatewayBaseUrl = getGatewayBaseUrl();
     if (!apiKey) {
       return NextResponse.json(
         { ok: false, error: "Missing UddoktaPay API key in environment" },
         { status: 500 }
       );
     }
+    if (!gatewayBaseUrl) {
+      return NextResponse.json(
+        { ok: false, error: "Missing UddoktaPay base URL in environment" },
+        { status: 500 }
+      );
+    }
 
     const origin = new URL(req.url).origin;
-    const redirectBase = process.env.UDDOKTAPAY_REDIRECT || `${origin}/user-dashboard/payment-methods`;
+    const redirectBase =
+      process.env.UDDOKTAPAY_REDIRECT || `${origin}/user-dashboard/payment-methods`;
     const cancelBase = process.env.UDDOKTAPAY_CANCEL || `${origin}/api/payment/cancel`;
     const webhookUrl = process.env.UDDOKTAPAY_WEBHOOK || `${origin}/api/payment/callback`;
 
     const payload = {
       full_name: decoded.email,
       email: decoded.email,
-      amount: String(amount),
+      amount: String(numericAmount),
       metadata: { userUid: decoded.uid, reason },
       redirect_url: withInvoiceId(redirectBase, trackingId),
       cancel_url: withInvoiceId(cancelBase, trackingId),
       webhook_url: webhookUrl,
     };
 
-    const res = await fetch(process.env.UDDOKTAPAY_BASE_URL, {
+    const res = await fetch(gatewayBaseUrl, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -66,7 +79,13 @@ export async function POST(req) {
       body: JSON.stringify(payload),
     });
 
-    const data = await res.json();
+    const rawBody = await res.text();
+    let data = null;
+    try {
+      data = JSON.parse(rawBody);
+    } catch {
+      data = { raw: rawBody };
+    }
 
     if (res.ok && data.status && data.payment_url) {
       const { db } = await getDB();
@@ -76,7 +95,7 @@ export async function POST(req) {
         userUid: decoded.uid,
         email: decoded.email,
         method: "uddoktapay",
-        amount: Number(amount),
+        amount: numericAmount,
         reason,
         status: "pending",
         createdAt: new Date(),
@@ -89,6 +108,15 @@ export async function POST(req) {
       });
     }
 
+    console.error("UDDOKTAPAY CREATE FAILED:", {
+      status: res.status,
+      gatewayBaseUrl,
+      redirectBase,
+      cancelBase,
+      webhookUrl,
+      response: data,
+    });
+
     return NextResponse.json(
       {
         ok: false,
@@ -97,6 +125,7 @@ export async function POST(req) {
           data?.error ||
           "Payment init failed from gateway",
         data,
+        gatewayStatus: res.status,
       },
       { status: 400 }
     );

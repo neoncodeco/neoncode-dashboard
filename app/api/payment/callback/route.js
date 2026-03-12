@@ -10,6 +10,20 @@ const getGatewayApiKey = () => {
   );
 };
 
+const getVerifyUrl = () => {
+  const baseUrl = process.env.UDDOKTAPAY_BASE_URL?.trim() || "";
+  if (!baseUrl) return "";
+
+  try {
+    const url = new URL(baseUrl);
+    url.pathname = "/api/verify-payment";
+    url.search = "";
+    return url.toString();
+  } catch {
+    return "";
+  }
+};
+
 const getTrxIdFromBody = (body) => {
   return (
     body?.trx_id ||
@@ -45,11 +59,15 @@ const parseCallbackBody = async (req) => {
 
 const verifyPayment = async (trxId) => {
   const apiKey = getGatewayApiKey();
+  const verifyUrl = getVerifyUrl();
   if (!apiKey) {
     return { ok: false, verifyData: { error: "Missing UddoktaPay API key" } };
   }
+  if (!verifyUrl) {
+    return { ok: false, verifyData: { error: "Missing UddoktaPay verify URL" } };
+  }
 
-  const verifyRes = await fetch("https://gorilladigital.paymently.io/api/verify-payment", {
+  const verifyRes = await fetch(verifyUrl, {
     method: "POST",
     headers: {
       "RT-UDDOKTAPAY-API-KEY": apiKey,

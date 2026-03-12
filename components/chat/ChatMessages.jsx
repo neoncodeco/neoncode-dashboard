@@ -31,6 +31,11 @@ export default function ChatMessages({ chatId, currentRole = "user" }) {
         const data = await res.json();
         if (active && data?.ok) {
           setMessages(data.messages || []);
+          return;
+        }
+
+        if (active && res.status === 404) {
+          setMessages([]);
         }
       } catch (err) {
         console.error("CHAT FETCH ERROR:", err);
@@ -48,12 +53,12 @@ export default function ChatMessages({ chatId, currentRole = "user" }) {
   return (
     <div 
       ref={scrollRef} 
-      className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 "
-      style={{ height: '100%' }}
+      className="flex-1 space-y-4 overflow-y-auto bg-gray-50/50 p-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      style={{ height: "100%" }}
     >
       {messages.length === 0 && (
         <div className="flex items-center justify-center h-full">
-          <p className="text-xs text-zinc-400  px-4 py-2 rounded-full shadow-sm">
+          <p className="rounded-full border border-[#d7e4cf] bg-white/80 px-4 py-2 text-xs text-[#55714a] shadow-sm">
             Start the conversation...
           </p>
         </div>
@@ -71,8 +76,8 @@ export default function ChatMessages({ chatId, currentRole = "user" }) {
             <div
               className={`max-w-[75%] px-4 py-2.5 shadow-sm transition-all ${
                 isMe
-                  ? "bg-blue-600 text-white rounded-[20px] rounded-tr-[4px] ml-12"
-                  : "bg-white border border-gray-100 text-zinc-800 rounded-[20px] rounded-tl-[4px] mr-12"
+                  ? "ml-12 rounded-[20px] rounded-tr-[4px] bg-[#214311] text-white"
+                  : "mr-12 rounded-[20px] rounded-tl-[4px] border border-[#dce8d3] bg-white text-zinc-800"
               }`}
             >
               {/* Message Content */}
@@ -94,7 +99,7 @@ export default function ChatMessages({ chatId, currentRole = "user" }) {
               )}
 
               {/* Timestamp */}
-              <div className={`text-[10px] mt-1.5 flex ${isMe ? 'justify-end text-blue-100' : 'justify-start text-zinc-400'}`}>
+              <div className={`mt-1.5 flex text-[10px] ${isMe ? "justify-end text-[#cde5ba]" : "justify-start text-zinc-400"}`}>
                 {m.createdAt ? (
                   new Date(m.createdAt).toLocaleTimeString([], {
                     hour: "2-digit",

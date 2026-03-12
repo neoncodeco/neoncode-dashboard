@@ -21,7 +21,7 @@ export default function Loader() {
       {isLoading && (
         <motion.div
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0, filter: "blur(10px)" }} // মিলিয়ে যাওয়ার সময় ব্লার হবে
+          exit={{ opacity: 0, filter: "blur(10px)" }} 
           transition={{ duration: 0.8, ease: "easeInOut" }}
           className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#050505] text-white"
         >

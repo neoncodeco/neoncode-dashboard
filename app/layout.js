@@ -5,7 +5,7 @@ import AuthProvider from "@/components/AuthProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Neon Studio",
+  title: "Neon  Dashboard",
   description: "Next Gen Dashboard",
 };
 

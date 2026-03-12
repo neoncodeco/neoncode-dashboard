@@ -20,7 +20,7 @@ export async function GET(req) {
     const chat = await db.collection("live_chats").findOne({ chatId });
 
     if (!chat) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+      return NextResponse.json({ ok: true, messages: [] });
     }
 
     const requester = await db.collection("users").findOne(

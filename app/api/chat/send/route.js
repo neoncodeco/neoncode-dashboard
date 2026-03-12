@@ -1,6 +1,60 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
+import {
+  generateAutoReply,
+  getSupportSystemPrompt,
+  resolveReplyLanguage,
+} from "@/lib/chatAutoReply";
+
+async function generateOpenAIReply({
+  text,
+  preferredLanguage,
+}) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+
+  if (!apiKey) {
+    return null;
+  }
+
+  const language = resolveReplyLanguage(text, preferredLanguage);
+  const languageInstruction =
+    language === "bn"
+      ? "Respond in Bangla script."
+      : "Respond in English.";
+
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.3,
+      max_tokens: 300,
+      messages: [
+        {
+          role: "system",
+          content: `${getSupportSystemPrompt()}\n\n${languageInstruction}`,
+        },
+        {
+          role: "user",
+          content: text,
+        },
+      ],
+    }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data?.error?.message || "OpenAI request failed");
+  }
+
+  return data?.choices?.[0]?.message?.content?.trim() || null;
+}
 
 export async function POST(req) {
   try {
@@ -9,7 +63,7 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { chatId, type, text, imageUrl } = await req.json();
+    const { chatId, type, text, imageUrl, preferredLanguage = "auto" } = await req.json();
 
     if (!chatId) {
       return NextResponse.json({ error: "chatId is required" }, { status: 400 });
@@ -35,7 +89,6 @@ export async function POST(req) {
         $setOnInsert: {
           chatId,
           userId: decoded.uid,
-          unreadForAdmin: 0,
           unreadForUser: 0,
           createdAt: new Date(),
         },
@@ -54,10 +107,54 @@ export async function POST(req) {
       createdAt: new Date(),
     });
 
+    if (safeType === "text" && text?.trim()) {
+      let autoReply = null;
+
+      try {
+        autoReply = await generateOpenAIReply({
+          text: text.trim(),
+          preferredLanguage,
+        });
+      } catch (openAiError) {
+        console.error("OPENAI CHAT ERROR:", openAiError);
+      }
+
+      if (!autoReply) {
+        autoReply = generateAutoReply(text, preferredLanguage);
+      }
+
+      if (autoReply) {
+        await db.collection("live_chat_messages").insertOne({
+          chatId,
+          senderRole: "assistant",
+          type: "text",
+          text: autoReply,
+          imageUrl: null,
+          seen: true,
+          automated: true,
+          createdAt: new Date(),
+        });
+
+        await db.collection("live_chats").updateOne(
+          { chatId, userId: decoded.uid },
+          {
+            $set: {
+              lastMessage: autoReply,
+              lastSender: "assistant",
+              updatedAt: new Date(),
+              status: "open",
+            },
+          }
+        );
+      }
+    }
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("CHAT SEND ERROR:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: err?.message || "Server error" },
+      { status: 500 }
+    );
   }
 }
-

@@ -197,7 +197,7 @@ const UserSidebar = () => {
         <div>
           <div className="flex items-center gap-3 mb-10">
             <Image src="/Neon Studio icon.png" alt="Logo" width={32} height={32} />
-            <span className="text-white text-2xl font-bold">neonstudio</span>
+            <span className="text-white text-2xl font-bold"> Neon Dashboard</span>
           </div>
           {renderMenu()}
         </div>
@@ -216,7 +216,7 @@ const UserSidebar = () => {
           </div> */}
 
           <div className="pt-4  border-t border-[#2f5e18] space-y-3">
-            <Link href="/">
+            <Link href="https://wa.me/8801344224787" target="_blank">
               <div className="flex items-center gap-3 text-gray-300 hover:text-white text-sm">
                 <HelpCircle size={18} />
                 Help & Information

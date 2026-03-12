@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { MessageCircle, X, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { Headset, Loader2, ShieldCheck, X } from "lucide-react";
 import ChatWindow from "./ChatWindow";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 
@@ -9,6 +10,23 @@ export default function LiveChatButton() {
   const { user } = useFirebaseAuth();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  useEffect(() => {
+    if (!notice) return undefined;
+
+    const timer = window.setTimeout(() => {
+      setNotice("");
+    }, 3200);
+
+    return () => window.clearTimeout(timer);
+  }, [notice]);
 
   const handleOpenChat = async () => {
     if (open) {
@@ -18,62 +36,79 @@ export default function LiveChatButton() {
 
     try {
       setLoading(true);
+
       if (!user) {
-        alert("Please log in to start live chat.");
+        setNotice("Live chat start korte login korte hobe.");
         return;
       }
+
+      setNotice("");
       setOpen(true);
     } catch (err) {
       console.error("Failed to start live chat:", err);
-      alert("Unable to start chat. Please try again.");
+      setNotice("Chat open kora jacche na. Ektu pore abar try korun.");
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-      <div className="fixed bottom-20 right-10 z-50 flex flex-col items-end">
-      {/* Chat Window Container */}
+  if (!mounted) return null;
+
+  return createPortal(
+    <div className="fixed bottom-2 right-3 z-50 sm:bottom-3 sm:right-5">
       {open && user && (
-        <div className="mb-4 transition-all duration-300 transform origin-bottom-right scale-100 opacity-100">
+        <div className="absolute bottom-[calc(100%+0.75rem)] right-0 w-[calc(100vw-1.5rem)] max-w-[410px] origin-bottom-right animate-in fade-in zoom-in-95 slide-in-from-bottom-6 duration-300 sm:w-[calc(100vw-2rem)]">
           <ChatWindow user={user} onClose={() => setOpen(false)} />
         </div>
       )}
 
-      {/* Professional Floating Button */}
+      {notice && (
+        <div className="absolute bottom-[calc(100%+0.75rem)] right-0 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-amber-300/40 bg-[#12250b]/95 px-4 py-3 text-sm text-amber-50 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+            <p>{notice}</p>
+          </div>
+        </div>
+      )}
+
       <button
         onClick={handleOpenChat}
         disabled={loading}
-        className={`
-          relative flex items-center justify-center 
-          w-14 h-14 md:w-16 md:h-16 
-          text-white rounded-full shadow-2xl 
-          transition-all duration-300 ease-in-out
-          hover:scale-110 active:scale-95
-          ${open ? 'bg-[#214311] rotate-90' : 'bg-blue-600 hover:bg-blue-700'}
-          disabled:cursor-not-allowed
-        `}
         aria-label="Live Chat"
+        aria-expanded={open}
+        className={`
+          group relative flex h-[3.75rem] w-[3.75rem] items-center justify-center overflow-hidden rounded-full border text-white shadow-[0_18px_45px_rgba(7,12,22,0.34)]
+          transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.03] active:translate-y-0
+          backdrop-blur-xl disabled:cursor-not-allowed disabled:opacity-80
+          ${open ? "border-[#3d6c23] bg-[#17320d]" : "border-[#4d8f29] bg-[linear-gradient(135deg,#17340d_0%,#214311_52%,#3d7721_100%)]"}
+        `}
       >
-        {loading ? (
-          <Loader2 className="w-7 h-7 animate-spin" />
-        ) : open ? (
-          <X className="w-7 h-7" />
-        ) : (
+        {!loading && (
           <>
-            <MessageCircle className="w-7 h-7" />
-            {/* Online Indicator Dot */}
-            <span className="absolute top-0 right-0 block h-4 w-4 rounded-full ring-2 ring-white bg-green-500"></span>
+            <span className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),transparent_52%)] opacity-80" />
+            <span className="absolute -right-3 -top-3 h-14 w-14 rounded-full bg-white/10 blur-2xl transition-transform duration-500 group-hover:scale-125" />
+            <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/10" />
           </>
         )}
-      </button>
 
-      {/* Tooltip (Optional) */}
-      {!open && !loading && (
-        <div className="absolute right-20 bottom-3 bg-white px-3 py-1 rounded-lg shadow-md border border-gray-100 hidden md:block whitespace-nowrap">
-          <p className="text-sm font-medium text-[#214311]">Chat with us!</p>
-        </div>
-      )}
+        <span className="relative flex h-full w-full items-center justify-center">
+          {!open && !loading && (
+            <>
+              <span className="absolute h-11 w-11 animate-ping rounded-full bg-emerald-300/15" />
+              <span className="absolute right-3 top-3 h-3 w-3 rounded-full border-2 border-[#214311] bg-emerald-400" />
+            </>
+          )}
+          {loading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : open ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <Headset className="h-6 w-6 drop-shadow-[0_3px_8px_rgba(0,0,0,0.3)]" />
+          )}
+        </span>
+      </button>
     </div>
+    ,
+    document.body
   );
 }

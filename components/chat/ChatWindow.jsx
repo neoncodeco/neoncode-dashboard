@@ -1,41 +1,79 @@
 "use client";
+
+import { useState } from "react";
 import ChatMessages from "./ChatMessages";
 import ChatInput from "./ChatInput";
-import { X, Headset } from "lucide-react";
+import { Headset, Minus, X } from "lucide-react";
 
 export default function ChatWindow({ user, onClose }) {
   const chatId = `support_${user.uid}`;
+  const [preferredLanguage, setPreferredLanguage] = useState("auto");
 
   return (
-    <div className="fixed bottom-2 right-0 sm:right-6 w-[95vw] sm:w-96 h-[500px] md:h-[580px] bg-[#214311] rounded-2xl shadow-2xl flex flex-col z-[60]  overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
-      
-      {/* --- Header: Fixed Height --- */}
-      <div className="flex-none p-4 border-b bg-[#214311] flex justify-between items-center">
+    <div className="flex h-[min(72vh,600px)] w-full flex-col overflow-hidden rounded-[28px] border border-[#345a21] bg-[linear-gradient(180deg,rgba(21,47,12,0.98)_0%,rgba(14,29,8,0.98)_100%)] shadow-[0_25px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl">
+      <div className="flex items-center justify-between border-b border-white/10 bg-[linear-gradient(135deg,rgba(61,119,33,0.34),rgba(255,255,255,0.03))] px-4 py-4">
         <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="p-2 bg-blue-50 rounded-full text-blue-600">
-              <Headset size={24} />
-            </div>
-            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+          <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-white shadow-inner shadow-white/5">
+            <Headset size={22} />
+            <span className="absolute bottom-1.5 right-1.5 h-3 w-3 rounded-full border-2 border-[#1b360f] bg-emerald-400" />
           </div>
           <div>
-            <h3 className="font-bold text-white text-sm leading-tight">Live Support</h3>
-            <p className="text-xs text-green-600 font-medium">Online</p>
+            <h3 className="text-sm font-semibold text-white">Live Support</h3>
+            <p className="text-xs text-emerald-300">Online now</p>
           </div>
         </div>
-        <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-full text-white">
-          <X size={20} />
-        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/80 transition hover:bg-white/10 hover:text-white"
+            aria-label="Minimize live chat"
+          >
+            <Minus size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/80 transition hover:bg-white/10 hover:text-white"
+            aria-label="Close live chat"
+          >
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
-      {/* --- Message Area: Scrollable (Main Fix) --- */}
-      <div className="flex-1 overflow-y-auto bg-gray-50/50 p-2 custom-scrollbar">
+      <div className="border-b border-white/10 bg-white/[0.04] px-4 py-3">
+        <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#31551d] bg-black/10 px-4 py-3 text-xs text-[#dceccc]">
+          <div>
+            <p className="font-medium text-white">Fast support channel</p>
+            <p>Billing, order update, service issue sob ekhane message dite parben.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="sr-only" htmlFor="chat-language">Chat language</label>
+            <select
+              id="chat-language"
+              value={preferredLanguage}
+              onChange={(e) => setPreferredLanguage(e.target.value)}
+              className="rounded-full border border-[#46732d] bg-[#1d3a11] px-3 py-1 text-[11px] font-medium text-[#ddf0cf] outline-none"
+            >
+              <option value="auto">Auto</option>
+              <option value="en">English</option>
+              <option value="bn">বাংলা</option>
+            </select>
+            <span className="shrink-0 rounded-full bg-emerald-400/15 px-3 py-1 font-medium text-emerald-300">
+              Secure
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 bg-[linear-gradient(180deg,rgba(242,246,238,0.98),rgba(232,239,227,0.98))]">
         <ChatMessages chatId={chatId} />
       </div>
 
-      {/* --- Input Area: Fixed at Bottom --- */}
-      <div className="flex-none p-3 bg-[#214311]">
-        <ChatInput chatId={chatId} />
+      <div className="border-t border-[#345a21] bg-[#16300d] p-3">
+        <ChatInput chatId={chatId} preferredLanguage={preferredLanguage} />
       </div>
     </div>
   );
