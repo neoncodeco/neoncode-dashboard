@@ -103,7 +103,7 @@ const UserSidebar = () => {
       <div className="sidebar-shell lg:hidden fixed top-0 left-0 w-full z-50 px-4 py-3 flex justify-between items-center border-b">
         <div className="flex items-center gap-2">
           <Image src="/Neon Studio icon.png" alt="Logo" width={24} height={24} />
-          <span className="font-bold text-white text-lg">neonstudio</span>
+          <span className="font-bold text-white text-lg">neoncode</span>
         </div>
         <button
           onClick={() => setIsMobileOpen(true)}
@@ -139,7 +139,7 @@ const UserSidebar = () => {
                 height={64}
                 className="mx-auto mb-3"
               />
-              <h2 className="text-white text-xl font-bold">NEON STUDIO</h2>
+              <h2 className="text-white text-xl font-bold">Neon Code</h2>
               <p className="text-xs text-gray-300">Dashboard Panel</p>
             </div>
 

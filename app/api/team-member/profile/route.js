@@ -3,7 +3,7 @@ import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import {
   getTeamMemberPublicUrl,
-  getTeamMemberQrUrl,
+  getTeamMemberQrUrlWithFallback,
   normalizeTeamMemberUsername,
 } from "@/lib/teamMemberProfile";
 import {
@@ -45,7 +45,7 @@ export async function GET(req) {
         username,
         profile,
         publicUrl: getTeamMemberPublicUrl(username),
-        qrUrl: getTeamMemberQrUrl(username),
+        qrUrl: getTeamMemberQrUrlWithFallback({ publicId: teamMemberDoc?.publicId, username }),
         usernameLocked: Boolean(username),
       },
     });
@@ -125,7 +125,10 @@ export async function POST(req) {
         username: savedTeamMemberDoc.username,
         profile: savedTeamMemberDoc.profile,
         publicUrl: getTeamMemberPublicUrl(savedTeamMemberDoc.username),
-        qrUrl: getTeamMemberQrUrl(savedTeamMemberDoc.username),
+        qrUrl: getTeamMemberQrUrlWithFallback({
+          publicId: savedTeamMemberDoc.publicId,
+          username: savedTeamMemberDoc.username,
+        }),
         usernameLocked: true,
       },
     });

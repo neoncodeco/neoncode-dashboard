@@ -337,7 +337,7 @@ export default function TeamMemberDashboardPage() {
                  https://neoncode.co/teammember/{previewUsername || "your-username"}
                 </p>
                 <p className="mt-2 text-sm text-sky-100/62">
-                  Username stays locked after the first successful save.
+                  Username stays locked after the first successful save, so your ID card QR can stay unchanged.
                 </p>
               </div>
             </div>
@@ -346,11 +346,14 @@ export default function TeamMemberDashboardPage() {
           <div className="mt-6 rounded-[1.6rem] border border-sky-400/15 bg-slate-950/70 p-4 sm:rounded-[2rem] sm:p-5">
             <div className="flex items-center gap-2 text-sm font-bold text-white">
               <QrCode size={18} />
-              Smart QR
+              Fixed QR
             </div>
             {profileState.qrUrl ? (
               <>
                 <img src={profileState.qrUrl} alt="Public profile QR" className="mt-4 w-full rounded-[1.6rem] bg-white p-4" />
+                <p className="mt-3 text-sm leading-6 text-sky-100/68">
+                  This QR stays the same for your ID card. You can still update the profile data anytime and the scanned page will show the latest info.
+                </p>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <button
                     type="button"

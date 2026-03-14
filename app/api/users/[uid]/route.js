@@ -1,6 +1,6 @@
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
-import { getTeamMemberPublicUrl, getTeamMemberQrUrl } from "@/lib/teamMemberProfile";
+import { getTeamMemberPublicUrl, getTeamMemberQrUrlWithFallback } from "@/lib/teamMemberProfile";
 import { findTeamMemberByUserId, getTeamMemberView } from "@/lib/teamMembers";
 
 export async function GET(req, { params }) {
@@ -63,7 +63,10 @@ export async function GET(req, { params }) {
         teamMemberUsername: teamMemberView.username || user.teamMemberUsername || "",
         teamMemberProfile: teamMemberView.profile,
         teamMemberPublicUrl: getTeamMemberPublicUrl(teamMemberView.username || user.teamMemberUsername),
-        teamMemberQrUrl: getTeamMemberQrUrl(teamMemberView.username || user.teamMemberUsername),
+        teamMemberQrUrl: getTeamMemberQrUrlWithFallback({
+          publicId: teamMemberDoc?.publicId,
+          username: teamMemberView.username || user.teamMemberUsername,
+        }),
         createdAt: user.createdAt,
         updatedAt: user.updatedAt ?? user.createdAt,
       },

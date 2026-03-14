@@ -113,7 +113,7 @@ const OverviewPage = () => {
   }
 
   const stats = userData.referralStats || {};
-  const referralLink = `https://neonstudio.com/ref/${userData?.referralCode || ""}`;
+  const referralLink = `https://neoncode.com/ref/${userData?.referralCode || ""}`;
   const recentTopups = topupHistory.slice(0, 3);
   const chartData = [
     { name: "Wallet", value: userData.walletBalance || 0, color: "#3b82f6" },
@@ -248,7 +248,7 @@ const OverviewPage = () => {
               </div>
               <h3 className="text-lg font-bold text-gray-900">Identity Verified</h3>
               <p className="mt-2 text-sm leading-relaxed text-gray-500">
-                Your account is under secure monitoring. All transactions are encrypted and protected by Neon Studio Guard.
+                Your account is under secure monitoring. All transactions are encrypted and protected by Neon Code Guard.
               </p>
               <button className="mt-4 flex items-center gap-1 text-sm font-bold text-blue-600 transition-all hover:gap-2">
                 Security Settings <ArrowUpRight size={16} />

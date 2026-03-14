@@ -16,7 +16,7 @@ const projectsData = [
   {
     id: 1,
     title: "Website Redesign",
-    client: "Neon Studio",
+    client: "Neon Code",
     status: "In Progress",
     deadline: "Dec 24, 2023",
     progress: 75,

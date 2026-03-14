@@ -43,7 +43,7 @@ export default function AffiliatePage() {
   };
 
   const shareOnSocial = (platform) => {
-    const text = `Join Neon Studio and scale your ads! Use my link: ${referralLink}`;
+    const text = `Join Neon Code and scale your ads! Use my link: ${referralLink}`;
     const urls = {
       whatsapp: `https://wa.me/?text=${encodeURIComponent(text)}`,
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralLink)}`,

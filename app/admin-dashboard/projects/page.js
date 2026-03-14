@@ -15,7 +15,7 @@ const projectsData = [
   { 
     id: '#PRJ-001', 
     name: 'Neon Website Redesign', 
-    client: 'Neon Studio', 
+    client: 'Neon Code', 
     team: ['A', 'B', 'C'], 
     progress: 75, 
     status: 'Active', 
