@@ -21,6 +21,8 @@ const PARTICLES = [
 
 const ORBIT_ITEMS = ["DESIGN", "DEVELOP", "MARKET", "GROW"];
 
+const normalizeTextValue = (value) => (typeof value === "string" ? value : "");
+
 export default function LoginPage() {
   const { login, googleLogin } = useFirebaseAuth();
   const router = useRouter();
@@ -38,9 +40,11 @@ export default function LoginPage() {
     if (typeof window === "undefined") return;
 
     const savedEmail = window.localStorage.getItem("neoncode_login_email");
-    if (savedEmail) {
+    if (savedEmail && savedEmail !== "[object Object]") {
       setEmail(savedEmail);
       setRemember(true);
+    } else if (savedEmail === "[object Object]") {
+      window.localStorage.removeItem("neoncode_login_email");
     }
   }, []);
 
@@ -50,10 +54,13 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await login(email, pass);
+      const normalizedEmail = normalizeTextValue(email).trim();
+      const normalizedPass = normalizeTextValue(pass);
+
+      await login(normalizedEmail, normalizedPass);
 
       if (remember && typeof window !== "undefined") {
-        window.localStorage.setItem("neoncode_login_email", email);
+        window.localStorage.setItem("neoncode_login_email", normalizedEmail);
       } else if (typeof window !== "undefined") {
         window.localStorage.removeItem("neoncode_login_email");
       }
@@ -261,9 +268,11 @@ export default function LoginPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h2 className="mt-1 text-4xl font-black tracking-tight text-[#f8ffec] sm:text-[3.55rem]">Welcome Back!</h2>
-                    <p className="mt-4 max-w-md text-[1.95rem] leading-[1.2] text-[#d3e5d9]/90 sm:text-[2rem] lg:text-[1.15rem] lg:leading-8">
+                    <Link
+                      href="/register"
+                      className="mt-4 max-w-md text-[1.95rem] leading-[1.2] text-[#d3e5d9]/90 sm:text-[2rem] lg:text-[1.15rem] lg:leading-8">
                       Let&apos;s continue to <span className="border-b-2 border-[#d8ff30] text-[#d8ff30]">create</span> something amazing.
-                    </p>
+                    </Link>
                   </div>
 
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-[#d8ff30] shadow-[0_0_30px_rgba(216,255,48,0.1)]">
@@ -293,7 +302,7 @@ export default function LoginPage() {
                     label="Email Address"
                     icon={Mail}
                     type="email"
-                    value={email}
+                    value={normalizeTextValue(email)}
                     onChange={setEmail}
                     placeholder="name@neoncode.co"
                     autoComplete="email"
@@ -303,7 +312,7 @@ export default function LoginPage() {
                     label="Password"
                     icon={LockKeyhole}
                     type={showPass ? "text" : "password"}
-                    value={pass}
+                    value={normalizeTextValue(pass)}
                     onChange={setPass}
                     placeholder="Enter your secure password"
                     autoComplete="current-password"
@@ -410,11 +419,11 @@ function Logo() {
     >
       <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl shadow-[0_0_40px_rgba(216,255,48,0.15)]">
         <Image
-          src="/Neon Studio icon.png"
+          src="/neon-code-logo.jpg"
           alt="NeonCode logo"
           width={64}
           height={64}
-          className="h-14 w-14 object-contain"
+          className="h-14 w-14 rounded-xl object-cover"
           priority
         />
       </div>
@@ -541,7 +550,7 @@ function HeroVisual() {
   );
 }
 
-function NeonInput({ label, icon: Icon, rightAction, ...props }) {
+function NeonInput({ label, icon: Icon, rightAction, onChange, ...props }) {
   return (
     <label className="block">
       <div className="group relative overflow-hidden rounded-[20px] border border-white/10 bg-white/[0.04] transition duration-300 focus-within:border-[#d8ff30]/35 focus-within:shadow-[0_0_0_1px_rgba(216,255,48,0.15),0_0_30px_rgba(0,255,213,0.12)]">
@@ -553,6 +562,7 @@ function NeonInput({ label, icon: Icon, rightAction, ...props }) {
           <input
             {...props}
             required
+            onChange={(event) => onChange?.(event.target.value)}
             className="h-15 w-full bg-transparent px-4 py-4 text-[15px] text-[#f6ffea] outline-none placeholder:text-[#cad8ca]/36 sm:text-base"
           />
           {rightAction ? <div className="pr-4">{rightAction}</div> : null}

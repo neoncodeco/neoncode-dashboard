@@ -113,7 +113,8 @@ const OverviewPage = () => {
   }
 
   const stats = userData.referralStats || {};
-  const referralLink = `https://neoncode.com/ref/${userData?.referralCode || ""}`;
+  const appBaseUrl = typeof window !== "undefined" ? window.location.origin : "https://app.neoncode.co";
+  const referralLink = `${appBaseUrl}/ref/${userData?.referralCode || ""}`;
   const recentTopups = topupHistory.slice(0, 3);
   const chartData = [
     { name: "Wallet", value: userData.walletBalance || 0, color: "#3b82f6" },

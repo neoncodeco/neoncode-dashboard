@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { signIn, signOut, useSession } from "next-auth/react";
 
 const FirebaseAuthContext = createContext(null);
+const normalizeTextValue = (value) => (typeof value === "string" ? value : "");
 
 function useProvideFirebaseAuth() {
   const { data: session, status, update } = useSession();
@@ -104,8 +105,8 @@ function useProvideFirebaseAuth() {
   const login = async (email, pass) => {
     const res = await signIn("credentials", {
       redirect: false,
-      email,
-      password: pass,
+      email: normalizeTextValue(email).trim(),
+      password: normalizeTextValue(pass),
     });
 
     if (res?.error) {
@@ -120,7 +121,12 @@ function useProvideFirebaseAuth() {
     const regRes = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password: pass, name, referralCode }),
+      body: JSON.stringify({
+        email: normalizeTextValue(email).trim(),
+        password: normalizeTextValue(pass),
+        name: normalizeTextValue(name).trim(),
+        referralCode: normalizeTextValue(referralCode).trim(),
+      }),
     });
 
     const regJson = await regRes.json();
@@ -131,8 +137,8 @@ function useProvideFirebaseAuth() {
 
     const loginRes = await signIn("credentials", {
       redirect: false,
-      email,
-      password: pass,
+      email: normalizeTextValue(email).trim(),
+      password: normalizeTextValue(pass),
     });
 
     if (loginRes?.error) {

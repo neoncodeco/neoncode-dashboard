@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 
 const REGISTER_PILLS = ["CREATE", "LAUNCH", "GROW", "SCALE"];
+const normalizeTextValue = (value) => (typeof value === "string" ? value : "");
 
 export default function RegisterClient() {
   const { signup, googleLogin } = useFirebaseAuth();
@@ -58,7 +59,12 @@ export default function RegisterClient() {
     }
 
     try {
-      await signup(email, pass, name, referralCode || undefined);
+      await signup(
+        normalizeTextValue(email).trim(),
+        normalizeTextValue(pass),
+        normalizeTextValue(name).trim(),
+        normalizeTextValue(referralCode).trim() || undefined
+      );
       router.replace("/");
     } catch (err) {
       setError(err.message || "Registration failed");
@@ -206,7 +212,7 @@ export default function RegisterClient() {
                 <RegisterInput
                   label="Full Name"
                   icon={UserRound}
-                  value={name}
+                  value={normalizeTextValue(name)}
                   onChange={setName}
                   placeholder="John Doe"
                 />
@@ -215,7 +221,7 @@ export default function RegisterClient() {
                   label="Email Address"
                   icon={Mail}
                   type="email"
-                  value={email}
+                  value={normalizeTextValue(email)}
                   onChange={setEmail}
                   placeholder="john@neoncode.co"
                 />
@@ -224,7 +230,7 @@ export default function RegisterClient() {
                   label="Password"
                   icon={LockKeyhole}
                   type={showPass ? "text" : "password"}
-                  value={pass}
+                  value={normalizeTextValue(pass)}
                   onChange={setPass}
                   placeholder="Choose a secure password"
                   rightAction={
@@ -242,7 +248,7 @@ export default function RegisterClient() {
                 <RegisterInput
                   label="Referral Code"
                   icon={Ticket}
-                  value={referralCode}
+                  value={normalizeTextValue(referralCode)}
                   onChange={(value) => setReferralCode(value.toUpperCase())}
                   placeholder="Optional referral code"
                 />
