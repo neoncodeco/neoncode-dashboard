@@ -11,7 +11,10 @@ const getGatewayApiKey = () => {
 };
 
 const getVerifyUrl = () => {
-  const baseUrl = process.env.UDDOKTAPAY_BASE_URL?.trim() || "";
+  const baseUrl =
+    process.env.UDDOKTAPAY_BASE_URL?.trim() ||
+    process.env.PAYMENTLY_BASE_URL?.trim() ||
+    "";
   if (!baseUrl) return "";
 
   try {
@@ -167,7 +170,10 @@ export async function POST(req) {
 }
 
 export async function GET(req) {
-  const origin = new URL(req.url).origin;
+  const origin =
+    process.env.NEXT_PUBLIC_BASE_URL?.trim() ||
+    process.env.APP_BASE_URL?.trim() ||
+    new URL(req.url).origin;
   const successUrl = new URL("/user-dashboard/payment-methods?payment=success", origin);
   const failedUrl = new URL("/user-dashboard/payment-methods?payment=failed", origin);
 

@@ -42,7 +42,7 @@ const UserSidebar = () => {
 
   const menuItems = [
     { name: "Overview", icon: LayoutDashboard, href: "/user-dashboard/overview" },
-     { name: "Our Services", icon: CheckSquare, href: "https://www.neoncode.co/services" },
+     { name: "Our Services", icon: CheckSquare, href: "/user-dashboard/services" },
     { name: "Meta Ads Account", icon: LayoutDashboard, href: "/user-dashboard/meta-ads-account" },
     // { name: "Projects", icon: LayoutGrid, href: "/user-dashboard/projects" },
     // { name: "Tasks", icon: CheckSquare, href: "/user-dashboard/tasks" },

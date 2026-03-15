@@ -3,10 +3,21 @@
 
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
-
+ 
+const formatGatewayError = (data) => {
+  const parts = [data?.error || data?.message || "Payment init failed"];
+  if (Array.isArray(data?.issues) && data.issues.length) {
+    parts.push(data.issues.join("\n"));
+  }
+  if (data?.gatewayStatus) {
+    parts.push(`Gateway status: ${data.gatewayStatus}`);
+  }
+  return parts.join("\n\n");
+};
 
 export default function UddoktaPayForm({ token, setMethod }) {
   const [amount, setAmount] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const inputStyle =
     "w-full border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg p-3 transition duration-150 ease-in-out bg-white text-gray-800 placeholder-gray-400";
@@ -18,21 +29,29 @@ export default function UddoktaPayForm({ token, setMethod }) {
     if (!amount) return Swal.fire("Error", "Amount required", "error");
     if (!token) return Swal.fire("Error", "You must login first", "error");
 
-    const res = await fetch("/api/payment/create", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ amount, reason: "Balance Top-up" }),
-    });
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/payment/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ amount, reason: "Balance Top-up" }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data.ok) {
-      window.location.href = data.paymentUrl;
-    } else {
-      Swal.fire("Failed", data.error || data.message || "Payment init failed", "error");
+      if (data.ok) {
+        window.location.href = data.paymentUrl;
+        return;
+      }
+
+      Swal.fire("Failed", formatGatewayError(data), "error");
+    } catch (error) {
+      Swal.fire("Failed", error.message || "Payment init failed", "error");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -54,9 +73,10 @@ export default function UddoktaPayForm({ token, setMethod }) {
       </div>
       <button
         onClick={handleUddoktaPay}
+        disabled={submitting}
         className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold transition duration-150 ease-in-out shadow-lg transform hover:scale-[1.01]"
       >
-        Pay Now via UddoktaPay
+        {submitting ? "Starting payment..." : "Pay Now via UddoktaPay"}
       </button>
       <button
         className="flex items-center justify-center w-full mt-3 text-sm text-gray-600 hover:text-blue-600 transition"

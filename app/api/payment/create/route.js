@@ -17,7 +17,42 @@ const getGatewayApiKey = () => {
 };
 
 const getGatewayBaseUrl = () => {
-  return process.env.UDDOKTAPAY_BASE_URL?.trim() || "";
+  return (
+    process.env.UDDOKTAPAY_BASE_URL?.trim() ||
+    process.env.PAYMENTLY_BASE_URL?.trim() ||
+    ""
+  );
+};
+
+const getPublicBaseUrl = (req) => {
+  const explicitBase =
+    process.env.NEXT_PUBLIC_BASE_URL?.trim() ||
+    process.env.APP_BASE_URL?.trim() ||
+    process.env.UDDOKTAPAY_REDIRECT?.trim() ||
+    "";
+
+  if (explicitBase) {
+    try {
+      return new URL(explicitBase).origin;
+    } catch {
+      return explicitBase.replace(/\/+$/, "");
+    }
+  }
+
+  return new URL(req.url).origin;
+};
+
+const getConfigIssues = ({ apiKey, gatewayBaseUrl, webhookUrl, publicBaseUrl }) => {
+  const issues = [];
+
+  if (!apiKey) issues.push("Missing automatic payment API key.");
+  if (!gatewayBaseUrl) issues.push("Missing automatic payment gateway URL.");
+  if (!publicBaseUrl) issues.push("Missing public app base URL.");
+  if (webhookUrl?.includes("localhost")) {
+    issues.push("Webhook URL is using localhost, which external gateways cannot reach.");
+  }
+
+  return issues;
 };
 
 export async function POST(req) {
@@ -40,24 +75,30 @@ export async function POST(req) {
     const trackingId = crypto.randomBytes(12).toString("hex");
     const apiKey = getGatewayApiKey();
     const gatewayBaseUrl = getGatewayBaseUrl();
-    if (!apiKey) {
-      return NextResponse.json(
-        { ok: false, error: "Missing UddoktaPay API key in environment" },
-        { status: 500 }
-      );
-    }
-    if (!gatewayBaseUrl) {
-      return NextResponse.json(
-        { ok: false, error: "Missing UddoktaPay base URL in environment" },
-        { status: 500 }
-      );
-    }
-
-    const origin = new URL(req.url).origin;
+    const publicBaseUrl = getPublicBaseUrl(req);
     const redirectBase =
-      process.env.UDDOKTAPAY_REDIRECT || `${origin}/user-dashboard/payment-methods`;
-    const cancelBase = process.env.UDDOKTAPAY_CANCEL || `${origin}/api/payment/cancel`;
-    const webhookUrl = process.env.UDDOKTAPAY_WEBHOOK || `${origin}/api/payment/callback`;
+      process.env.UDDOKTAPAY_REDIRECT?.trim() || `${publicBaseUrl}/user-dashboard/payment-methods`;
+    const cancelBase =
+      process.env.UDDOKTAPAY_CANCEL?.trim() || `${publicBaseUrl}/api/payment/cancel`;
+    const webhookUrl =
+      process.env.UDDOKTAPAY_WEBHOOK?.trim() || `${publicBaseUrl}/api/payment/callback`;
+    const configIssues = getConfigIssues({
+      apiKey,
+      gatewayBaseUrl,
+      webhookUrl,
+      publicBaseUrl,
+    });
+
+    if (!apiKey || !gatewayBaseUrl) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Automatic payment gateway is not configured correctly.",
+          issues: configIssues,
+        },
+        { status: 500 }
+      );
+    }
 
     const payload = {
       full_name: decoded.email,
@@ -111,6 +152,7 @@ export async function POST(req) {
     console.error("UDDOKTAPAY CREATE FAILED:", {
       status: res.status,
       gatewayBaseUrl,
+      publicBaseUrl,
       redirectBase,
       cancelBase,
       webhookUrl,
@@ -124,6 +166,13 @@ export async function POST(req) {
           data?.message ||
           data?.error ||
           "Payment init failed from gateway",
+        issues:
+          res.status === 401
+            ? [
+                "The gateway rejected the configured API key.",
+                "Check that the API key matches the same merchant account as the configured gateway URL.",
+              ]
+            : configIssues,
         data,
         gatewayStatus: res.status,
       },

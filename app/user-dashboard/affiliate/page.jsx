@@ -34,7 +34,7 @@ export default function AffiliatePage() {
   const totalReferrers = userData?.referralStats?.totalReferrers || 0;
   const completedUsers = userData?.level1DepositCount || 0;
 
-  const referralLink = `https://neonstudio.com/ref/${userData?.referralCode || "loading..."}`;
+  const referralLink = `https://app.neoncode.co/ref/${userData?.referralCode || "loading..."}`;
 
   const copyLink = () => {
     navigator.clipboard.writeText(referralLink);

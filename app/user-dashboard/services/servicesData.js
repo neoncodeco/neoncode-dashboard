@@ -1,0 +1,153 @@
+"use client";
+
+export const serviceCategories = [
+  {
+    id: "growth",
+    title: "Growth Marketing",
+    tagline: "Performance-first acquisition stack",
+    gradient: "from-[#214211]/55 via-[#d8ff30]/12 to-[#214211]/35",
+    services: [
+      {
+        id: "meta-ads",
+        name: "Data Driven Meta Ads Campaign",
+        summary: "Full-funnel Meta campaigns with audience testing, CAC tracking, and weekly optimization loops.",
+        whatYouGet: ["Creative + copy matrix", "Pixel + CAPI setup", "Weekly analytics dashboard", "Scaling playbook"],
+        bestFor: "Brands wanting predictable lead flow",
+        timeline: "7-10 days to launch",
+        model: "Monthly retainer + ad budget",
+        image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1200&auto=format&fit=crop",
+      },
+      {
+        id: "business-profile",
+        name: "Professional Business Profile",
+        summary: "Conversion-focused company profile kit for Facebook, LinkedIn, and Google Business.",
+        whatYouGet: ["Brand story rewrite", "Profile cover designs", "Trust assets section", "Posting guideline"],
+        bestFor: "Service businesses and agencies",
+        timeline: "3-5 days",
+        model: "One-time setup",
+        image: "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1200&auto=format&fit=crop",
+      },
+      {
+        id: "seo-visibility",
+        name: "Search Visibility Sprint",
+        summary: "Technical fixes + content structure to improve discoverability and qualified organic traffic.",
+        whatYouGet: ["Audit report", "On-page optimization", "Schema + speed fixes", "Keyword mapping"],
+        bestFor: "Sites with low organic reach",
+        timeline: "2-3 weeks",
+        model: "Sprint based",
+        image: "https://images.unsplash.com/photo-1572177812156-58036aae439c?q=80&w=1200&auto=format&fit=crop",
+      },
+      {
+        id: "social-ops",
+        name: "Social Growth Operations",
+        summary: "Content planning and publishing rhythm engineered to generate inbound conversations.",
+        whatYouGet: ["30-day calendar", "Short-form creative direction", "Community response flow", "Monthly insights"],
+        bestFor: "Founders building authority",
+        timeline: "5 days onboarding",
+        model: "Monthly retainer",
+        image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=1200&auto=format&fit=crop",
+      },
+    ],
+  },
+  {
+    id: "design",
+    title: "Creative + Brand",
+    tagline: "Distinct visuals people remember",
+    gradient: "from-[#3e5f1d]/32 via-[#d8ff30]/12 to-[#214211]/28",
+    services: [
+      {
+        id: "creative-graphics",
+        name: "Creative Graphic Design",
+        summary: "Campaign-ready visuals for ads, social feeds, and product stories with consistent style.",
+        whatYouGet: ["Design system", "Ad/post templates", "Motion-ready assets", "Production files"],
+        bestFor: "Teams needing fast, premium creatives",
+        timeline: "4-7 days",
+        model: "Package or monthly",
+        image: "https://images.unsplash.com/photo-1452802447250-470a88ac82bc?q=80&w=1200&auto=format&fit=crop",
+      },
+      {
+        id: "branding",
+        name: "Branding",
+        summary: "Positioning, voice, and identity crafted to make your company look and feel premium.",
+        whatYouGet: ["Brand strategy", "Logo suite", "Color + typography guide", "Usage handbook"],
+        bestFor: "New launches and rebrands",
+        timeline: "2-4 weeks",
+        model: "Project based",
+        image: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=1200&auto=format&fit=crop",
+      },
+      {
+        id: "ui-ux",
+        name: "Product UI/UX Design",
+        summary: "Interface systems that balance visual quality, speed, and conversion outcomes.",
+        whatYouGet: ["User flow", "Wireframes", "Hi-fi screens", "Prototype handoff"],
+        bestFor: "SaaS, dashboard, marketplace",
+        timeline: "1-3 weeks",
+        model: "Per module",
+        image: "https://images.unsplash.com/photo-1559028012-481c04fa702d?q=80&w=1200&auto=format&fit=crop",
+      },
+    ],
+  },
+  {
+    id: "build",
+    title: "Web + App Engineering",
+    tagline: "Production-grade products that scale",
+    gradient: "from-[#214211]/55 via-[#a7c81f]/12 to-[#0f2616]/42",
+    services: [
+      {
+        id: "website-dev",
+        name: "Website Development",
+        summary: "Fast, SEO-aware, responsive websites with CMS control and conversion-ready structure.",
+        whatYouGet: ["Custom UI build", "CMS integration", "Core web vitals tuning", "Deployment + docs"],
+        bestFor: "Corporate and service websites",
+        timeline: "2-5 weeks",
+        model: "Project based",
+        image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
+      },
+      {
+        id: "web-app-dev",
+        name: "Web App Development",
+        summary: "Secure and maintainable web applications with role-based flows and clean architecture.",
+        whatYouGet: ["Auth + RBAC", "API integration", "Admin dashboard", "QA + release pipeline"],
+        bestFor: "Internal tools and SaaS MVP",
+        timeline: "3-8 weeks",
+        model: "Milestone based",
+        image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?q=80&w=1200&auto=format&fit=crop",
+      },
+      {
+        id: "app-development",
+        name: "App Development",
+        summary: "Cross-platform mobile apps with smooth UX, analytics hooks, and app-store readiness.",
+        whatYouGet: ["iOS + Android build", "Push setup", "Crash analytics", "Store publishing support"],
+        bestFor: "Consumer and service apps",
+        timeline: "4-10 weeks",
+        model: "Milestone based",
+        image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?q=80&w=1200&auto=format&fit=crop",
+      },
+      {
+        id: "automation",
+        name: "Workflow Automation",
+        summary: "No-code and API-driven automations that reduce repetitive ops and manual errors.",
+        whatYouGet: ["Process mapping", "Automation build", "Alerting", "Owner training"],
+        bestFor: "Growing teams with repetitive ops",
+        timeline: "1-2 weeks",
+        model: "Scope based",
+        image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=1200&auto=format&fit=crop",
+      },
+    ],
+  },
+];
+
+export const servicesById = Object.fromEntries(
+  serviceCategories.flatMap((category) =>
+    category.services.map((service) => [
+      service.id,
+      {
+        ...service,
+        categoryId: category.id,
+        categoryTitle: category.title,
+        categoryTagline: category.tagline,
+        categoryGradient: category.gradient,
+      },
+    ])
+  )
+);
