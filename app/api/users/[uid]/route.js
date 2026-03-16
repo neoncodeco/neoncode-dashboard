@@ -2,6 +2,7 @@ import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import { getTeamMemberPublicUrl, getTeamMemberQrUrlWithFallback } from "@/lib/teamMemberProfile";
 import { findTeamMemberByUserId, getTeamMemberView } from "@/lib/teamMembers";
+import { DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@/lib/currency";
 
 export async function GET(req, { params }) {
   try {
@@ -16,9 +17,14 @@ export async function GET(req, { params }) {
     }
 
     const { db } = await getDB();
-    const user = await db.collection("users").findOne({ userId: uid });
-    const teamMemberDoc = await findTeamMemberByUserId(db, uid);
+    const [user, teamMemberDoc, usdRateSetting] = await Promise.all([
+      db.collection("users").findOne({ userId: uid }),
+      findTeamMemberByUserId(db, uid),
+      db.collection("settings").findOne({ key: "USD_TO_BDT_RATE" }),
+    ]);
     const teamMemberView = getTeamMemberView(user || {}, teamMemberDoc);
+    const globalUsdToBdtRate = resolveUsdToBdtRate(usdRateSetting?.value, DEFAULT_USD_TO_BDT_RATE);
+    const effectiveUsdToBdtRate = resolveUsdToBdtRate(user?.metaAdsConfig?.usdRate, globalUsdToBdtRate);
 
     if (!user) {
       return Response.json({ error: "User not found" }, { status: 404 });
@@ -54,8 +60,12 @@ export async function GET(req, { params }) {
         photo: user.photo,
         coverPhoto: user.coverPhoto ?? "",
         payoutMethods: user.payoutMethods ?? {},
+        currencyConfig: {
+          usdToBdtRate: effectiveUsdToBdtRate,
+          globalUsdToBdtRate,
+        },
         metaAdsConfig: {
-          usdRate: user.metaAdsConfig?.usdRate ?? 150,
+          usdRate: effectiveUsdToBdtRate,
           allowBudgetIncrease: user.metaAdsConfig?.allowBudgetIncrease ?? true,
           allowTopupAction: user.metaAdsConfig?.allowTopupAction ?? true,
           remainingBudgetOverride: user.metaAdsConfig?.remainingBudgetOverride ?? null,

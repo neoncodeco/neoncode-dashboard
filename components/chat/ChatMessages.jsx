@@ -53,12 +53,12 @@ export default function ChatMessages({ chatId, currentRole = "user" }) {
   return (
     <div 
       ref={scrollRef} 
-      className="flex-1 space-y-4 overflow-y-auto bg-gray-50/50 p-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      className="flex-1 space-y-4 overflow-y-auto bg-[#0c1830] p-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       style={{ height: "100%" }}
     >
       {messages.length === 0 && (
         <div className="flex items-center justify-center h-full">
-          <p className="rounded-full border border-[#d7e4cf] bg-white/80 px-4 py-2 text-xs text-[#55714a] shadow-sm">
+          <p className="rounded-full border border-[#2c4167] bg-[#132546] px-4 py-2 text-xs text-[#9fb3de] shadow-sm">
             Start the conversation...
           </p>
         </div>
@@ -76,8 +76,8 @@ export default function ChatMessages({ chatId, currentRole = "user" }) {
             <div
               className={`max-w-[75%] px-4 py-2.5 shadow-sm transition-all ${
                 isMe
-                  ? "ml-12 rounded-[20px] rounded-tr-[4px] bg-[#214311] text-white"
-                  : "mr-12 rounded-[20px] rounded-tl-[4px] border border-[#dce8d3] bg-white text-zinc-800"
+                  ? "ml-12 rounded-[20px] rounded-tr-[4px] bg-[#8ab4ff] text-[#081227]"
+                  : "mr-12 rounded-[20px] rounded-tl-[4px] border border-[#2c4167] bg-[#132546] text-[#f5f8ff]"
               }`}
             >
               {/* Message Content */}
@@ -99,7 +99,7 @@ export default function ChatMessages({ chatId, currentRole = "user" }) {
               )}
 
               {/* Timestamp */}
-              <div className={`mt-1.5 flex text-[10px] ${isMe ? "justify-end text-[#cde5ba]" : "justify-start text-zinc-400"}`}>
+              <div className={`mt-1.5 flex text-[10px] ${isMe ? "justify-end text-[#29426d]" : "justify-start text-[#8fa5cf]"}`}>
                 {m.createdAt ? (
                   new Date(m.createdAt).toLocaleTimeString([], {
                     hour: "2-digit",

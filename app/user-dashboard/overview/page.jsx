@@ -29,8 +29,19 @@ import {
   Share2,
 } from "lucide-react";
 import Link from "next/link";
+import CurrencyAmount from "@/components/CurrencyAmount";
+import { formatUsd, resolveUsdToBdtRate } from "@/lib/currency";
 
-const StatCard = ({ title, value, icon: Icon, color, suffix = "$", children }) => (
+const StatCard = ({
+  title,
+  value,
+  icon: Icon,
+  color,
+  suffix = "$",
+  children,
+  usdToBdtRate,
+  showCurrency = false,
+}) => (
   <div className="group rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:shadow-md">
     <div className="mb-4 flex items-start justify-between">
       <div
@@ -40,9 +51,18 @@ const StatCard = ({ title, value, icon: Icon, color, suffix = "$", children }) =
       </div>
       <div className="text-right">
         <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{title}</p>
-        <h3 className="mt-1 text-2xl font-black text-gray-900">
-          {value?.toLocaleString()} <span className="text-sm font-medium">{suffix}</span>
-        </h3>
+        {showCurrency ? (
+          <CurrencyAmount
+            value={value}
+            usdToBdtRate={usdToBdtRate}
+            primaryClassName="mt-1 text-2xl font-black text-gray-900"
+            secondaryClassName="mt-1 text-xs font-semibold text-gray-500"
+          />
+        ) : (
+          <h3 className="mt-1 text-2xl font-black text-gray-900">
+            {value?.toLocaleString()} <span className="text-sm font-medium">{suffix}</span>
+          </h3>
+        )}
       </div>
     </div>
     {children}
@@ -113,6 +133,7 @@ const OverviewPage = () => {
   }
 
   const stats = userData.referralStats || {};
+  const usdToBdtRate = resolveUsdToBdtRate(userData?.currencyConfig?.usdToBdtRate);
   const appBaseUrl = typeof window !== "undefined" ? window.location.origin : "https://app.neoncode.co";
   const referralLink = `${appBaseUrl}/ref/${userData?.referralCode || ""}`;
   const recentTopups = topupHistory.slice(0, 3);
@@ -157,15 +178,29 @@ const OverviewPage = () => {
       </div>
 
       <div className="mb-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <StatCard title="Wallet Balance" value={userData.walletBalance} icon={Wallet} color="bg-blue-600" />
-        <StatCard title="Topup Balance" value={userData.topupBalance} icon={CreditCard} color="bg-indigo-600">
+        <StatCard
+          title="Wallet Balance"
+          value={userData.walletBalance}
+          usdToBdtRate={usdToBdtRate}
+          showCurrency
+          icon={Wallet}
+          color="bg-blue-600"
+        />
+        <StatCard
+          title="Topup Balance"
+          value={userData.topupBalance}
+          usdToBdtRate={usdToBdtRate}
+          showCurrency
+          icon={CreditCard}
+          color="bg-indigo-600"
+        >
           <div className="space-y-2 border-t border-gray-100 pt-4">
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Recent approved topup</p>
             {recentTopups.length > 0 ? (
               recentTopups.map((item) => (
                 <div key={item.name} className="flex items-center justify-between rounded-xl bg-gray-50 px-3 py-2">
                   <span className="text-xs font-semibold text-gray-500">{item.name}</span>
-                  <span className="text-xs font-black text-indigo-600">${item.value}</span>
+                  <span className="text-xs font-black text-indigo-600">{formatUsd(item.value)}</span>
                 </div>
               ))
             ) : (
@@ -174,8 +209,22 @@ const OverviewPage = () => {
           </div>
         </StatCard>
         <StatCard title="Total Referrers" value={stats.totalReferrers} icon={Users} color="bg-orange-500" suffix="Users" />
-        <StatCard title="Refer Income" value={stats.totalReferIncome} icon={TrendingUp} color="bg-emerald-600" />
-        <StatCard title="Total Payout" value={stats.totalPayout} icon={DollarSign} color="bg-rose-600" />
+        <StatCard
+          title="Refer Income"
+          value={stats.totalReferIncome}
+          usdToBdtRate={usdToBdtRate}
+          showCurrency
+          icon={TrendingUp}
+          color="bg-emerald-600"
+        />
+        <StatCard
+          title="Total Payout"
+          value={stats.totalPayout}
+          usdToBdtRate={usdToBdtRate}
+          showCurrency
+          icon={DollarSign}
+          color="bg-rose-600"
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-8 xl:grid-cols-12">
@@ -292,7 +341,12 @@ const OverviewPage = () => {
                 </div>
                 <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-4 backdrop-blur">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Total earning</p>
-                  <p className="mt-3 text-3xl font-black text-white">৳{stats.totalReferIncome || 0}</p>
+                  <CurrencyAmount
+                    value={stats.totalReferIncome || 0}
+                    usdToBdtRate={usdToBdtRate}
+                    primaryClassName="mt-3 text-3xl font-black text-white"
+                    secondaryClassName="mt-1 text-xs font-semibold text-slate-300"
+                  />
                   <p className="mt-1 text-xs text-slate-300">Income generated from referrals</p>
                 </div>
               </div>

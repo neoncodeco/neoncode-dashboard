@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
+import { convertBdtToUsd, DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@/lib/currency";
 
 const VERIFIED_SUCCESS_STATUS = "COMPLETED";
 const getGatewayApiKey = () => {
@@ -94,6 +95,23 @@ const verifyPayment = async (trxId) => {
   };
 };
 
+const getCreditedUsdAmount = async (db, paymentDoc) => {
+  if (Number(paymentDoc.creditedUsdAmount) > 0) {
+    return Number(paymentDoc.creditedUsdAmount);
+  }
+
+  const amountBdt = Number(paymentDoc.amountBdt ?? paymentDoc.amount ?? 0);
+  if (amountBdt <= 0) return 0;
+
+  const fallbackRateSetting = await db.collection("settings").findOne({ key: "USD_TO_BDT_RATE" });
+  const usdToBdtRate = resolveUsdToBdtRate(
+    paymentDoc.usdToBdtRate,
+    resolveUsdToBdtRate(fallbackRateSetting?.value, DEFAULT_USD_TO_BDT_RATE)
+  );
+
+  return convertBdtToUsd(amountBdt, usdToBdtRate);
+};
+
 const processPayment = async ({ trxId, callbackData = null }) => {
   const { db } = await getDB();
 
@@ -137,11 +155,11 @@ const processPayment = async ({ trxId, callbackData = null }) => {
   );
 
   if (approveResult.modifiedCount > 0) {
-    const amount = Number(paymentDoc.amount) || 0;
-    if (amount > 0 && paymentDoc.userUid) {
+    const creditedUsdAmount = await getCreditedUsdAmount(db, paymentDoc);
+    if (creditedUsdAmount > 0 && paymentDoc.userUid) {
       await db.collection("users").updateOne(
         { userId: paymentDoc.userUid },
-        { $inc: { walletBalance: amount, topupBalance: amount } }
+        { $inc: { walletBalance: creditedUsdAmount, topupBalance: creditedUsdAmount } }
       );
     }
   }

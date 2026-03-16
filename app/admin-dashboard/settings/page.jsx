@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
+import { formatBdt } from "@/lib/currency";
 import { 
   Key, 
   Save, 
@@ -21,6 +22,7 @@ import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 export default function TokenSettings() {
   const { token } = useFirebaseAuth();
   const [fbToken, setFbToken] = useState("");
+  const [usdToBdtRate, setUsdToBdtRate] = useState("150");
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
@@ -35,6 +37,7 @@ export default function TokenSettings() {
         const data = await res.json();
         if (!res.ok) throw data;
         setFbToken(data.token || "");
+        setUsdToBdtRate(String(data.usdToBdtRate || 150));
       })
       .catch((err) => {
         Swal.fire({
@@ -55,13 +58,17 @@ export default function TokenSettings() {
       Swal.fire({ icon: "warning", title: "Empty Token", text: "Please provide a Facebook System Token.", confirmButtonColor: "#000" });
       return;
     }
+    if (!Number(usdToBdtRate) || Number(usdToBdtRate) <= 0) {
+      Swal.fire({ icon: "warning", title: "Invalid Rate", text: "Please provide a valid USD to BDT rate.", confirmButtonColor: "#000" });
+      return;
+    }
 
     setLoading(true);
     try {
       const res = await fetch("/api/admin/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ newToken: fbToken }),
+        body: JSON.stringify({ newToken: fbToken, usdToBdtRate: Number(usdToBdtRate) }),
       });
 
       if (!res.ok) throw await res.json();
@@ -93,9 +100,9 @@ export default function TokenSettings() {
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 tracking-tight">System Controls & API</h1>
             <p className="text-gray-500 mt-2 font-medium">Manage backend configurations, security keys, and environment variables.</p>
           </div>
-          <div className="flex items-center gap-3 px-4 sm:px-6 py-3 bg-emerald-50 text-emerald-700 rounded-2xl border border-emerald-100 shadow-sm w-full md:w-auto justify-center md:justify-start">
-            <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></div>
-            <span className="text-xs font-black uppercase tracking-widest text-emerald-800">System Online</span>
+          <div className="admin-panel-muted flex w-full items-center justify-center gap-3 rounded-2xl border px-4 py-3 shadow-sm md:w-auto md:justify-start sm:px-6">
+            <div className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping"></div>
+            <span className="text-xs font-black uppercase tracking-widest text-emerald-200">System Online</span>
           </div>
         </div>
 
@@ -108,7 +115,7 @@ export default function TokenSettings() {
               <div className="p-5 sm:p-8 md:p-12 space-y-8">
                 
                 <div className="flex items-center gap-4 sm:gap-5">
-                  <div className="p-4 bg-black text-white rounded-2xl shadow-xl shadow-black/20 transform -rotate-3">
+                  <div className="admin-accent-button rounded-2xl p-4 shadow-xl shadow-[#2c53a0]/30 transform -rotate-3">
                     <Terminal size={28} />
                   </div>
                   <div>
@@ -121,9 +128,32 @@ export default function TokenSettings() {
                   <div className="relative group">
                     <div className="flex justify-between items-center mb-3">
                         <label className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">
+                          Global USD to BDT Rate
+                        </label>
+                        <span className="admin-badge rounded-md px-2 py-0.5 text-[10px] font-bold italic">
+                          1 USD = {formatBdt(Number(usdToBdtRate || 0), { round: false, minimumFractionDigits: 2 })}
+                        </span>
+                    </div>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={usdToBdtRate}
+                      onChange={(e) => setUsdToBdtRate(e.target.value)}
+                      placeholder="Enter BDT value for 1 USD"
+                      className="w-full p-5 sm:p-6 bg-gray-50 border border-gray-100 rounded-[2rem] text-sm font-semibold focus:outline-none focus:ring-8 focus:ring-black/5 focus:border-black transition-all text-gray-700 shadow-inner"
+                    />
+                    <p className="mt-3 text-xs text-slate-500 leading-relaxed font-medium italic">
+                      Wallet, remaining budget, and other USD-based dashboard values will use this admin-defined conversion rate.
+                    </p>
+                  </div>
+
+                  <div className="relative group">
+                    <div className="flex justify-between items-center mb-3">
+                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">
                           Secure API Key Input
                         </label>
-                        <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-md font-bold text-gray-400 italic">Encrypted Connection</span>
+                        <span className="admin-badge rounded-md px-2 py-0.5 text-[10px] font-bold italic">Encrypted Connection</span>
                     </div>
                     <textarea
                       value={fbToken}
@@ -137,9 +167,9 @@ export default function TokenSettings() {
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-4 p-4 sm:p-6 bg-slate-50 rounded-[2rem] border border-slate-200 border-dashed">
-                    <div className="p-2 bg-slate-200 rounded-xl">
-                        <AlertCircle size={20} className="text-slate-600" />
+                  <div className="admin-panel-muted flex items-start gap-4 rounded-[2rem] border border-dashed p-4 sm:p-6">
+                    <div className="rounded-xl bg-[#203963] p-2">
+                        <AlertCircle size={20} className="text-[#dce8ff]" />
                     </div>
                     <div>
                       <p className="text-sm text-slate-900 font-black">Security Protocol</p>
@@ -154,7 +184,7 @@ export default function TokenSettings() {
                   <button
                     onClick={handleUpdate}
                     disabled={loading}
-                    className="w-full md:w-auto flex items-center justify-center gap-4 px-8 sm:px-12 py-4 sm:py-5 bg-black text-white rounded-[2rem] text-sm font-black hover:bg-gray-800 transition-all shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] hover:translate-y-[-2px] active:scale-95 disabled:bg-gray-300"
+                    className="admin-accent-button flex w-full items-center justify-center gap-4 rounded-[2rem] px-8 py-4 text-sm font-black transition-all hover:-translate-y-[2px] active:scale-95 disabled:opacity-50 md:w-auto sm:px-12 sm:py-5"
                   >
                     {loading ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
                     {loading ? "PROCESSING..." : "UPDATE SYSTEM ACCESS"}
@@ -165,16 +195,16 @@ export default function TokenSettings() {
 
             {/* --- BOTTOM GRID: DOCUMENTATION & TIPS --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="bg-gradient-to-br from-gray-900 to-black rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
+                <div className="rounded-[2.5rem] border border-[#2c4167] bg-gradient-to-br from-[#132546] to-[#0d1d3b] p-8 text-white shadow-2xl relative overflow-hidden group">
                     <div className="relative z-10">
                         <div className="flex items-center gap-4 mb-4">
-                            <Info size={28} className="text-gray-400" />
+                            <Info size={28} className="text-[#9fb3de]" />
                             <h3 className="text-xl font-black">Graph API Docs</h3>
                         </div>
                         <p className="text-gray-400 text-xs leading-relaxed mb-6 font-medium">
                             Need help with permissions? Visit Meta Developer documentation to learn more about <code>ads_management</code> and <code>business_management</code> scopes.
                         </p>
-                        <button className="px-6 py-3 bg-white text-black rounded-xl text-xs font-black transition-all uppercase tracking-widest hover:bg-gray-200">
+                        <button className="admin-accent-button rounded-xl px-6 py-3 text-xs font-black uppercase tracking-widest transition-all">
                             View Documentation
                         </button>
                     </div>
@@ -185,7 +215,7 @@ export default function TokenSettings() {
 
                 <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm flex flex-col justify-center">
                     <div className="flex items-center gap-4 mb-3">
-                        <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-300">
                             <ShieldCheck size={20} />
                         </div>
                         <h3 className="text-lg font-black text-gray-800 tracking-tight">Privacy Focus</h3>
@@ -214,7 +244,7 @@ export default function TokenSettings() {
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-gray-50">
                     <span className="text-xs font-bold text-gray-500 uppercase tracking-tighter">Environment</span>
-                    <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg uppercase border border-blue-100">Production</span>
+                    <span className="admin-badge rounded-lg px-2.5 py-1 text-[10px] font-black uppercase">Production</span>
                   </div>
                   <div className="flex justify-between items-center py-2">
                     <span className="text-xs font-bold text-gray-500 uppercase tracking-tighter">Node Version</span>
@@ -229,14 +259,14 @@ export default function TokenSettings() {
                  <Database size={14} /> Analytics Sync
                </h3>
                <div className="space-y-4">
-                   <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                   <div className="admin-panel-muted flex items-center gap-4 rounded-2xl border p-4">
                       <RefreshCw size={20} className="text-gray-400 animate-spin-slow" />
                       <div>
                         <p className="text-[9px] font-black text-gray-400 uppercase leading-none mb-1">Last Sync</p>
                         <p className="text-xs font-black text-gray-800">{new Date().toLocaleTimeString()}</p>
                       </div>
                    </div>
-                   <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                   <div className="admin-panel-muted flex items-center gap-4 rounded-2xl border p-4">
                       <Clock size={20} className="text-gray-400" />
                       <div>
                         <p className="text-[9px] font-black text-gray-400 uppercase leading-none mb-1">Local Time</p>
@@ -247,10 +277,10 @@ export default function TokenSettings() {
             </div>
 
             {/* Logs Placeholder */}
-            <div className="p-5 sm:p-8 bg-indigo-50/50 rounded-[2.5rem] border border-indigo-100 flex flex-col items-center text-center">
-                <Activity size={32} className="text-indigo-600 mb-3" />
-                <h4 className="text-sm font-black text-indigo-900 mb-2 uppercase tracking-tighter">Activity Monitoring</h4>
-                <p className="text-[10px] text-indigo-400 font-bold leading-relaxed px-4 uppercase">
+            <div className="admin-panel-muted flex flex-col items-center rounded-[2.5rem] border p-5 text-center sm:p-8">
+                <Activity size={32} className="mb-3 text-[#8ab4ff]" />
+                <h4 className="mb-2 text-sm font-black uppercase tracking-tighter text-[#dce8ff]">Activity Monitoring</h4>
+                <p className="px-4 text-[10px] font-bold uppercase leading-relaxed text-[#9fb3de]">
                     System tracking is enabled for all configuration changes.
                 </p>
             </div>

@@ -22,22 +22,28 @@ export default function Overview() {
       />
 
       {/* --- ১. হেডার সেকশন (ওয়েলকাম মেসেজ এবং রিকোয়েস্ট বাটন) --- */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-2 md:pt-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">
-            Meta Ads Account Panel
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Manage your ad accounts and requests efficiently.
-          </p>
+      <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(17,31,58,0.95),rgba(9,19,40,0.96))] p-6 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.95)]">
+        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+          <div className="max-w-2xl">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-blue-100">
+              <Plus size={12} />
+              Meta Ads Access
+            </div>
+            <h1 className="text-3xl font-black tracking-tight text-white">
+              Meta Ads Account Panel
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              Request new accounts, monitor live balances, and manage production ad spend from one dashboard.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsReqAdAcModalOpen(true)}
+            className="inline-flex items-center gap-2 rounded-2xl bg-blue-500 px-5 py-3 text-sm font-black text-white transition-all hover:bg-blue-600 shadow-lg shadow-blue-900/30"
+          >
+            <Plus size={18} />
+            Request New Account
+          </button>
         </div>
-        <button
-          onClick={() => setIsReqAdAcModalOpen(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-sm"
-        >
-          <Plus size={18} />
-          Request New Account
-        </button>
       </div>
 
       <AdAccountUi />

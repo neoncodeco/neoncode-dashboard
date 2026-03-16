@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import {
   DollarSign,
   Users,
@@ -41,7 +41,7 @@ export default function AffiliatePayoutsPage() {
   const [initialLoading, setInitialLoading] = useState(true);
 
   // --- LOAD REQUESTS ---
-  const loadRequests = async () => {
+  const loadRequests = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/affiliate/list", {
         method: "GET",
@@ -56,11 +56,11 @@ export default function AffiliatePayoutsPage() {
     } finally {
       setInitialLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     if (token) loadRequests();
-  }, [token]);
+  }, [token, loadRequests]);
 
   // --- EXPORT CSV FUNCTION ---
   const handleExportCSV = () => {
@@ -158,7 +158,7 @@ export default function AffiliatePayoutsPage() {
         <button
           onClick={handleExportCSV}
           disabled={filteredRequests.length === 0}
-          className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-black px-5 py-2.5 text-sm font-bold text-white shadow-lg transition-all active:scale-95 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
+          className="admin-accent-button flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Download size={18} /> Export Data (CSV)
         </button>
@@ -244,7 +244,7 @@ export default function AffiliatePayoutsPage() {
                 <tr key={req._id} className="group hover:bg-gray-50/80 transition-all">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600">
+                        <div className="admin-panel-muted flex h-10 w-10 items-center justify-center rounded-full font-bold text-[#dce8ff]">
                             {req.userName?.charAt(0)}
                         </div>
                         <div>
@@ -257,7 +257,7 @@ export default function AffiliatePayoutsPage() {
                   <td className="px-6 py-4 font-black text-gray-900">${req.amount?.toLocaleString()}</td>
                   
                   <td className="px-6 py-4 text-center">
-                    <p className="text-xs font-bold text-gray-700 uppercase">{req.method}</p>
+                    <p className="text-xs font-bold uppercase text-[#dce8ff]">{req.method}</p>
                     <p className="text-[10px] text-gray-400 font-mono mt-0.5">{req.account?.number || 'N/A'}</p>
                   </td>
 
@@ -277,14 +277,14 @@ export default function AffiliatePayoutsPage() {
                         <button
                           onClick={() => handleAction(req._id, "approve")}
                           disabled={loading}
-                          className="p-2 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100"
+                          className="rounded-lg border border-emerald-400/20 bg-emerald-400/10 p-2 text-emerald-200 transition-all hover:bg-emerald-500 hover:text-white"
                         >
                           <CheckCircle size={16} />
                         </button>
                         <button
                           onClick={() => handleAction(req._id, "reject")}
                           disabled={loading}
-                          className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all border border-red-100"
+                          className="rounded-lg border border-red-400/20 bg-red-400/10 p-2 text-red-200 transition-all hover:bg-red-500 hover:text-white"
                         >
                           <XCircle size={16} />
                         </button>

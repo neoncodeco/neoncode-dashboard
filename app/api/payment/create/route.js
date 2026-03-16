@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import crypto from "crypto";
+import { convertBdtToUsd, DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@/lib/currency";
 
 const withInvoiceId = (url, trackingId) => {
   const separator = url.includes("?") ? "&" : "?";
@@ -55,6 +56,11 @@ const getConfigIssues = ({ apiKey, gatewayBaseUrl, webhookUrl, publicBaseUrl }) 
   return issues;
 };
 
+const getCurrentUsdToBdtRate = async (db) => {
+  const rateSetting = await db.collection("settings").findOne({ key: "USD_TO_BDT_RATE" });
+  return resolveUsdToBdtRate(rateSetting?.value, DEFAULT_USD_TO_BDT_RATE);
+};
+
 export async function POST(req) {
   try {
     const decoded = await verifyToken(req);
@@ -63,11 +69,11 @@ export async function POST(req) {
     }
 
     const { amount, reason } = await req.json();
-    const numericAmount = Number(amount);
+    const numericAmountBdt = Number(amount);
 
-    if (!numericAmount || numericAmount <= 0 || !reason) {
+    if (!numericAmountBdt || numericAmountBdt <= 0 || !reason) {
       return NextResponse.json(
-        { ok: false, error: "Valid amount and reason are required" },
+        { ok: false, error: "Valid BDT amount and reason are required" },
         { status: 400 }
       );
     }
@@ -100,11 +106,15 @@ export async function POST(req) {
       );
     }
 
+    const { db } = await getDB();
+    const usdToBdtRate = await getCurrentUsdToBdtRate(db);
+    const creditedUsdAmount = convertBdtToUsd(numericAmountBdt, usdToBdtRate);
+
     const payload = {
       full_name: decoded.email,
       email: decoded.email,
-      amount: String(numericAmount),
-      metadata: { userUid: decoded.uid, reason },
+      amount: String(numericAmountBdt),
+      metadata: { userUid: decoded.uid, reason, currency: "BDT", usdToBdtRate },
       redirect_url: withInvoiceId(redirectBase, trackingId),
       cancel_url: withInvoiceId(cancelBase, trackingId),
       webhook_url: webhookUrl,
@@ -129,14 +139,16 @@ export async function POST(req) {
     }
 
     if (res.ok && data.status && data.payment_url) {
-      const { db } = await getDB();
-
       await db.collection("payments").insertOne({
         trx_id: trackingId,
         userUid: decoded.uid,
         email: decoded.email,
         method: "uddoktapay",
-        amount: numericAmount,
+        amount: numericAmountBdt,
+        amountBdt: numericAmountBdt,
+        creditedUsdAmount,
+        currency: "BDT",
+        usdToBdtRate,
         reason,
         status: "pending",
         createdAt: new Date(),

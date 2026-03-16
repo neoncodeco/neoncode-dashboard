@@ -223,8 +223,8 @@ export default function WithdrawModal({ balance, onClose }) {
             <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-extrabold">$</span>
             <input
               type="number"
-              min={MINIMUM_WITHDRAW_AMOUNT} // 💡 Min value set for UX
-              placeholder={`Enter minimum $${MINIMUM_WITHDRAW_AMOUNT}`} // 💡 Updated Placeholder
+              min={MINIMUM_WITHDRAW_AMOUNT} 
+              placeholder={`Enter minimum $${MINIMUM_WITHDRAW_AMOUNT}`} 
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition duration-150 text-lg font-semibold"

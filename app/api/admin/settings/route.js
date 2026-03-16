@@ -1,7 +1,7 @@
-
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
+import { DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@/lib/currency";
 
 export async function GET(req) {
   try {
@@ -15,15 +15,20 @@ export async function GET(req) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // settings কালেকশন থেকে টোকেনটি খুঁজে বের করা
-    const settings = await db.collection("settings").findOne({ key: "FB_SYS_TOKEN" });
+    const [tokenSetting, usdRateSetting] = await Promise.all([
+      db.collection("settings").findOne({ key: "FB_SYS_TOKEN" }),
+      db.collection("settings").findOne({ key: "USD_TO_BDT_RATE" }),
+    ]);
 
-    return NextResponse.json({ ok: true, token: settings?.value || "" });
-  } catch (err) {
+    return NextResponse.json({
+      ok: true,
+      token: tokenSetting?.value || "",
+      usdToBdtRate: resolveUsdToBdtRate(usdRateSetting?.value, DEFAULT_USD_TO_BDT_RATE),
+    });
+  } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
-
 
 export async function POST(req) {
   try {
@@ -37,17 +42,42 @@ export async function POST(req) {
       return NextResponse.json({ error: "Forbidden. Only Admin can change settings." }, { status: 403 });
     }
 
-    const { newToken } = await req.json();
+    const { newToken, usdToBdtRate } = await req.json();
+    const updates = [];
 
-    // টোকেন আপডেট বা ইনসার্ট করা
-    await db.collection("settings").updateOne(
-      { key: "FB_SYS_TOKEN" },
-      { $set: { value: newToken, updatedAt: new Date() } },
-      { upsert: true }
-    );
+    if (typeof newToken === "string") {
+      updates.push(
+        db.collection("settings").updateOne(
+          { key: "FB_SYS_TOKEN" },
+          { $set: { value: newToken, updatedAt: new Date() } },
+          { upsert: true }
+        )
+      );
+    }
 
-    return NextResponse.json({ ok: true, message: "Token updated successfully" });
-  } catch (err) {
+    if (usdToBdtRate !== undefined) {
+      const normalizedRate = resolveUsdToBdtRate(usdToBdtRate, DEFAULT_USD_TO_BDT_RATE);
+      if (normalizedRate <= 0) {
+        return NextResponse.json({ error: "USD to BDT rate must be greater than 0." }, { status: 400 });
+      }
+
+      updates.push(
+        db.collection("settings").updateOne(
+          { key: "USD_TO_BDT_RATE" },
+          { $set: { value: normalizedRate, updatedAt: new Date() } },
+          { upsert: true }
+        )
+      );
+    }
+
+    if (!updates.length) {
+      return NextResponse.json({ error: "No settings payload provided." }, { status: 400 });
+    }
+
+    await Promise.all(updates);
+
+    return NextResponse.json({ ok: true, message: "Settings updated successfully" });
+  } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

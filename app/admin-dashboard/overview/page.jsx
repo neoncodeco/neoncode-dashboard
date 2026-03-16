@@ -124,7 +124,7 @@ export default function AdminDashboard() {
           </div>
           <button 
             onClick={handleDownload}
-            className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-black px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-gray-800"
+            className="admin-accent-button flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition"
           >
             <Download size={16} /> Download
           </button>
@@ -134,7 +134,7 @@ export default function AdminDashboard() {
       {/* --- ২. ফিন্যান্সিয়াল মেট্রিক্স কার্ডস --- */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:gap-6">
         {metricsConfig.map((item, idx) => (
-          <div key={idx} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition">
+          <div key={idx} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm transition hover:-translate-y-1">
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-sm font-medium text-gray-500">{item.label}</p>
@@ -146,7 +146,7 @@ export default function AdminDashboard() {
                 <item.icon size={20} />
               </div>
             </div>
-            <div className="flex items-center gap-1 mt-4 text-xs font-bold text-green-600 bg-green-50 w-fit px-2 py-1 rounded">
+            <div className="admin-badge mt-4 flex w-fit items-center gap-1 rounded px-2 py-1 text-xs font-bold">
               <TrendingUp size={12} /> Live Updates
             </div>
           </div>
@@ -157,8 +157,8 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {countsConfig.map((item, idx) => (
           <div key={idx} className="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-4">
-            <div className="p-2 bg-gray-50 rounded-lg text-gray-400">
-              <item.icon color="blue" size={18} />
+            <div className="admin-panel-muted rounded-lg p-2 text-[#8ab4ff]">
+              <item.icon size={18} />
             </div>
             <div>
               <p className="text-xs text-gray-500 font-medium">{item.label}</p>
@@ -172,7 +172,7 @@ export default function AdminDashboard() {
       <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-lg font-bold text-gray-900 underline decoration-lime-400 decoration-4">Registration Analytics</h3>
-          <div className="text-sm text-gray-500 font-medium px-3 py-1 bg-gray-50 rounded-lg">Annual View</div>
+          <div className="admin-badge rounded-lg px-3 py-1 text-sm font-medium">Annual View</div>
         </div>
         <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -183,10 +183,10 @@ export default function AdminDashboard() {
                   <stop offset="95%" stopColor="#D8FF30" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2b4069" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9fb3de', fontSize: 12}} />
               <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
-              <Area type="monotone" dataKey="users" stroke="#214311" fillOpacity={1} fill="url(#colorValue)" strokeWidth={3} />
+              <Area type="monotone" dataKey="users" stroke="#8ab4ff" fillOpacity={1} fill="url(#colorValue)" strokeWidth={3} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -196,7 +196,7 @@ export default function AdminDashboard() {
       <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-lg font-bold text-gray-900">Recent 10 Registrations</h3>
-          <Link href="/admin-dashboard/users"className="text-sm text-blue-600 font-bold hover:underline">View All</Link>
+          <Link href="/admin-dashboard/users"className="text-sm font-bold text-[#8ab4ff] hover:underline">View All</Link>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-[640px] w-full text-left">
@@ -213,7 +213,7 @@ export default function AdminDashboard() {
                 <tr key={i} className="border-b border-gray-50 last:border-none hover:bg-gray-50 transition">
                   <td className="py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 uppercase">
+                      <div className="admin-panel-muted flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold uppercase">
                         {user.name?.charAt(0) || "U"}
                       </div>
                       <div>
@@ -223,12 +223,12 @@ export default function AdminDashboard() {
                     </div>
                   </td>
                   <td className="py-4">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-600 border border-gray-200">
+                    <span className="admin-badge rounded px-2 py-0.5 text-[10px] font-bold uppercase">
                       {user.role}
                     </span>
                   </td>
                   <td className="py-4">
-                    <p className="text-sm font-bold text-green-700">{user.walletBalance || 0} $</p>
+                    <p className="text-sm font-bold text-emerald-300">{user.walletBalance || 0} $</p>
                   </td>
                   <td className="py-4 text-right">
                     <p className="text-xs text-gray-400">{new Date(user.createdAt).toLocaleDateString()}</p>

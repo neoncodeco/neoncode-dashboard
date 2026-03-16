@@ -40,11 +40,11 @@ export default function AdminReplyInput({ chatId }) {
   };
 
   return (
-    <div className="bg-white border-t border-gray-200 p-4">
+    <div className="border-t border-[#22375d] bg-[#0f1d38] p-4">
       <div className={`
-        relative flex flex-col w-full rounded-xl border transition-all duration-200
-        ${loading ? 'bg-gray-50 opacity-70' : 'bg-white shadow-sm'}
-        focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-50
+        relative flex w-full flex-col rounded-xl border transition-all duration-200
+        ${loading ? 'bg-[#132546] opacity-70' : 'bg-[#132546] shadow-sm'}
+        border-[#2c4167] focus-within:border-[#8ab4ff] focus-within:ring-2 focus-within:ring-[#8ab4ff]/15
       `}>
         
         {/* Textarea for longer replies */}
@@ -54,14 +54,14 @@ export default function AdminReplyInput({ chatId }) {
           onKeyDown={handleKeyDown}
           placeholder="Write a professional reply..."
           disabled={loading}
-          className="w-full bg-transparent border-none focus:ring-0 text-[15px] p-4 text-slate-900 placeholder:text-slate-400 resize-none min-h-[100px]"
+          className="min-h-[100px] w-full resize-none border-none bg-transparent p-4 text-[15px] text-[#f5f8ff] placeholder:text-[#8fa5cf] focus:ring-0"
           rows={3}
         />
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between px-3 py-2 bg-slate-50/50 border-t border-gray-100 rounded-b-xl">
-          <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium ml-2">
-            <span className="flex items-center gap-1 bg-white border border-gray-200 px-1.5 py-0.5 rounded shadow-sm">
+        <div className="flex items-center justify-between rounded-b-xl border-t border-[#22375d] bg-[#101c37] px-3 py-2">
+          <div className="ml-2 flex items-center gap-2 text-[11px] font-medium text-[#9fb3de]">
+            <span className="flex items-center gap-1 rounded border border-[#2c4167] bg-[#132546] px-1.5 py-0.5 shadow-sm">
               <Command size={10} /> + Enter
             </span>
             <span>to send faster</span>
@@ -73,8 +73,8 @@ export default function AdminReplyInput({ chatId }) {
             className={`
               flex items-center gap-2 px-5 py-2 rounded-lg font-semibold text-sm transition-all
               ${text.trim() && !loading
-                ? "bg-indigo-600 text-white shadow-md hover:bg-indigo-700 active:scale-95"
-                : "bg-slate-200 text-slate-400 cursor-not-allowed"}
+                ? "bg-[#8ab4ff] text-[#081227] shadow-md hover:bg-[#9fc0ff] active:scale-95"
+                : "cursor-not-allowed bg-[#243a63] text-[#7f96c7]"}
             `}
           >
             {loading ? (
@@ -94,7 +94,7 @@ export default function AdminReplyInput({ chatId }) {
       
       {/* Quick Tips */}
       <div className="mt-2 text-center">
-        <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#7f96c7]">
           Admin Dashboard Mode
         </p>
       </div>

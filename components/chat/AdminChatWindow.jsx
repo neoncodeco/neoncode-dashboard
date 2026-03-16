@@ -41,9 +41,9 @@ export default function AdminChatWindow({ chatId, userId }) {
 
   if (!chatId) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 lg:border-l border-gray-100">
-        <div className="p-4 bg-white rounded-full shadow-sm mb-4">
-          <User size={40} className="text-slate-200" />
+      <div className="flex h-full flex-col items-center justify-center border-gray-100 bg-[#0f1d38] text-[#9fb3de] lg:border-l">
+        <div className="mb-4 rounded-full bg-[#132546] p-4 shadow-sm">
+          <User size={40} className="text-[#8ab4ff]" />
         </div>
         <p className="text-sm font-medium">Select a conversation to start messaging</p>
       </div>
@@ -51,52 +51,52 @@ export default function AdminChatWindow({ chatId, userId }) {
   }
 
   return (
-    <div className="h-full flex flex-col bg-white lg:border-l border-gray-100 overflow-hidden">
+    <div className="flex h-full flex-col overflow-hidden border-gray-100 bg-[#0f1d38] lg:border-l">
       
       {/* --- Admin Chat Header (Desktop View) --- */}
-      <div className="hidden lg:flex flex-none px-6 py-4 bg-white border-b border-gray-100 items-center justify-between shadow-sm">
+      <div className="hidden flex-none items-center justify-between border-b border-[#22375d] bg-[#0f1d38] px-6 py-4 shadow-sm lg:flex">
         <div className="flex items-center gap-4">
           {/* User Image or Icon */}
           <div className="relative">
             {userInfo.image ? (
-              <img src={userInfo.image} alt="user" className="w-10 h-10 rounded-xl object-cover border border-gray-100" />
+              <img src={userInfo.image} alt="user" className="h-10 w-10 rounded-xl border border-[#22375d] object-cover" />
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#2c4167] bg-[#132546] text-[#8ab4ff]">
                 <User size={20} />
               </div>
             )}
-            <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
+            <div className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-[#0f1d38] bg-emerald-400"></div>
           </div>
 
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-black text-slate-800 tracking-tight">
+              <h3 className="font-black tracking-tight text-[#f5f8ff]">
                 {loading ? "Loading..." : userInfo.name}
               </h3>
-              <span className="flex items-center gap-1 bg-green-50 text-green-600 text-[9px] font-black px-2 py-0.5 rounded-full border border-green-100 uppercase tracking-wider">
+              <span className="flex items-center gap-1 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-200">
                 <Circle size={6} fill="currentColor" /> Active
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1 font-medium italic">
-              <ShieldCheck size={12} className="text-indigo-400" /> Secure Admin Session
+            <p className="mt-0.5 flex items-center gap-1 text-[11px] font-medium italic text-[#9fb3de]">
+              <ShieldCheck size={12} className="text-[#8ab4ff]" /> Secure Admin Session
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-            <button className="text-[11px] font-bold text-slate-500 hover:text-indigo-600 transition-all bg-slate-50 hover:bg-indigo-50 px-4 py-2 rounded-xl border border-gray-100 uppercase tracking-wider">
+            <button className="rounded-xl border border-[#2c4167] bg-[#132546] px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[#dce8ff] transition-all hover:bg-[#18315c] hover:text-[#8ab4ff]">
                 User Details
             </button>
         </div>
       </div>
 
       {/* --- Messages Area --- */}
-      <div className="flex-1 overflow-y-auto bg-slate-50/20 relative">
+      <div className="relative flex-1 overflow-y-auto bg-[#0c1830]">
         <ChatMessages chatId={chatId} currentRole={role} />
       </div>
 
       {/* --- Admin Reply Section --- */}
-      <div className="flex-none p-3 md:p-4 bg-white border-t border-gray-50 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)]">
+      <div className="flex-none border-t border-[#22375d] bg-[#0f1d38] p-3 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.24)] md:p-4">
         <AdminReplyInput chatId={chatId} />
       </div>
 

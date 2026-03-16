@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
+import { convertBdtToUsd, DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@/lib/currency";
 
-/* ================= CONFIG ================= */
 const REQUIRED_TOTAL = 2000;
 const ONE_TIME_COMMISSION = 10;
 
@@ -12,9 +12,27 @@ const LEVEL1_MILESTONES = [
   { count: 50, reward: 400 },
 ];
 
+const getCreditedUsdAmount = async (db, payment) => {
+  if (Number(payment.creditedUsdAmount) > 0) {
+    return Number(payment.creditedUsdAmount);
+  }
+
+  const amountBdt = Number((payment.amountBdt ?? payment.amount) || 0);
+  const fallbackRateSetting = await db.collection("settings").findOne({ key: "USD_TO_BDT_RATE" });
+  const usdToBdtRate = resolveUsdToBdtRate(
+    payment.usdToBdtRate,
+    resolveUsdToBdtRate(fallbackRateSetting?.value, DEFAULT_USD_TO_BDT_RATE)
+  );
+
+  return {
+    amountBdt,
+    usdToBdtRate,
+    creditedUsdAmount: convertBdtToUsd(amountBdt, usdToBdtRate),
+  };
+};
+
 export async function POST(req) {
   try {
-    /* ---------- AUTH ---------- */
     const decoded = await verifyToken(req);
     if (!decoded) {
       return NextResponse.json(
@@ -36,7 +54,6 @@ export async function POST(req) {
       );
     }
 
-    /* ---------- REQUEST ---------- */
     const { userUid, action } = await req.json();
 
     if (!userUid || !["approve", "reject"].includes(action)) {
@@ -46,7 +63,6 @@ export async function POST(req) {
       );
     }
 
-    /* ---------- FIND PENDING PAYMENT ---------- */
     const payment = await db.collection("payments").findOne(
       { userUid, status: "pending" },
       { sort: { createdAt: -1 } }
@@ -59,45 +75,44 @@ export async function POST(req) {
       });
     }
 
-    /* ================= APPROVE ================= */
     if (action === "approve") {
-      // 🔒 FORCE NUMBERS (MOST IMPORTANT FIX)
-      const amount = Number(payment.amount || 0);
-      if (Number.isNaN(amount) || amount <= 0) {
+      const { amountBdt, usdToBdtRate, creditedUsdAmount } = await getCreditedUsdAmount(db, payment);
+
+      if (Number.isNaN(amountBdt) || amountBdt <= 0 || creditedUsdAmount <= 0) {
         return NextResponse.json(
           { ok: false, error: "Invalid payment amount" },
           { status: 400 }
         );
       }
 
-      /* 1️⃣ Update user balances (SAFE) */
       await db.collection("users").updateOne(
         { userId: userUid },
         {
           $inc: {
-            walletBalance: amount,
-            topupBalance: amount,
+            walletBalance: creditedUsdAmount,
+            topupBalance: creditedUsdAmount,
           },
         }
       );
 
-      /* 2️⃣ Update payment status */
       await db.collection("payments").updateOne(
         { _id: payment._id },
         {
           $set: {
             status: "approved",
+            amountBdt,
+            creditedUsdAmount,
+            currency: "BDT",
+            usdToBdtRate,
             updatedAt: new Date(),
           },
         }
       );
 
-      /* 3️⃣ Reload updated user */
       const user = await db
         .collection("users")
         .findOne({ userId: userUid });
 
-      /* ================= REFERRAL THRESHOLD ================= */
       if (
         user?.referredBy &&
         !user.thresholdRewardGiven &&
@@ -108,7 +123,6 @@ export async function POST(req) {
           .findOne({ userId: user.referredBy });
 
         if (referrer) {
-          /* 💰 One-time referral reward */
           await db.collection("users").updateOne(
             { userId: referrer.userId },
             {
@@ -119,13 +133,11 @@ export async function POST(req) {
             }
           );
 
-          /* 🔒 Lock reward */
           await db.collection("users").updateOne(
             { userId: userUid },
             { $set: { thresholdRewardGiven: true } }
           );
 
-          /* 📜 Referral history */
           await db.collection("referral_history").insertOne({
             referrerId: referrer.userId,
             referredUserId: userUid,
@@ -135,7 +147,6 @@ export async function POST(req) {
             createdAt: new Date(),
           });
 
-          /* ================= MILESTONE CHECK ================= */
           const updatedReferrer = await db
             .collection("users")
             .findOne({ userId: referrer.userId });
@@ -167,11 +178,10 @@ export async function POST(req) {
 
       return NextResponse.json({
         ok: true,
-        message: "Payment approved & balances updated safely",
+        message: "Payment approved and balances updated safely",
       });
     }
 
-    /* ================= REJECT ================= */
     await db.collection("payments").updateOne(
       { _id: payment._id },
       {
@@ -186,7 +196,6 @@ export async function POST(req) {
       ok: true,
       message: "Payment rejected",
     });
-
   } catch (error) {
     console.error("PAYMENT APPROVE ERROR:", error);
     return NextResponse.json(

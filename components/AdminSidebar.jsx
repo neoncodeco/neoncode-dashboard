@@ -189,7 +189,7 @@ const AdminSidebar = () => {
 
         <button
           onClick={() => setIsMobileOpen(true)}
-          className="p-2 bg-gray-800 rounded-lg text-white hover:bg-gray-700 transition"
+          className="admin-secondary-button rounded-lg p-2 transition"
         >
           <Menu size={24} />
         </button>
@@ -220,14 +220,14 @@ const AdminSidebar = () => {
                     <span className="text-xl font-bold text-white block">
                       NEON ADMIN
                     </span>
-                    <span className="text-[10px] text-gray-400 uppercase tracking-widest bg-gray-800 px-2 py-0.5 rounded">
+                    <span className="admin-badge rounded px-2 py-0.5 text-[10px] uppercase tracking-widest">
                       Control Panel
                     </span>
                   </div>
                 </div>
                 <button
                   onClick={() => setIsMobileOpen(false)}
-                  className="text-gray-400 hover:text-white"
+                  className="text-gray-400 hover:text-[#dce8ff]"
                 >
                   <X size={24} />
                 </button>
@@ -236,13 +236,13 @@ const AdminSidebar = () => {
               {renderMenu()}
             </div>
 
-            <div className="space-y-3 pt-6 border-t border-gray-800">
-              <div className="flex items-center gap-3 px-4 text-gray-400 hover:text-white text-sm cursor-pointer">
+            <div className="space-y-3 border-t border-[#22375d] pt-6">
+              <div className="flex cursor-pointer items-center gap-3 px-4 text-sm text-gray-400 hover:text-[#dce8ff]">
                 <ShieldCheck size={18} /> Admin Profile
               </div>
               <div
                 onClick={HandalLogOut}
-                className="flex items-center gap-3 px-4 text-gray-400 hover:text-red-400 text-sm cursor-pointer"
+                className="flex cursor-pointer items-center gap-3 px-4 text-sm text-gray-400 hover:text-red-300"
               >
                 <LogOut size={18} /> Logout
               </div>
@@ -268,7 +268,7 @@ const AdminSidebar = () => {
               <span className="text-xl font-bold text-white block">
                 NEON ADMIN
               </span>
-              <span className="text-[10px] text-gray-400 uppercase tracking-widest bg-gray-800 px-2 py-0.5 rounded">
+              <span className="admin-badge rounded px-2 py-0.5 text-[10px] uppercase tracking-widest">
                 Control Panel
               </span>
             </div>
@@ -277,13 +277,13 @@ const AdminSidebar = () => {
           {renderMenu()}
         </div>
 
-        <div className="space-y-3 pt-6 border-t border-gray-800">
-          <div className="flex items-center gap-3 px-4 text-gray-400 hover:text-white text-sm cursor-pointer">
+        <div className="space-y-3 border-t border-[#22375d] pt-6">
+          <div className="flex cursor-pointer items-center gap-3 px-4 text-sm text-gray-400 hover:text-[#dce8ff]">
             <ShieldCheck size={18} /> Admin Profile
           </div>
           <div
             onClick={HandalLogOut}
-            className="flex items-center gap-3 px-4 text-gray-400 hover:text-red-400 text-sm cursor-pointer"
+            className="flex cursor-pointer items-center gap-3 px-4 text-sm text-gray-400 hover:text-red-300"
           >
             <LogOut size={18} /> Logout
           </div>

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import { 
   Send, X, Lock, ShieldCheck, Image as ImageIcon, 
@@ -19,7 +19,7 @@ export default function AdminSupportLayout() {
   
   const messagesEndRef = useRef(null);
 
-  const loadAllTickets = async () => {
+  const loadAllTickets = useCallback(async () => {
     if (!token) return;
     try {
       const res = await fetch("/api/admin/support/ticket/all", {
@@ -29,7 +29,7 @@ export default function AdminSupportLayout() {
       setTickets(data.data || []);
     } catch (err) { console.error(err); }
     finally { setLoadingList(false); }
-  };
+  }, [token]);
 
   const selectTicket = async (id) => {
     setReply("");
@@ -43,7 +43,7 @@ export default function AdminSupportLayout() {
     } catch (err) { console.error(err); }
   };
 
-  useEffect(() => { loadAllTickets(); }, [token]);
+  useEffect(() => { loadAllTickets(); }, [loadAllTickets]);
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [selectedTicket?.messages]);
 
   const handleFileSelect = async (e) => {
@@ -94,7 +94,7 @@ export default function AdminSupportLayout() {
       
       <div className={`${selectedTicket ? "hidden lg:flex" : "flex"} h-full w-full shrink-0 flex-col border-r border-[#2c4167] bg-[#0f1d38] lg:w-[350px]`}>
         <div className="p-5 border-b border-[#2c4167] bg-[#0f1d38]">
-          <h1 className="mb-4 text-xl font-black tracking-tight text-indigo-600 sm:text-2xl">Support Panel</h1>
+          <h1 className="mb-4 text-xl font-black tracking-tight text-[#dce8ff] sm:text-2xl">Support Panel</h1>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input 
@@ -112,18 +112,18 @@ export default function AdminSupportLayout() {
               <div
                 key={t._id}
                 onClick={() => selectTicket(t._id)}
-                className={`p-5 cursor-pointer transition-all gap-3 bg-[#14284d] flex items-center gap-4 ${selectedTicket?._id === t._id ? "bg-[#1b2f57] border-r-4 border-r-indigo-500 shadow-sm" : "hover:bg-[#1a315d]"}`}
+                className={`flex cursor-pointer items-center gap-4 bg-[#14284d] p-5 transition-all ${selectedTicket?._id === t._id ? "bg-[#1b2f57] border-r-4 border-r-[#8ab4ff] shadow-sm" : "hover:bg-[#1a315d]"}`}
               >
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${t.status === 'open' ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm ${t.status === 'open' ? 'bg-emerald-400/10 text-emerald-300' : 'bg-[#243a63] text-[#9fb3de]'}`}>
                   <MessageSquare size={20} />
                 </div>
                 <div className="flex-1 overflow-hidden">
                   <div className="flex justify-between items-start mb-0.5">
-                    <h3 className={`text-sm font-extrabold truncate ${selectedTicket?._id === t._id ? "text-indigo-300" : "text-gray-100"}`}>{t.subject}</h3>
+                    <h3 className={`truncate text-sm font-extrabold ${selectedTicket?._id === t._id ? "text-[#8ab4ff]" : "text-gray-100"}`}>{t.subject}</h3>
                   </div>
                   <div className="flex justify-between items-center">
                     <p className="text-[12px] text-gray-400 font-medium truncate uppercase tracking-tighter">User: {t.userId?.slice(-6)}</p>
-                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest ${t.status === 'open' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100'}`}>
+                    <span className={`rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${t.status === 'open' ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200' : 'border-red-400/20 bg-red-400/10 text-red-200'}`}>
                       {t.status}
                     </span>
                   </div>
@@ -151,7 +151,7 @@ export default function AdminSupportLayout() {
                 <div>
                   <h2 className="font-black text-gray-100 text-base lg:text-lg tracking-tight leading-tight">{selectedTicket.subject}</h2>
                   <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                    <span className="text-indigo-600">Official Support</span>
+                    <span className="text-[#8ab4ff]">Official Support</span>
                     <span className="w-1 h-1 bg-gray-600 rounded-full" />
                     <span>UID: {selectedTicket.userId}</span>
                   </div>
@@ -171,15 +171,15 @@ export default function AdminSupportLayout() {
                           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
                             {isAdmin ? "Admin Response" : m.senderName || "End User"}
                           </span>
-                          {isAdmin && <ShieldCheck size={14} className="text-indigo-500 fill-indigo-50" />}
+                          {isAdmin && <ShieldCheck size={14} className="fill-[#8ab4ff]/20 text-[#8ab4ff]" />}
                         </div>
                         <div className={`p-4 md:p-5 rounded-[24px] text-sm md:text-[15px] shadow-sm leading-relaxed border transition-all ${
-                          isAdmin ? "bg-indigo-600 text-white rounded-tr-none border-indigo-500 shadow-indigo-100" : "bg-[#0f1d38] border-[#2c4167] text-gray-100 rounded-tl-none"
+                          isAdmin ? "rounded-tr-none border-[#8ab4ff] bg-[#6f95df] text-[#081227] shadow-[#2c53a0]/20" : "rounded-tl-none border-[#2c4167] bg-[#0f1d38] text-gray-100"
                         }`}>
                           <p className="whitespace-pre-wrap">{m.text}</p>
                           {m.screenshots?.map((img, idx) => (
                             <div key={idx} className="mt-4 overflow-hidden rounded-2xl shadow-md ring-2 ring-black/5">
-                              <img src={img.url} className="max-h-80 w-full object-cover sm:w-auto" alt="img" />
+                              <img src={img.url} className="max-h-80 w-full object-cover sm:w-auto" alt="Attachment" />
                             </div>
                           ))}
                         </div>
@@ -198,12 +198,12 @@ export default function AdminSupportLayout() {
                   <div className="space-y-4">
                     {screenshot && (
                       <div className="relative inline-block animate-in zoom-in slide-in-from-bottom-3">
-                        <img src={screenshot.url} className="w-24 h-24 object-cover rounded-2xl border-2 border-indigo-600 shadow-xl ring-4 ring-indigo-50" />
-                        <button onClick={() => setScreenshot(null)} className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-2 shadow-lg border-2 border-white hover:bg-red-600"><X size={12}/></button>
+                        <img src={screenshot.url} className="h-24 w-24 rounded-2xl border-2 border-[#8ab4ff] object-cover shadow-xl ring-4 ring-[#8ab4ff]/10" alt="Reply attachment preview" />
+                        <button onClick={() => setScreenshot(null)} className="absolute -top-3 -right-3 rounded-full border-2 border-[#132546] bg-red-500 p-2 text-white shadow-lg hover:bg-red-600"><X size={12}/></button>
                       </div>
                     )}
-                    <div className="flex items-end gap-2 rounded-[24px] border-2 border-[#2c4167] bg-[#132546] p-2.5 shadow-inner transition-all focus-within:border-indigo-500 focus-within:bg-[#152a51] sm:gap-3 sm:p-3 sm:rounded-[28px]">
-                      <label className="p-3 text-gray-400 hover:text-indigo-600 cursor-pointer active:scale-90 transition-all">
+                    <div className="flex items-end gap-2 rounded-[24px] border-2 border-[#2c4167] bg-[#132546] p-2.5 shadow-inner transition-all focus-within:border-[#8ab4ff] focus-within:bg-[#152a51] sm:gap-3 sm:p-3 sm:rounded-[28px]">
+                      <label className="cursor-pointer p-3 text-gray-400 transition-all hover:text-[#8ab4ff] active:scale-90">
                         {isUploading ? <Loader2 size={24} className="animate-spin" /> : <ImageIcon size={24} />}
                         <input type="file" hidden accept="image/*" onChange={handleFileSelect} />
                       </label>
@@ -221,7 +221,7 @@ export default function AdminSupportLayout() {
                         className={`flex min-h-[56px] min-w-[56px] items-center justify-center rounded-2xl p-4 shadow-xl transition-all ${
                           isSending || isUploading || (!reply.trim() && !screenshot)
                           ? "bg-slate-700 text-slate-400"
-                          : "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-200 active:scale-95"
+                          : "bg-[#8ab4ff] text-[#081227] hover:bg-[#9fc0ff] hover:shadow-[#2c53a0]/30 active:scale-95"
                         }`}
                       >
                         {isSending ? <Loader2 size={24} className="animate-spin" /> : <Send size={24} className="rotate-45" />}
@@ -229,7 +229,7 @@ export default function AdminSupportLayout() {
                     </div>
                   </div>
                 ) : (
-                  <div className="py-6 bg-red-50 text-red-500 rounded-[28px] text-center font-black text-xs uppercase tracking-[3px] border-2 border-dashed border-red-100 flex items-center justify-center gap-3">
+                  <div className="flex items-center justify-center gap-3 rounded-[28px] border-2 border-dashed border-red-400/20 bg-red-400/10 py-6 text-center text-xs font-black uppercase tracking-[3px] text-red-200">
                     <Lock size={18} /> Ticket Closed for Responses
                   </div>
                 )}
@@ -238,8 +238,8 @@ export default function AdminSupportLayout() {
           </>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-gray-300 p-10 text-center">
-            <div className="w-28 h-28 bg-[#0f1d38] shadow-xl rounded-[40px] flex items-center justify-center mb-8 border border-[#2c4167] animate-bounce transition-all duration-1000">
-              <MessageSquare size={48} className="text-indigo-100 fill-indigo-50" />
+            <div className="mb-8 flex h-28 w-28 items-center justify-center rounded-[40px] border border-[#2c4167] bg-[#0f1d38] shadow-xl animate-bounce transition-all duration-1000">
+              <MessageSquare size={48} className="fill-[#8ab4ff]/20 text-[#dce8ff]" />
             </div>
             <h3 className="text-2xl font-black text-gray-100 tracking-tight">Select conversation</h3>
             <p className="text-xs max-w-[240px] mt-3 font-bold uppercase tracking-widest text-gray-400 leading-loose">Choose a user ticket from the list to start responding.</p>

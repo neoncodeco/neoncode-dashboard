@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
+import { formatBdt, formatUsd } from "@/lib/currency";
 import {
   FileText,
   RefreshCw,
@@ -193,7 +194,12 @@ const PaymentHistoryUI = () => {
                   <td className="px-6 py-4 text-sm font-mono font-medium text-gray-700">{p.id}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{new Date(p.date).toLocaleString()}</td>
                   <td className="px-6 py-4 text-sm text-gray-700">{p.description}</td>
-                  <td className="px-6 py-4 text-sm font-extrabold text-green-600">${p.amount}</td>
+                  <td className="px-6 py-4 text-sm font-extrabold text-green-600">
+                    {formatBdt(p.amountBdt ?? p.amount)}
+                    {p.creditedUsdAmount > 0 ? (
+                      <div className="text-xs font-semibold text-gray-500">{formatUsd(p.creditedUsdAmount)} credited</div>
+                    ) : null}
+                  </td>
                   <td className="px-6 py-4 text-sm text-gray-600">{p.method}</td>
                   <td className="px-6 py-4">
                     <span

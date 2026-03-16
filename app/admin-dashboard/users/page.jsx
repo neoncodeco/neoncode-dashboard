@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search, Shield, Trash2, Download, UserCheck, UserX, Clock, Users } from "lucide-react";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import ManageUserModal from "@/components/ManageUserModal";
@@ -38,7 +38,7 @@ export default function AllUsersPage() {
   const [deletingUserId, setDeletingUserId] = useState("");
 
   /* ================= LOAD USERS ================= */
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     try {
@@ -53,11 +53,11 @@ export default function AllUsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     loadUsers();
-  }, [token]);
+  }, [loadUsers]);
 
   /* ================= FILTER ================= */
   const filteredUsers = useMemo(() => {
@@ -152,7 +152,7 @@ export default function AllUsersPage() {
           <button
             onClick={handleExportCSV}
             disabled={loading || filteredUsers.length === 0}
-            className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-black px-5 py-2.5 text-sm font-bold text-white shadow-lg transition-all active:scale-95 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
+            className="admin-accent-button flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Download size={18} /> Export CSV
           </button>
@@ -205,9 +205,9 @@ export default function AllUsersPage() {
                             <img
                               src={u.photo || "https://i.ibb.co/kgp65LMf/profile-avater.png"}
                               className="w-11 h-11 rounded-full border-2 border-white shadow-sm object-cover"
-                              alt=""
+                              alt={u.name ? `${u.name} avatar` : "User avatar"}
                             />
-                            <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${u.status === 'inactive' ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                            <div className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#132546] ${u.status === 'inactive' ? 'bg-red-400' : 'bg-emerald-400'}`}></div>
                         </div>
                         <div>
                           <p className="font-bold text-gray-900 group-hover:text-black transition-colors">
@@ -248,7 +248,7 @@ export default function AllUsersPage() {
                             e.stopPropagation();
                             setSelectedUser(u);
                           }}
-                          className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-black  border border-gray-200 rounded-lg hover:border-black hover:shadow-sm transition-all"
+                          className="admin-secondary-button flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold transition-all"
                         >
                           <Shield size={14} /> Open Profile
                         </button>
@@ -259,7 +259,7 @@ export default function AllUsersPage() {
                             handleDeleteUser(u);
                           }}
                           disabled={deletingUserId === u.userId || u.userId === user?.uid}
-                          className="p-2 text-red-300 hover:text-red-500 disabled:text-red-200 disabled:cursor-not-allowed transition-colors"
+                          className="p-2 text-red-300 transition-colors hover:text-red-200 disabled:cursor-not-allowed disabled:text-red-900/40"
                           title={u.userId === user?.uid ? "You cannot delete your own account" : "Delete user"}
                         >
                           <Trash2 size={18} />

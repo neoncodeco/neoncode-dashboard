@@ -1,5 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useState } from "react";
+import { formatBdt, formatUsd } from "@/lib/currency";
 import {
   Banknote,
   ArrowUpRight,
@@ -104,7 +105,7 @@ export default function TransactionsPage() {
           {/* <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 transition">
             <Calendar size={16} /> Select Date
           </button> */}
-          <button className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#D8FF30] px-4 py-2 text-sm font-bold text-black shadow-sm transition hover:bg-[#cbf028]">
+          <button className="admin-accent-button flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition">
             <Download size={16} /> Export Report
           </button>
         </div>
@@ -125,7 +126,7 @@ export default function TransactionsPage() {
               className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition"
             />
           </div>
-          <button className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-bold text-gray-600 transition hover:bg-gray-100">
+          <button className="admin-secondary-button flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition">
             <Filter size={16} /> Filter
           </button>
         </div>
@@ -159,7 +160,12 @@ export default function TransactionsPage() {
                         {p.userUid}
                       </td>
 
-                      <td className="p-4 font-bold text-green-600">+{p.amount}</td>
+                      <td className="p-4 font-bold text-emerald-300">
+                        +{formatBdt(p.amountBdt ?? p.amount)}
+                        {(Number(p.creditedUsdAmount) || 0) > 0 ? (
+                          <div className="text-xs font-semibold text-gray-500">{formatUsd(p.creditedUsdAmount)} wallet credit</div>
+                        ) : null}
+                      </td>
 
                       <td className="p-4 text-gray-600">{p.method || "N/A"}</td>
 
@@ -180,14 +186,14 @@ export default function TransactionsPage() {
                           <>
                             <button
                               onClick={() => handleAction(p.userUid, "approve")}
-                              className="px-3 py-1 bg-green-100 text-green-700 rounded-lg font-bold flex items-center gap-1"
+                              className="flex items-center gap-1 rounded-lg border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 font-bold text-emerald-200"
                             >
                               <CheckCircle size={14} /> Approve
                             </button>
 
                             <button
                               onClick={() => handleAction(p.userUid, "reject")}
-                              className="px-3 py-1 bg-red-100 text-red-700 rounded-lg font-bold flex items-center gap-1"
+                              className="flex items-center gap-1 rounded-lg border border-red-400/20 bg-red-400/10 px-3 py-1 font-bold text-red-200"
                             >
                               <XCircle size={14} /> Reject
                             </button>
