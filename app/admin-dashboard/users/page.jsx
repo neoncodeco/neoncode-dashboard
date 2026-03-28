@@ -129,7 +129,7 @@ export default function AllUsersPage() {
   };
 
   return (
-    <div className="min-h-screen space-y-6 bg-[#fcfcfc] p-4 pt-20 sm:p-6 sm:pt-20 md:p-8 md:pt-8">
+    <div className="min-h-screen space-y-6 bg-[#fcfcfc] p-4  sm:p-6 sm:pt-5 md:space-y-8 md:p-8 md:pt-8">
       
       {/* HEADER SECTION */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -161,7 +161,73 @@ export default function AllUsersPage() {
 
       {/* TABLE SECTION */}
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl shadow-black/5">
-        <div className="overflow-x-auto">
+        <div className="space-y-3 p-3 md:hidden">
+          {loading ? (
+            <div className="flex flex-col items-center gap-2 rounded-2xl px-4 py-10 text-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-black border-t-transparent"></div>
+              <p className="text-sm font-medium text-gray-400">Fetching users...</p>
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="rounded-2xl px-4 py-10 text-center text-gray-400">
+              <Users size={36} className="mx-auto mb-3 text-gray-200" />
+              <p className="font-medium">No users found matching your search</p>
+            </div>
+          ) : (
+            filteredUsers.map((u) => (
+              <div
+                key={u.userId}
+                className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+                onClick={() => setSelectedUser(u)}
+              >
+                <div className="flex items-start gap-3">
+                  <img
+                    src={u.photo || "https://i.ibb.co/kgp65LMf/profile-avater.png"}
+                    className="h-11 w-11 shrink-0 rounded-full border-2 border-white object-cover shadow-sm"
+                    alt={u.name ? `${u.name} avatar` : "User avatar"}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-bold text-gray-900">{u.name || "Unnamed"}</p>
+                    <p className="truncate text-xs font-medium text-gray-400">{u.email}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-black uppercase ${statusColor(u.status || "active")}`}>
+                        {u.status === "inactive" ? <UserX size={12} /> : u.status === "pending" ? <Clock size={12} /> : <UserCheck size={12} />}
+                        {u.status || "Active"}
+                      </span>
+                      <span className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold capitalize ${roleColor(u.role)}`}>
+                        <Shield size={12} />
+                        {u.role || "user"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedUser(u);
+                    }}
+                    className="admin-secondary-button flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all"
+                  >
+                    <Shield size={14} /> Open
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteUser(u);
+                    }}
+                    disabled={deletingUserId === u.userId || u.userId === user?.uid}
+                    className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-50 text-red-500 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-40"
+                    title={u.userId === user?.uid ? "You cannot delete your own account" : "Delete user"}
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto md:block">
           <table className="min-w-[720px] w-full text-left">
             <thead className="bg-gray-50/50 border-b border-gray-100 text-gray-400">
               <tr>

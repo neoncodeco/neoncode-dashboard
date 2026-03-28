@@ -32,6 +32,8 @@ import CurrencyAmount from "./CurrencyAmount";
 import { formatUsd, resolveUsdToBdtRate, toSafeNumber } from "@/lib/currency";
 
 const FILTERS = ["All Accounts", "Ready Accounts", "Pending Setup", "Needs Attention"];
+const statCardClass =
+  "overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(160deg,rgba(20,34,63,0.94),rgba(12,23,45,0.96))] p-5 shadow-[0_20px_42px_-28px_rgba(15,23,42,0.88)]";
 
 const getAdStatusMeta = (status) => {
   switch (status) {
@@ -365,83 +367,83 @@ export default function AdAccountUi() {
         )}
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-          <div className="overflow-hidden rounded-3xl border border-white/10 bg-[linear-gradient(160deg,rgba(20,34,63,0.94),rgba(12,23,45,0.96))] p-5 shadow-lg">
+          <div className={statCardClass}>
             <div className="mb-5 flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-400">Wallet Balance</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Wallet Balance</p>
                 <CurrencyAmount
                   value={userData?.walletBalance}
                   usdToBdtRate={usdRate}
-                  primaryClassName="mt-1 text-3xl font-black text-white"
-                  secondaryClassName="mt-1 text-xs font-semibold text-blue-100/80"
+                  primaryClassName="mt-2 text-[1.8rem] font-black leading-none text-white"
+                  secondaryClassName="mt-2 text-[12px] font-semibold text-slate-200"
                 />
               </div>
               <div className="rounded-2xl bg-blue-400/10 p-3 text-blue-200">
                 <Wallet size={20} />
               </div>
             </div>
-            <div className="inline-flex rounded-full border border-blue-400/10 bg-blue-400/10 px-3 py-1 text-xs font-bold text-blue-100">
+            <div className="inline-flex rounded-full border border-blue-400/20 bg-blue-400/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
               Available for budget increase
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-3xl border border-white/10 bg-[linear-gradient(160deg,rgba(20,34,63,0.94),rgba(12,23,45,0.96))] p-5 shadow-lg">
+          <div className={statCardClass}>
             <div className="mb-5 flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-400">USD Rate</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">USD Rate</p>
                 <CurrencyAmount
                   value={usdRate}
                   usdToBdtRate={usdRate}
                   asRate
-                  primaryClassName="mt-1 text-3xl font-black text-white"
-                  secondaryClassName="mt-1 text-xs font-semibold text-emerald-100/80"
+                  primaryClassName="mt-2 text-[1.8rem] font-black leading-none text-white"
+                  secondaryClassName="mt-2 text-[12px] font-semibold text-slate-200"
                 />
               </div>
               <div className="rounded-2xl bg-emerald-400/10 p-3 text-emerald-200">
                 <DollarSign size={20} />
               </div>
             </div>
-            <div className="inline-flex rounded-full border border-emerald-400/10 bg-emerald-400/10 px-3 py-1 text-xs font-bold text-emerald-100">
+            <div className="inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
               BDT to USD working rate
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-3xl border border-white/10 bg-[linear-gradient(160deg,rgba(20,34,63,0.94),rgba(12,23,45,0.96))] p-5 shadow-lg">
+          <div className={statCardClass}>
             <div className="mb-5 flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-400">Top Up Balance</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Top Up Balance</p>
                 <CurrencyAmount
                   value={userData?.topupBalance}
                   usdToBdtRate={usdRate}
-                  primaryClassName="mt-1 text-3xl font-black text-white"
-                  secondaryClassName="mt-1 text-xs font-semibold text-indigo-100/80"
+                  primaryClassName="mt-2 text-[1.8rem] font-black leading-none text-white"
+                  secondaryClassName="mt-2 text-[12px] font-semibold text-slate-200"
                 />
               </div>
               <div className="rounded-2xl bg-indigo-400/10 p-3 text-indigo-200">
                 <CreditCard size={20} />
               </div>
             </div>
-            <div className="inline-flex rounded-full border border-indigo-400/10 bg-indigo-400/10 px-3 py-1 text-xs font-bold text-indigo-100">
+            <div className="inline-flex rounded-full border border-indigo-400/20 bg-indigo-400/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
               Cumulative wallet top-ups
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-3xl border border-white/10 bg-[linear-gradient(160deg,rgba(20,34,63,0.94),rgba(12,23,45,0.96))] p-5 shadow-lg">
+          <div className={statCardClass}>
             <div className="mb-5 flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-400">Remaining Budget</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Remaining Budget</p>
                 <CurrencyAmount
                   value={remainingDisplay}
                   usdToBdtRate={usdRate}
-                  primaryClassName="mt-1 text-3xl font-black text-white"
-                  secondaryClassName="mt-1 text-xs font-semibold text-amber-100/80"
+                  primaryClassName="mt-2 text-[1.8rem] font-black leading-none text-white"
+                  secondaryClassName="mt-2 text-[12px] font-semibold text-slate-200"
                 />
               </div>
               <div className="rounded-2xl bg-amber-400/10 p-3 text-amber-200">
                 <TrendingUp size={20} />
               </div>
             </div>
-            <div className="inline-flex rounded-full border border-amber-400/10 bg-amber-400/10 px-3 py-1 text-xs font-bold text-amber-100">
+            <div className="inline-flex rounded-full border border-amber-400/20 bg-amber-400/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
               Sum of synced active accounts
             </div>
           </div>
@@ -631,9 +633,9 @@ export default function AdAccountUi() {
                             return (
                               <div
                                 key={item.label}
-                                className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-4"
+                                className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))] p-4"
                               >
-                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                                <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-500">
                                   {item.label}
                                 </p>
 
@@ -644,8 +646,8 @@ export default function AdAccountUi() {
                                   </div>
                                 ) : showUnavailable ? (
                                   <div className="mt-3">
-                                    <p className="text-base font-black text-slate-200">Unavailable</p>
-                                    <p className="mt-1 text-xs text-slate-500">
+                                    <p className="text-[1rem] font-black text-slate-200">Unavailable</p>
+                                    <p className="mt-1 text-[11px] leading-5 text-slate-500">
                                       {!canFetchBalance
                                         ? "Awaiting valid Meta setup"
                                         : balance?.readableError || balance?.error || "Live Meta balance unavailable"}
@@ -653,7 +655,7 @@ export default function AdAccountUi() {
                                   </div>
                                 ) : (
                                   <div className="mt-3">
-                                    <p className={`text-lg font-black ${item.tone}`}>
+                                    <p className={`text-[1.2rem] font-black leading-none ${item.tone}`}>
                                       {formatUsd(item.value)}
                                     </p>
                                     <div className="mt-1">
@@ -661,7 +663,7 @@ export default function AdAccountUi() {
                                         value={item.value}
                                         usdToBdtRate={usdRate}
                                         primaryClassName="hidden"
-                                        secondaryClassName="text-xs font-semibold text-slate-400"
+                                        secondaryClassName="text-[11px] font-semibold text-slate-400"
                                         secondaryPrefix=""
                                       />
                                     </div>

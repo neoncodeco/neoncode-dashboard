@@ -256,7 +256,7 @@ export default function AdminAdAccountApprove() {
   }
 
   return (
-    <div className="min-h-screen space-y-6 bg-[#fcfcfc] p-4 pt-20 sm:p-6 sm:pt-20 md:space-y-8 md:p-8 md:pt-8">
+    <div className="min-h-screen space-y-6 bg-[#fcfcfc] p-4  sm:p-6 sm:pt-4 md:space-y-8 md:p-8 md:pt-8">
       
       {/* HEADER SECTION */}
       <div className="overflow-hidden rounded-[2rem] border border-[#22375d] bg-[linear-gradient(135deg,rgba(19,37,70,0.96),rgba(11,24,48,0.96))] p-5 shadow-xl shadow-black/10 sm:p-6">
@@ -319,7 +319,101 @@ export default function AdminAdAccountApprove() {
             </div>
           )}
         </div>
-        <div className="overflow-x-auto">
+        <div className="space-y-3 p-3 md:hidden">
+          {filtered.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-10 text-center text-sm text-gray-500">
+              No ad account requests found.
+            </div>
+          ) : (
+            filtered.map((r) => {
+              const st = getStatusClasses(r.status);
+              return (
+                <div key={r._id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="admin-panel-muted rounded-xl p-2.5 text-[#8ab4ff]">
+                      <Layers size={18} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <input
+                        className="w-full rounded-lg border px-3 py-2 text-sm font-bold text-gray-900"
+                        value={getRowValue(r, "accountName") || ""}
+                        onChange={(e) => onRowFieldChange(r._id, "accountName", e.target.value)}
+                      />
+                      <input
+                        className="mt-2 w-full rounded-lg border px-3 py-2 text-xs text-gray-600"
+                        value={getRowValue(r, "userEmail") || ""}
+                        onChange={(e) => onRowFieldChange(r._id, "userEmail", e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <input
+                      className="w-full rounded-lg border px-3 py-2 text-center font-mono text-xs text-gray-600"
+                      value={getRowValue(r, "bmId") || ""}
+                      onChange={(e) => onRowFieldChange(r._id, "bmId", e.target.value)}
+                      placeholder="BM ID"
+                    />
+                    <input
+                      type="number"
+                      className="w-full rounded-lg border px-3 py-2 text-center text-sm font-black text-gray-800"
+                      value={getRowValue(r, "monthlyBudget") || 0}
+                      onChange={(e) => onRowFieldChange(r._id, "monthlyBudget", e.target.value)}
+                      placeholder="Budget"
+                    />
+                  </div>
+
+                  <input
+                    className="mt-3 w-full rounded-lg border px-3 py-2 text-center text-xs font-mono"
+                    placeholder="Enter Meta ID"
+                    value={getRowValue(r, "MetaAccountID") || ""}
+                    onChange={(e) => onRowFieldChange(r._id, "MetaAccountID", e.target.value.trim())}
+                  />
+
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <span className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-[10px] font-black uppercase tracking-tight ${st.bg}`}>
+                      {st.icon} {r.status || "Pending"}
+                    </span>
+                    <span className="text-xs font-medium text-gray-500">BM: {getRowValue(r, "bmId") || "-"}</span>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-4 gap-2">
+                    <button
+                      onClick={() => saveRow(r)}
+                      title="Save Row"
+                      className="rounded-lg border border-[#8ab4ff]/20 bg-[#8ab4ff]/10 p-2 text-[#315ea8] transition-all hover:bg-[#8ab4ff] hover:text-white"
+                    >
+                      <ExternalLink size={16} className="mx-auto" />
+                    </button>
+                    <button
+                      onClick={() => handleAction(r._id, "active")}
+                      title="Approve"
+                      className="rounded-lg border border-emerald-400/20 bg-emerald-400/10 p-2 text-emerald-600 transition-all hover:bg-emerald-500 hover:text-white"
+                    >
+                      <CheckCircle size={16} className="mx-auto" />
+                    </button>
+                    <button
+                      onClick={() => handleAction(r._id, "rejected")}
+                      title="Reject"
+                      className="rounded-lg border border-red-400/20 bg-red-400/10 p-2 text-red-500 transition-all hover:bg-red-500 hover:text-white"
+                    >
+                      <XCircle size={16} className="mx-auto" />
+                    </button>
+                    <button
+                      onClick={() => cancelRow(r)}
+                      title="Cancel account"
+                      className="rounded-lg border border-slate-400/20 bg-slate-100 p-2 text-slate-500 transition-all hover:bg-slate-500 hover:text-white"
+                    >
+                      <XCircle size={16} className="mx-auto" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[980px] text-left">
             <thead className="bg-gray-50/50 border-b border-gray-100 text-gray-400">
               <tr>

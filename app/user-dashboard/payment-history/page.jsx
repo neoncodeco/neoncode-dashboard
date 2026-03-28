@@ -120,7 +120,7 @@ const PaymentHistoryUI = () => {
     );
 
   return (
-    <div className="w-full p-4 pt-20 md:p-6 lg:p-8 lg:pt-8">
+    <div className="w-full p-3 pt-5 sm:p-4 md:p-6 lg:p-8 lg:pt-8">
       <div className="bg-white text-black rounded-xl shadow-lg border border-gray-100 overflow-hidden">
         {/* Header & Actions */}
         <div className="p-4 sm:p-6 border-b border-gray-100 flex flex-col lg:flex-row gap-4 justify-between lg:items-center">
@@ -175,7 +175,53 @@ const PaymentHistoryUI = () => {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className="space-y-3 p-3 md:hidden">
+          {currentPageData.map((p) => (
+            <div key={p.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-mono text-xs font-semibold text-gray-700">{p.id}</p>
+                  <p className="mt-1 text-xs text-gray-500">{new Date(p.date).toLocaleString()}</p>
+                </div>
+                <span
+                  className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-semibold ${
+                    p.status === "approved"
+                      ? "bg-green-100 text-green-700"
+                      : p.status === "Pending"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : p.status === "Failed"
+                      ? "bg-red-100 text-red-600"
+                      : "bg-gray-200 text-gray-700"
+                  }`}
+                >
+                  {p.status}
+                </span>
+              </div>
+              <p className="mt-3 text-sm font-semibold text-gray-800">{p.description}</p>
+              <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400">Amount</p>
+                  <p className="mt-1 font-extrabold text-green-600">{formatBdt(p.amountBdt ?? p.amount)}</p>
+                  {p.creditedUsdAmount > 0 ? (
+                    <p className="text-xs font-semibold text-gray-500">{formatUsd(p.creditedUsdAmount)} credited</p>
+                  ) : null}
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400">Method</p>
+                  <p className="mt-1 text-gray-700">{p.method}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {currentPageData.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-10 text-center text-sm text-gray-500">
+              No {filterStatus !== "All" ? filterStatus : ""} Payments Found.
+            </div>
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[760px] text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 text-gray-600 text-sm uppercase font-bold tracking-wider">

@@ -227,7 +227,7 @@ export default function WithdrawModal({ balance, onClose }) {
               placeholder={`Enter minimum $${MINIMUM_WITHDRAW_AMOUNT}`} 
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition duration-150 text-lg font-semibold"
+              className="w-full rounded-xl border border-gray-300 bg-white py-3 pl-8 pr-4 text-lg font-semibold text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition duration-150"
             />
           </div>
           
@@ -289,8 +289,8 @@ export default function WithdrawModal({ balance, onClose }) {
               value={form.wallet}
               onChange={(e) => handleFormChange('wallet', e.target.value)}
               placeholder={`${method.toUpperCase()} Wallet Number`}
-              className={`w-full px-4 py-3 border rounded-xl transition ${
-                isSavedMethod ? "bg-gray-100 cursor-not-allowed text-gray-600" : "focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
+              className={`w-full rounded-xl border px-4 py-3 transition ${
+                isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-600 placeholder:text-gray-400" : "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
               }`}
             />
           )}
@@ -298,22 +298,22 @@ export default function WithdrawModal({ balance, onClose }) {
           {/* bank */}
           {method === "bank" && (
             <>
-              <input disabled={isSavedMethod} value={form.bankName} onChange={(e) => handleFormChange('bankName', e.target.value)} placeholder="Bank Name (Required)" className={`w-full px-4 py-3 border rounded-xl transition ${isSavedMethod ? "bg-gray-100 cursor-not-allowed text-gray-600" : "focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"}`}/>
-              <input disabled={isSavedMethod} value={form.accountName} onChange={(e) => handleFormChange('accountName', e.target.value)} placeholder="Account Name (Required)" className={`w-full px-4 py-3 border rounded-xl transition ${isSavedMethod ? "bg-gray-100 cursor-not-allowed text-gray-600" : "focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"}`}/>
-              <input disabled={isSavedMethod} value={form.accountNo} onChange={(e) => handleFormChange('accountNo', e.target.value)} placeholder="Account Number (Required)" className={`w-full px-4 py-3 border rounded-xl transition ${isSavedMethod ? "bg-gray-100 cursor-not-allowed text-gray-600" : "focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"}`}/>
-              <input disabled={isSavedMethod} value={form.branch} onChange={(e) => handleFormChange('branch', e.target.value)} placeholder="Branch Name (Optional)" className={`w-full px-4 py-3 border rounded-xl transition ${isSavedMethod ? "bg-gray-100 cursor-not-allowed text-gray-600" : "focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"}`}/>
+              <input disabled={isSavedMethod} value={form.bankName} onChange={(e) => handleFormChange('bankName', e.target.value)} placeholder="Bank Name (Required)" className={`w-full rounded-xl border px-4 py-3 transition ${isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-600 placeholder:text-gray-400" : "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"}`}/>
+              <input disabled={isSavedMethod} value={form.accountName} onChange={(e) => handleFormChange('accountName', e.target.value)} placeholder="Account Name (Required)" className={`w-full rounded-xl border px-4 py-3 transition ${isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-600 placeholder:text-gray-400" : "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"}`}/>
+              <input disabled={isSavedMethod} value={form.accountNo} onChange={(e) => handleFormChange('accountNo', e.target.value)} placeholder="Account Number (Required)" className={`w-full rounded-xl border px-4 py-3 transition ${isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-600 placeholder:text-gray-400" : "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"}`}/>
+              <input disabled={isSavedMethod} value={form.branch} onChange={(e) => handleFormChange('branch', e.target.value)} placeholder="Branch Name (Optional)" className={`w-full rounded-xl border px-4 py-3 transition ${isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-600 placeholder:text-gray-400" : "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"}`}/>
             </>
           )}
 
           {/* crypto */}
           {method === "crypto" && (
             <>
-              <select disabled={isSavedMethod} value={form.network} onChange={(e) => handleFormChange('network', e.target.value)} className={`w-full px-4 py-3 border rounded-xl transition appearance-none ${isSavedMethod ? "bg-gray-100 cursor-not-allowed text-gray-600" : "focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"}`}>
+              <select disabled={isSavedMethod} value={form.network} onChange={(e) => handleFormChange('network', e.target.value)} className={`w-full appearance-none rounded-xl border px-4 py-3 transition ${isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-600" : "border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"}`}>
                 <option value="USDT-TRC20">USDT (TRC20 Network)</option>
                 <option value="USDT-BEP20">USDT (BEP20 Network)</option>
               </select>
 
-              <input disabled={isSavedMethod} value={form.cryptoAddress} onChange={(e) => handleFormChange('cryptoAddress', e.target.value)} placeholder="USDT Wallet Address" className={`w-full px-4 py-3 border rounded-xl transition ${isSavedMethod ? "bg-gray-100 cursor-not-allowed text-gray-600" : "focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"}`}/>
+              <input disabled={isSavedMethod} value={form.cryptoAddress} onChange={(e) => handleFormChange('cryptoAddress', e.target.value)} placeholder="USDT Wallet Address" className={`w-full rounded-xl border px-4 py-3 transition ${isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-600 placeholder:text-gray-400" : "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"}`}/>
             </>
           )}
         </div>

@@ -38,12 +38,12 @@ export default function MyTicketsPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-4.5rem)] lg:h-[calc(100vh-20px)] overflow-hidden pt-16 lg:pt-0 m-0 lg:m-2 xl:m-4 lg:rounded-2xl border-none lg:border border-[#2c4167] shadow-none text-black bg-[linear-gradient(180deg,#081227_0%,#0d1d3b_100%)]">
+    <div className="flex min-h-[calc(100svh-4rem)] flex-col overflow-hidden pt-16 lg:h-[calc(100vh-20px)] lg:flex-row lg:pt-0 lg:m-2 xl:m-4 lg:rounded-2xl border-none lg:border border-[#2c4167] shadow-none text-black bg-[linear-gradient(180deg,#081227_0%,#0d1d3b_100%)]">
       
       {/* Sidebar */}
       <div className={`
         ${view !== "list" ? "hidden lg:flex" : "flex"} 
-        w-full lg:w-[380px] xl:w-[420px] border-r border-[#2c4167] flex-col bg-[#0f1d38] transition-all duration-300 min-w-0
+        w-full lg:w-[380px] xl:w-[420px] border-b lg:border-b-0 lg:border-r border-[#2c4167] flex-col bg-[#0f1d38] transition-all duration-300 min-w-0
       `}>
         <div className="px-4 py-4 sm:py-5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-b border-gray-200">
 
@@ -116,7 +116,7 @@ export default function MyTicketsPage() {
       {/* Main Content Area */}
       <div className={`
         ${view === "list" ? "hidden lg:flex" : "flex"} 
-        flex-1 flex-col bg-[#0c1830] w-full h-full relative min-w-0
+        flex-1 flex-col bg-[#0c1830] w-full min-h-[calc(100svh-4rem)] lg:min-h-0 relative min-w-0
       `}>
         {view === "list" && (
           <div className="hidden lg:flex flex-col items-center justify-center h-full animate-in fade-in zoom-in duration-500 text-center">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -21,12 +21,31 @@ import {
 } from "lucide-react";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import Swal from "sweetalert2";
+import DashboardThemeToggle from "@/components/DashboardThemeToggle";
 
-const AdminSidebar = () => {
+const AdminSidebar = ({ theme, toggleTheme }) => {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const { role, userData, logout } = useFirebaseAuth();
+
+  useEffect(() => {
+    if (!isMobileOpen) return;
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsMobileOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "";
+    };
+  }, [isMobileOpen]);
 
   /* ================= MENU CONFIG ================= */
   const menuItems = [
@@ -171,7 +190,7 @@ const AdminSidebar = () => {
   return (
     <>
       {/* ================= MOBILE HEADER ================= */}
-      <div className="sidebar-shell lg:hidden fixed top-0 left-0 w-full z-50 border-b px-4 py-3 flex justify-between items-center shadow-md">
+      <div className="sidebar-shell fixed top-0 left-0 z-[60] flex w-full items-center justify-between border-b px-4 py-3 shadow-md lg:hidden">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center">
             <Image
@@ -188,8 +207,10 @@ const AdminSidebar = () => {
         </div>
 
         <button
+          type="button"
           onClick={() => setIsMobileOpen(true)}
           className="admin-secondary-button rounded-lg p-2 transition"
+          aria-label="Open menu"
         >
           <Menu size={24} />
         </button>
@@ -197,7 +218,7 @@ const AdminSidebar = () => {
 
       {/* ================= MOBILE SIDEBAR ================= */}
       {isMobileOpen && (
-        <div className="fixed inset-0 z-[60] lg:hidden">
+        <div className="fixed inset-0 z-[90] lg:hidden">
           <div
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsMobileOpen(false)}
@@ -226,11 +247,17 @@ const AdminSidebar = () => {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setIsMobileOpen(false)}
                   className="text-gray-400 hover:text-[#dce8ff]"
+                  aria-label="Close menu"
                 >
                   <X size={24} />
                 </button>
+              </div>
+
+              <div className="mb-6">
+                <DashboardThemeToggle theme={theme} toggleTheme={toggleTheme} />
               </div>
 
               {renderMenu()}
@@ -272,6 +299,10 @@ const AdminSidebar = () => {
                 Control Panel
               </span>
             </div>
+          </div>
+
+          <div className="mb-6">
+            <DashboardThemeToggle theme={theme} toggleTheme={toggleTheme} />
           </div>
 
           {renderMenu()}

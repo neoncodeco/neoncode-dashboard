@@ -99,7 +99,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6 bg-[#fcfcfc] p-4 pt-20 pb-10 sm:p-6 sm:pt-20 md:space-y-8 md:p-8 md:pt-8 md:pb-12">
+    <div className="space-y-6 bg-[#fcfcfc] p-4   sm:p-6 sm:pt-5  md:space-y-8 md:p-8 md:pt-8 md:pb-12">
       
       {/* --- ১. হেডার --- */}
       <div className="flex flex-col gap-4 pt-2 sm:pt-4 md:flex-row md:items-center md:justify-between md:pt-0">

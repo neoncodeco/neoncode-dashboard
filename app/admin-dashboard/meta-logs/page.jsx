@@ -87,7 +87,7 @@ export default function BudgetLogsPage() {
   const totalPages = Math.ceil(totalLogs / limit);
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] p-4 pt-20 md:p-6 lg:p-8 w-full font-sans">
+    <div className="min-h-screen bg-[#f8f9fa] p-4 pt-4 md:pt-8 md:p-6 lg:p-8 w-full font-sans">
       <div className="w-full space-y-8">
         
         {/* --- HEADER SECTION (Matches your design) --- */}

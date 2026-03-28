@@ -91,7 +91,7 @@ export default function TokenSettings() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] p-4 pt-20 md:p-6 lg:p-8 w-full">
+    <div className="min-h-screen bg-[#f8f9fa] p-4 md:pt-5 md:p-6 lg:p-8 w-full">
       <div className="w-full space-y-8">
         
         {/* --- HERO SECTION (FULL WIDTH) --- */}

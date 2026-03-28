@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -20,14 +20,32 @@ import {
   X,
 } from "lucide-react";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import DashboardThemeToggle from "@/components/DashboardThemeToggle";
 
-const UserSidebar = () => {
+const UserSidebar = ({ theme, toggleTheme }) => {
   const pathname = usePathname();
-
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const { user, logout } = useFirebaseAuth();
+
+  useEffect(() => {
+    if (!isMobileOpen) return;
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsMobileOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "";
+    };
+  }, [isMobileOpen]);
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -71,7 +89,7 @@ const UserSidebar = () => {
       { name: "Affiliate", icon: Share2, href: "/user-dashboard/affiliate" },
   ];
 
-  const renderMenu = () => (
+  const renderMenu = (isMobile = false) => (
     <nav className="space-y-2">
       {menuItems.map((item) => {
         const isActive = pathname === item.href;
@@ -82,8 +100,12 @@ const UserSidebar = () => {
             onClick={() => setIsMobileOpen(false)}
           >
             <div
-              className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all mb-2 ${
-                isActive
+              className={`mb-2 flex items-center gap-4 rounded-xl px-4 py-3 transition-all ${
+                isMobile
+                  ? isActive
+                    ? "border border-[#8ab4ff]/30 bg-[#18315c] font-bold text-white shadow-md"
+                    : "border border-transparent bg-white/5 text-[#dce8ff]"
+                  : isActive
                   ? "sidebar-active font-bold shadow-md"
                   : "sidebar-link"
               }`}
@@ -100,97 +122,106 @@ const UserSidebar = () => {
   return (
     <>
       {/* ================= Mobile Header ================= */}
-      <div className="sidebar-shell lg:hidden fixed top-0 left-0 w-full z-50 px-4 py-3 flex justify-between items-center border-b">
+      <div className="sidebar-shell fixed top-0 left-0 z-[60] flex w-full justify-between items-center border-b px-4 py-3 lg:hidden">
         <div className="flex items-center gap-2">
           <Image src="/Neon Studio icon.png" alt="Logo" width={24} height={24} />
-          <span className="font-bold text-white text-lg">neoncode</span>
+          <span className="font-bold text-white text-lg">Neon Code</span>
         </div>
         <button
+          type="button"
           onClick={() => setIsMobileOpen(true)}
-          className="p-2  rounded-lg text-white"
+          className="rounded-lg p-2 text-white"
+          aria-label="Open menu"
         >
           <Menu size={24} />
         </button>
       </div>
 
       {/* ================= Mobile Drawer ================= */}
-      {isMobileOpen && (
-        <div className="fixed inset-0 z-[60] lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/60"
+      <div
+        className={`fixed inset-0 z-[90] lg:hidden transition ${
+          isMobileOpen ? "pointer-events-auto" : "pointer-events-none"
+        }`}
+        aria-hidden={!isMobileOpen}
+      >
+        <div
+          className={`absolute inset-0 bg-black/60 transition-opacity duration-200 ${
+            isMobileOpen ? "opacity-100" : "opacity-0"
+          }`}
+          onClick={() => setIsMobileOpen(false)}
+        />
+
+        <div
+          className={`absolute top-0 left-0 z-10 flex h-full w-[84%] max-w-sm flex-col overflow-y-auto border-r border-[#22375d] bg-[#0f1d38] p-6 text-white shadow-2xl transition-transform duration-300 ${
+            isMobileOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <button
+            type="button"
             onClick={() => setIsMobileOpen(false)}
-          />
+            className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white"
+            aria-label="Close menu"
+          >
+            <X size={20} />
+          </button>
 
-          <div className="sidebar-shell absolute top-0 left-0 w-[80%] max-w-sm h-full p-6 flex flex-col overflow-y-auto">
-            {/* Close */}
-            <button
-              onClick={() => setIsMobileOpen(false)}
-              className="absolute top-4 right-4 p-2 bg-white/10 rounded-full text-white"
-            >
-              <X size={20} />
-            </button>
+          <div className="mb-8 mt-4 text-center">
+            <Image
+              src="/Neon Studio icon.png"
+              alt="Logo"
+              width={64}
+              height={64}
+              className="mx-auto mb-3"
+            />
+            <h2 className="text-white text-xl font-bold">Neon Code</h2>
+            <p className="text-xs text-slate-300">Dashboard Panel</p>
+          </div>
 
-            {/* Logo */}
-            <div className="text-center mb-8 mt-4">
-              <Image
-                src="/Neon Studio icon.png"
-                alt="Logo"
-                width={64}
-                height={64}
-                className="mx-auto mb-3"
-              />
-              <h2 className="text-white text-xl font-bold">Neon Code</h2>
-              <p className="text-xs text-gray-300">Dashboard Panel</p>
+          <div className="mb-6">
+            <DashboardThemeToggle theme={theme} toggleTheme={toggleTheme} />
+          </div>
+
+          {renderMenu(true)}
+
+          <div className="mt-auto space-y-6 pt-6">
+            <div className="rounded-2xl border border-[#2f5e18] bg-[#1a350e] p-5 text-center">
+              <h3 className="mb-1 font-bold text-white">Upgrade to Pro</h3>
+              <p className="mb-4 text-xs text-gray-300">Get 1 month free and unlock</p>
+              <Link href="/upgrade" onClick={() => setIsMobileOpen(false)}>
+                <button className="w-full rounded-xl bg-white py-2 font-bold text-[#1a350e]">
+                  Upgrade
+                </button>
+              </Link>
             </div>
 
-            {/* Menu */}
-            {renderMenu()}
+            <div className="space-y-4 border-t border-[#2f5e18] pt-4">
+              <Link href="/help" onClick={() => setIsMobileOpen(false)}>
+                <div className="flex items-center gap-3 text-sm text-gray-300 hover:text-white">
+                  <HelpCircle size={18} />
+                  Help & Information
+                </div>
+              </Link>
 
-            {/* Bottom Section */}
-            <div className="mt-auto space-y-6">
-              {/* Upgrade */}
-              <div className="bg-[#1a350e] p-5 rounded-2xl text-center border border-[#2f5e18]">
-                <h3 className="text-white font-bold mb-1">Upgrade to Pro</h3>
-                <p className="text-xs text-gray-300 mb-4">
-                  Get 1 month free and unlock
-                </p>
-                <Link href="/upgrade" onClick={() => setIsMobileOpen(false)}>
-                  <button className="w-full bg-white text-[#1a350e] py-2 rounded-xl font-bold">
-                    Upgrade
-                  </button>
-                </Link>
-              </div>
-
-              {/* Help + Logout */}
-              <div className="pt-4 border-t border-[#2f5e18] space-y-4">
-                <Link href="/help" onClick={() => setIsMobileOpen(false)}>
-                  <div className="flex items-center gap-3 text-gray-300 hover:text-white text-sm">
-                    <HelpCircle size={18} />
-                    Help & Information
-                  </div>
-                </Link>
-
-                {user ? (
-                  <div
-                    onClick={handleLogout}
-                    className="flex items-center gap-3 text-gray-300 hover:text-red-400 text-sm cursor-pointer"
-                  >
+              {user ? (
+                <div
+                  onClick={handleLogout}
+                  className="flex cursor-pointer items-center gap-3 text-sm text-gray-300 hover:text-red-400"
+                >
+                  <LogOut size={18} />
+                  {isLoggingOut ? "Logging out..." : "Log out"}
+                </div>
+              ) : (
+                <Link href="/login" onClick={() => setIsMobileOpen(false)}>
+                  <div className="flex items-center gap-3 text-sm text-gray-300 hover:text-white">
                     <LogOut size={18} />
-                    {isLoggingOut ? "Logging out..." : "Log out"}
+                    Log in
                   </div>
-                ) : (
-                  <Link href="/login" onClick={() => setIsMobileOpen(false)}>
-                    <div className="flex items-center gap-3 text-gray-300 hover:text-white text-sm">
-                      <LogOut size={18} />
-                      Log in
-                    </div>
-                  </Link>
-                )}
-              </div>
+                </Link>
+              )}
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* ================= Desktop Sidebar ================= */}
       <div className="sidebar-shell hidden min-h-screen flex-col justify-between border-r p-6 lg:flex lg:w-64 xl:w-72">
@@ -199,7 +230,10 @@ const UserSidebar = () => {
             <Image src="/Neon Studio icon.png" alt="Logo" width={32} height={32} />
             <span className="text-white text-2xl font-bold"> Neon Dashboard</span>
           </div>
-          {renderMenu()}
+          <div className="mb-6">
+            <DashboardThemeToggle theme={theme} toggleTheme={toggleTheme} />
+          </div>
+          {renderMenu(false)}
         </div>
 
         <div className="space-y-6">

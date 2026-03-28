@@ -5,10 +5,8 @@ import {
   Search, 
   MoreVertical, 
   Calendar, 
-  Users, 
   FolderKanban,
-  CheckCircle2,
-  Clock
+  ArrowUpRight
 } from 'lucide-react';
 
 // --- ডামি প্রজেক্ট ডাটা ---
@@ -109,7 +107,7 @@ export default function ProjectsPage() {
       {/* --- ২. প্রজেক্ট গ্রিড --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {projectsData.map((project) => (
-            <div key={project.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+            <div key={project.id} className="group rounded-[1.7rem] border border-gray-100 bg-white p-6 shadow-[0_18px_42px_-30px_rgba(15,23,42,0.18)] transition-all hover:-translate-y-1 hover:shadow-[0_24px_50px_-28px_rgba(37,99,235,0.18)]">
                 
                 {/* কার্ড হেডার */}
                 <div className="flex justify-between items-start mb-4">
@@ -118,8 +116,8 @@ export default function ProjectsPage() {
                             <FolderKanban size={24} />
                         </div>
                         <div>
-                            <h3 className="font-bold text-gray-800 text-lg group-hover:text-green-700 transition-colors">{project.title}</h3>
-                            <p className="text-xs text-gray-400">{project.client}</p>
+                            <h3 className="text-[1.05rem] font-bold text-gray-800 transition-colors group-hover:text-green-700">{project.title}</h3>
+                            <p className="text-[11px] font-medium text-gray-400">{project.client}</p>
                         </div>
                     </div>
                     <button className="text-gray-400 hover:text-gray-600">
@@ -152,7 +150,7 @@ export default function ProjectsPage() {
                 </div>
 
                 {/* ফুটার (টিম মেম্বারস) */}
-                <div className="flex justify-between items-center pt-4 border-t border-gray-50">
+                <div className="flex justify-between items-center pt-4 border-t border-gray-100">
                     <div className="flex -space-x-2">
                         {project.team.map((img, index) => (
                            <div key={index} className="w-8 h-8 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-[10px] font-bold text-gray-500 overflow-hidden">
@@ -165,9 +163,20 @@ export default function ProjectsPage() {
                         </div>
                     </div>
                     
-                    <div className="flex items-center gap-1 text-gray-400 text-xs font-medium cursor-pointer hover:text-green-600">
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-2 rounded-full border border-green-100 bg-green-50 px-3 py-2 text-[11px] font-bold text-green-700 transition-all hover:border-green-200 hover:bg-green-100 hover:text-green-800"
+                    >
                         View Details
-                    </div>
+                        <ArrowUpRight size={14} />
+                    </button>
+                </div>
+
+                <div className="mt-4 rounded-[1.15rem] border border-gray-100 bg-[linear-gradient(180deg,#f9fbff_0%,#f4f8ff_100%)] px-4 py-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">Project Summary</p>
+                    <p className="mt-2 text-[13px] leading-6 text-gray-600">
+                        Track deadlines, monitor delivery progress, and keep the client workflow moving without losing visibility.
+                    </p>
                 </div>
 
             </div>

@@ -90,9 +90,9 @@ export default function AdminSupportLayout() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-transparent pt-16 text-white lg:pt-0">
+    <div className="flex min-h-[calc(100svh-4rem)] flex-col overflow-hidden bg-transparent pt-16 text-white lg:h-screen lg:flex-row lg:pt-0">
       
-      <div className={`${selectedTicket ? "hidden lg:flex" : "flex"} h-full w-full shrink-0 flex-col border-r border-[#2c4167] bg-[#0f1d38] lg:w-[350px]`}>
+      <div className={`${selectedTicket ? "hidden lg:flex" : "flex"} h-full w-full shrink-0 flex-col border-b lg:border-b-0 lg:border-r border-[#2c4167] bg-[#0f1d38] lg:w-[350px]`}>
         <div className="p-5 border-b border-[#2c4167] bg-[#0f1d38]">
           <h1 className="mb-4 text-xl font-black tracking-tight text-[#dce8ff] sm:text-2xl">Support Panel</h1>
           <div className="relative">
@@ -136,7 +136,7 @@ export default function AdminSupportLayout() {
 
       {/* --- RIGHT SIDE: CHAT VIEW --- */}
       {/* মোবাইলে এবং ট্যাবলেটে (lg এর নিচে) টিকেট সিলেক্ট না থাকলে এটি লুকানো থাকবে */}
-      <div className={`${!selectedTicket ? "hidden lg:flex" : "flex"} relative h-full w-full min-w-0 flex-1 flex-col bg-[#0c1830]`}>
+      <div className={`${!selectedTicket ? "hidden lg:flex" : "flex"} relative min-h-[calc(100svh-4rem)] lg:min-h-0 h-full w-full min-w-0 flex-1 flex-col bg-[#0c1830]`}>
         {selectedTicket ? (
           <>
             {/* Header: Back Button visible on Mobile & Tablet (lg:hidden) */}

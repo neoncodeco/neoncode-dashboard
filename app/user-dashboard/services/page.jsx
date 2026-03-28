@@ -38,7 +38,7 @@ export default function ServicesPage() {
           transition={{ duration: 0.7 }}
           className="mb-12"
         >
-          <p className="mb-4 inline-flex rounded-full border border-[#d8ff30]/20 bg-[#d8ff30]/8 px-4 py-1 text-xs uppercase tracking-[0.25em] text-[#d8ff30]">
+          <p className="mb-4 inline-flex rounded-full border border-lime-200 bg-lime-50 px-4 py-1 text-xs font-bold uppercase tracking-[0.25em] text-lime-700">
             Service Architecture
           </p>
           
@@ -57,12 +57,12 @@ export default function ServicesPage() {
                 }}
                 className={`rounded-2xl border px-5 py-3 text-left transition-all duration-300 ${
                   isActive
-                    ? "border-[#d8ff30]/30 bg-[#d8ff30]/12 text-white shadow-[0_10px_30px_rgba(216,255,48,0.08)]"
-                    : "border-white/10 bg-white/[0.04] text-white/68 hover:border-[#d8ff30]/20 hover:bg-white/[0.07]"
+                    ? "border-lime-200 bg-lime-50 text-slate-900 shadow-[0_10px_30px_rgba(163,230,53,0.12)]"
+                    : "border-slate-200 bg-white/80 text-slate-700 hover:border-lime-200 hover:bg-lime-50/70"
                 }`}
               >
                 <p className="text-sm font-semibold">{category.title}</p>
-                <p className="text-xs text-white/46">{category.services.length} active services</p>
+                <p className="text-xs text-slate-500">{category.services.length} active services</p>
               </button>
             );
           })}
@@ -127,14 +127,14 @@ export default function ServicesPage() {
                       <button
                         type="button"
                         onClick={() => setSelectedService(service)}
-                        className="rounded-lg border border-[#d8ff30]/30 bg-[#d8ff30]/12 px-4 py-2 text-xs font-semibold text-[#f6ffd0] transition hover:bg-[#d8ff30]/18"
+                        className="rounded-lg border border-lime-200 bg-lime-50 px-4 py-2 text-xs font-semibold text-lime-700 transition hover:bg-lime-100"
                       >
                         View details
                       </button>
                       <button
                         type="button"
                         onClick={() => setExpandedService((prev) => (prev === service.id ? null : service.id))}
-                        className="rounded-lg border border-white/20 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/[0.1]"
+                        className="rounded-lg border border-slate-200 bg-white/90 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
                       >
                         {isExpanded ? "Hide preview" : "See sample workflow"}
                       </button>
@@ -147,7 +147,7 @@ export default function ServicesPage() {
                           });
                           setPopupOpen(true);
                         }}
-                        className="rounded-lg border border-white/20 px-4 py-2 text-xs font-semibold text-gray-100 transition hover:border-[#d8ff30]/28 hover:bg-white/[0.08]"
+                        className="rounded-lg border border-slate-200 bg-white/90 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:border-lime-200 hover:bg-lime-50/60"
                       >
                         Start this service
                       </button>

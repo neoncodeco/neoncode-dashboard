@@ -4,8 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ExternalLink, LogOut, Menu, QrCode, UserCircle2, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import DashboardThemeToggle from "@/components/DashboardThemeToggle";
 
 const menuItems = [
   {
@@ -15,11 +16,29 @@ const menuItems = [
   },
 ];
 
-export default function TeamMemberSidebar() {
+export default function TeamMemberSidebar({ theme, toggleTheme }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { logout, userData } = useFirebaseAuth();
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
   const publicUrl = userData?.teamMemberPublicUrl;
 
@@ -66,6 +85,10 @@ export default function TeamMemberSidebar() {
           </div>
         </div>
 
+        <div className="mb-6">
+          <DashboardThemeToggle theme={theme} toggleTheme={toggleTheme} />
+        </div>
+
         {renderMenu()}
 
         <div className="mt-8 rounded-[1.8rem] border border-sky-400/20 bg-sky-500/10 p-5 text-sm text-sky-50">
@@ -101,23 +124,25 @@ export default function TeamMemberSidebar() {
 
   return (
     <>
-      <div className="sidebar-shell fixed left-0 top-0 z-50 flex w-full items-center justify-between border-b px-4 py-3 lg:hidden">
+      <div className="sidebar-shell fixed left-0 top-0 z-[60] flex w-full items-center justify-between border-b px-4 py-3 lg:hidden">
         <div className="flex items-center gap-2">
           <Image src="/Neon Studio icon.png" alt="Logo" width={24} height={24} />
           <span className="text-lg font-bold text-white">team dashboard</span>
         </div>
-        <button onClick={() => setIsOpen(true)} className="rounded-lg p-2 text-white">
+        <button type="button" onClick={() => setIsOpen(true)} className="rounded-lg p-2 text-white" aria-label="Open menu">
           <Menu size={22} />
         </button>
       </div>
 
       {isOpen ? (
-        <div className="fixed inset-0 z-[60] lg:hidden">
+        <div className="fixed inset-0 z-[90] lg:hidden">
           <div className="absolute inset-0 bg-black/70" onClick={() => setIsOpen(false)} />
           <div className="sidebar-shell absolute left-0 top-0 flex h-full w-[82%] max-w-sm flex-col justify-between border-r p-6">
             <button
+              type="button"
               onClick={() => setIsOpen(false)}
               className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white"
+              aria-label="Close menu"
             >
               <X size={18} />
             </button>
