@@ -15,7 +15,7 @@ export default function Overview() {
 
   
   return (
-    <div className="min-h-screen space-y-8 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.16),transparent_40%),linear-gradient(180deg,#f8fbff_0%,#eef4fb_100%)] px-6 pt-4   md:px-8 md:pt-0">
+    <div className="min-h-screen space-y-8 bg-transparent px-6 pt-4 md:px-8 md:pt-0">
       <ReqAdAcModal
         isOpen={isReqAdAcModalOpen}
         onClose={() => setIsReqAdAcModalOpen(false)}

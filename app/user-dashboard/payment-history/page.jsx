@@ -120,7 +120,7 @@ const PaymentHistoryUI = () => {
     );
 
   return (
-    <div className="w-full p-3 pt-5 sm:p-4 md:p-6 lg:p-8 lg:pt-8">
+    <div className="w-full p-3 5 sm:p-4 md:p-6 lg:p-8 lg:pt-8">
       <div className="bg-white text-black rounded-xl shadow-lg border border-gray-100 overflow-hidden">
         {/* Header & Actions */}
         <div className="p-4 sm:p-6 border-b border-gray-100 flex flex-col lg:flex-row gap-4 justify-between lg:items-center">

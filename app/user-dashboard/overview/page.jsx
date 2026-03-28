@@ -148,7 +148,7 @@ const OverviewPage = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[linear-gradient(180deg,#f8fbff_0%,#eef4fb_100%)] p-4 pt-5 md:p-8">
+    <div className="min-h-screen w-full bg-transparent p-4 md:pt-5 md:p-8">
       {/* Header section remains similar but compact */}
       <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>

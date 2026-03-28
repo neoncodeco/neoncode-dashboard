@@ -146,7 +146,7 @@ export default function AffiliatePayoutsPage() {
   }
 
   return (
-    <div className="min-h-screen space-y-6 bg-[#fcfcfc] p-4  sm:p-6 sm:pt-5 md:space-y-8 md:p-8 md:pt-8">
+    <div className="min-h-screen space-y-6 bg-[#fcfcfc] p-4  sm:p-6 md:space-y-8 md:p-8 md:pt-8">
 
       {/* HEADER */}
       <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">

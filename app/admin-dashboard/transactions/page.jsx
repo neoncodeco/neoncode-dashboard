@@ -92,7 +92,7 @@ export default function TransactionsPage() {
   };
 
   return (
-    <div className="space-y-6 p-4  sm:p-6 sm:pt-5 md:space-y-8 md:p-8 md:pt-8">
+    <div className="space-y-6 p-4  sm:p-6  md:space-y-8 md:p-8 md:pt-8">
 
       {/* Header */}
       <div className="flex flex-col gap-4 pt-2 sm:pt-4 md:flex-row md:items-center md:justify-between md:pt-0">

@@ -55,7 +55,7 @@ export default function AffiliatePage() {
   };
 
   return (
-    <div className="mx-auto min-h-screen space-y-10 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.16),transparent_34%),linear-gradient(180deg,#f8fbff_0%,#eef4fb_100%)] p-4 lg:p-10">
+    <div className="mx-auto min-h-screen space-y-10 bg-transparent p-4 lg:p-10">
       
       {/* ================= HEADER ================= */}
       <div className="flex flex-col items-start justify-between gap-5 border-b border-gray-200 pb-6 pt-16 md:flex-row md:pt-0">
