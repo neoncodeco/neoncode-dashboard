@@ -3,7 +3,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "dashboard-theme";
-const DEFAULT_THEME = "dark";
+const DEFAULT_THEME = "light";
 const THEME_EVENT = "dashboard-theme-change";
 
 function getThemeSnapshot() {
@@ -52,6 +52,10 @@ export default function useDashboardTheme() {
   const theme = useSyncExternalStore(subscribe, getThemeSnapshot, () => DEFAULT_THEME);
 
   useEffect(() => {
+    if (!window.localStorage.getItem(STORAGE_KEY)) {
+      window.localStorage.setItem(STORAGE_KEY, DEFAULT_THEME);
+    }
+
     document.documentElement.setAttribute("data-dashboard-theme", theme);
   }, [theme]);
 

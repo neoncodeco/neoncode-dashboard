@@ -4,7 +4,6 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Bell,
   Check,
   Copy,
   ShieldCheck,
@@ -105,27 +104,12 @@ function StatusRow({ label, value, tone = "success" }) {
 }
 
 function MobileWalletCard({
-  profileName,
   userData,
   usdToBdtRate,
   totalPayout,
 }) {
   return (
     <div className="mx-auto w-full max-w-[320px] rounded-[30px] border border-[var(--dashboard-frame-border)] bg-[linear-gradient(180deg,var(--dashboard-frame-bg),var(--dashboard-panel-bg))] p-4 shadow-[var(--dashboard-phone-shadow)]">
-      <div className="mb-4 flex items-center justify-end">
-        <div className="flex items-center gap-2">
-          <Bell size={16} className="dashboard-text-muted" />
-          <div className="dashboard-accent-surface flex h-8 w-8 items-center justify-center rounded-xl text-[10px] font-black">
-            {profileName
-              .split(/\s+/)
-              .map((part) => part[0])
-              .join("")
-              .slice(0, 2)
-              .toUpperCase()}
-          </div>
-        </div>
-      </div>
-
       <div className="dashboard-subpanel rounded-[24px] border border-[var(--dashboard-frame-border)] bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] p-5">
         <p className="text-[11px] font-black uppercase tracking-[0.18em] dashboard-text-faint">
           Current Balance
@@ -258,7 +242,6 @@ export default function OverviewPage() {
   const totalReferIncome = Number(stats.totalReferIncome || 0);
   const totalTopup = Number(userData.topupBalance || 0);
   const totalWallet = Number(userData.walletBalance || 0);
-  const profileName = user?.displayName || userData?.name || "Neon Client";
   const profileId = userData?.referralCode || userData?.userId?.slice(-6) || "585D93";
   const chartData = [
     { name: "Wallet", value: totalWallet, fill: "#B7DF69" },
@@ -281,7 +264,6 @@ export default function OverviewPage() {
     <div className="space-y-4 p-3 sm:p-4">
       <div className="xl:hidden">
         <MobileWalletCard
-          profileName={profileName}
           userData={userData}
           usdToBdtRate={usdToBdtRate}
           totalPayout={totalPayout}

@@ -13,12 +13,15 @@ import {
   LogOut,
   Layers3,
   LifeBuoy,
+  Moon,
   PackageOpen,
   Share2,
+  Sun,
   WalletCards,
   History,
   X,
 } from "lucide-react";
+import DashboardThemeToggle from "@/components/DashboardThemeToggle";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import { userDashboardMenuItems } from "@/lib/userDashboardNav";
 
@@ -156,6 +159,12 @@ const UserSidebar = ({ theme, toggleTheme }) => {
       <div className="space-y-3 border-t pt-5" style={{ borderColor: "var(--dashboard-frame-border)" }}>
         <UserIdentity user={user} />
 
+        <DashboardThemeToggle
+          theme={theme}
+          toggleTheme={toggleTheme}
+          className="w-full justify-start"
+        />
+
         <Link
           href="https://wa.me/8801344224787"
           target="_blank"
@@ -259,6 +268,12 @@ const UserSidebar = ({ theme, toggleTheme }) => {
                     </div>
 
                     <div className="mt-3 grid gap-2">
+                      <DashboardThemeToggle
+                        theme={theme}
+                        toggleTheme={toggleTheme}
+                        className="w-full justify-start rounded-2xl px-4 py-3"
+                      />
+
                       {[
                         { name: "Profile", href: "/user-dashboard/profile", icon: CircleHelp },
                         { name: "History", href: "/user-dashboard/history", icon: History },
@@ -342,6 +357,18 @@ const UserSidebar = ({ theme, toggleTheme }) => {
                   );
                 })}
               </nav>
+
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="dashboard-app-frame sidebar-shell fixed bottom-[calc(env(safe-area-inset-bottom,0px)+5.95rem)] left-4 z-[88] flex h-12 w-12 items-center justify-center rounded-2xl lg:hidden"
+                aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+                title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+              >
+                <span className="dashboard-accent-surface flex h-9 w-9 items-center justify-center rounded-2xl">
+                  {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                </span>
+              </button>
 
               <button
                 type="button"
