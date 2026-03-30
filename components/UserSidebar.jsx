@@ -1,49 +1,96 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { createPortal } from "react-dom";
+import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard,
-  CheckSquare,
-  UserPlus,
+  CircleHelp,
   CreditCard,
-  History,
-  LifeBuoy,
-  Share2,
-  Crown,
+  Headset,
+  Home,
   LogOut,
-  HelpCircle,
-  Menu,
+  Layers3,
+  LifeBuoy,
+  PackageOpen,
+  Share2,
+  WalletCards,
+  History,
   X,
 } from "lucide-react";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
-import DashboardThemeToggle from "@/components/DashboardThemeToggle";
+import { userDashboardMenuItems } from "@/lib/userDashboardNav";
+
+const mobileTabs = [
+  { name: "Home", icon: Home, href: "/user-dashboard/overview", tooltip: "Overview" },
+  { name: "Services", icon: Layers3, href: "/user-dashboard/services", tooltip: "Our Services" },
+  { name: "Meta Ads", icon: WalletCards, href: "/user-dashboard/meta-ads-account", tooltip: "Meta Ads Account" },
+  { name: "Wallet", icon: CreditCard, href: "/user-dashboard/payment-methods" },
+];
+
+function UserIdentity({ user }) {
+  const initials = useMemo(() => {
+    const base = user?.displayName || user?.email || "NC";
+    return base
+      .split(/\s+/)
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+  }, [user]);
+
+  return (
+    <div className="dashboard-subpanel flex items-center gap-3 p-3">
+      {user?.photoURL ? (
+        <Image
+          src={user.photoURL}
+          alt={user.displayName || "User"}
+          width={42}
+          height={42}
+          className="h-10 w-10 rounded-2xl object-cover"
+        />
+      ) : (
+        <div className="dashboard-accent-surface flex h-10 w-10 items-center justify-center rounded-2xl text-sm font-black">
+          {initials}
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-bold dashboard-text-strong">
+          {user?.displayName || "Neon Client"}
+        </p>
+        <p className="truncate text-xs dashboard-text-muted">
+          {user?.email || "Premium Tier"}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 const UserSidebar = ({ theme, toggleTheme }) => {
+  const router = useRouter();
   const pathname = usePathname();
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [servicesMenuOpen, setServicesMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { user, logout } = useFirebaseAuth();
+  const portalRoot = typeof document !== "undefined" ? document.body : null;
 
   useEffect(() => {
-    if (!isMobileOpen) return;
+    if (!servicesMenuOpen && !profileMenuOpen) return undefined;
 
-    const handleEscape = (event) => {
+    const closeOnEscape = (event) => {
       if (event.key === "Escape") {
-        setIsMobileOpen(false);
+        setServicesMenuOpen(false);
+        setProfileMenuOpen(false);
       }
     };
 
-    document.addEventListener("keydown", handleEscape);
-    document.body.style.overflow = "hidden";
-
+    document.addEventListener("keydown", closeOnEscape);
     return () => {
-      document.removeEventListener("keydown", handleEscape);
-      document.body.style.overflow = "";
+      document.removeEventListener("keydown", closeOnEscape);
     };
-  }, [isMobileOpen]);
+  }, [servicesMenuOpen, profileMenuOpen]);
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -57,171 +104,277 @@ const UserSidebar = ({ theme, toggleTheme }) => {
     }
   };
 
-  const menuItems = [
-    { name: "Overview", icon: LayoutDashboard, href: "/user-dashboard/overview" },
-    { name: "Our Services", icon: CheckSquare, href: "/user-dashboard/services" },
-    { name: "Meta Ads Account", icon: LayoutDashboard, href: "/user-dashboard/meta-ads-account" },
-    { name: "Freepik Premium", icon: Crown, href: "/user-dashboard/freepik-premium" },
-    { name: "Payment Methods", icon: CreditCard, href: "/user-dashboard/payment-methods" },
-    { name: "History", icon: History, href: "/user-dashboard/history" },
-    { name: "Support Tickets", icon: LifeBuoy, href: "/user-dashboard/support" },
-    { name: "Profile", icon: UserPlus, href: "/user-dashboard/profile" },
-    { name: "Affiliate", icon: Share2, href: "/user-dashboard/affiliate" },
-  ];
-
-  const renderMenu = (isMobile = false) => (
-    <nav className="space-y-2">
-      {menuItems.map((item) => {
+  const renderMenu = () => (
+    <nav className="space-y-1.5">
+      {userDashboardMenuItems.map((item) => {
         const isActive = pathname === item.href;
 
         return (
-          <Link key={item.name} href={item.href} onClick={() => setIsMobileOpen(false)}>
-            <div
-              className={`flex items-center gap-4 rounded-xl px-4 py-3 transition-all ${
-                isMobile
-                  ? isActive
-                    ? "border border-[#8ab4ff]/30 bg-[#18315c] font-bold text-white shadow-md"
-                    : "border border-transparent bg-white/5 text-[#dce8ff]"
-                  : isActive
-                  ? "sidebar-active font-bold shadow-md"
-                  : "sidebar-link"
+          <Link
+            key={item.name}
+            href={item.href}
+            className={`group flex items-center gap-3 rounded-2xl px-4 py-3 transition-all ${
+              isActive
+                ? "sidebar-active border text-white shadow-[0_10px_26px_rgba(183,223,105,0.12)]"
+                : "sidebar-link border border-transparent"
+            }`}
+          >
+            <span
+              className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all ${
+                isActive ? "dashboard-accent-surface" : "dashboard-subpanel"
               }`}
             >
-              <item.icon size={20} />
-              <span className="text-sm">{item.name}</span>
-            </div>
+              <item.icon size={16} />
+            </span>
+            <span className="text-sm font-semibold">{item.name}</span>
           </Link>
         );
       })}
     </nav>
   );
 
+  const sidebarContent = (
+    <>
+      <div>
+        <div className="mb-6 flex items-center gap-3">
+          <div className="dashboard-subpanel flex h-12 w-12 items-center justify-center rounded-2xl p-2.5">
+            <Image src="/Neon Studio icon.png" alt="Logo" width={28} height={28} />
+          </div>
+          <div>
+            <p className="text-[1.7rem] font-semibold tracking-tight dashboard-text-strong">
+              Neon Code
+            </p>
+            <p className="text-[11px] uppercase tracking-[0.26em] dashboard-text-faint">
+              Client Dashboard
+            </p>
+          </div>
+        </div>
+
+        {renderMenu()}
+      </div>
+
+      <div className="space-y-3 border-t pt-5" style={{ borderColor: "var(--dashboard-frame-border)" }}>
+        <UserIdentity user={user} />
+
+        <Link
+          href="https://wa.me/8801344224787"
+          target="_blank"
+          className="dashboard-subpanel flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium dashboard-text-muted transition"
+        >
+          <CircleHelp size={18} />
+          Help & Information
+        </Link>
+
+        {user ? (
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="dashboard-subpanel flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium dashboard-text-muted transition hover:text-red-400"
+          >
+            <LogOut size={18} />
+            {isLoggingOut ? "Logging out..." : "Logout"}
+          </button>
+        ) : (
+          <Link
+            href="/login"
+            className="dashboard-subpanel flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium dashboard-text-muted"
+          >
+            <LogOut size={18} />
+            Login
+          </Link>
+        )}
+      </div>
+    </>
+  );
+
   return (
     <>
-      <div className="sidebar-shell fixed left-0 top-0 z-[80] flex w-full items-center justify-between border-b px-4 py-3 shadow-md lg:hidden">
-        <div className="flex items-center gap-2">
-          <Image src="/Neon Studio icon.png" alt="Logo" width={24} height={24} />
-          <span className="text-lg font-bold text-white">Neon Code</span>
+      <aside className="hidden lg:block lg:w-[300px] lg:flex-shrink-0">
+        <div className="sticky top-4 h-[calc(100vh-2rem)] p-4">
+          <div className="dashboard-app-frame sidebar-shell flex h-full flex-col justify-between p-6">
+            {sidebarContent}
+          </div>
         </div>
+      </aside>
 
-        <button
-          type="button"
-          onClick={() => setIsMobileOpen(true)}
-          className="rounded-xl bg-white/5 p-2 text-white transition active:scale-95"
-          aria-label="Open menu"
-        >
-          <Menu size={24} />
-        </button>
-      </div>
-
-      {isMobileOpen && (
-        <div className="fixed inset-0 z-[140] lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-            onClick={() => setIsMobileOpen(false)}
-          />
-
-          <div className="sidebar-shell absolute left-0 top-0 flex h-full w-[84%] max-w-sm flex-col border-r border-[#22375d] p-6 shadow-2xl">
-            <div>
-              <div className="mb-8 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Image src="/Neon Studio icon.png" alt="Logo" width={32} height={32} />
-                  <div>
-                    <p className="text-lg font-bold text-white">Neon Code</p>
-                    <p className="text-[10px] uppercase tracking-[0.18em] text-slate-400">Dashboard</p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setIsMobileOpen(false)}
-                  className="rounded-full bg-white/10 p-2 text-white"
-                  aria-label="Close menu"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <div className="mb-6">
-                <DashboardThemeToggle theme={theme} toggleTheme={toggleTheme} />
-              </div>
-
-              {renderMenu(true)}
-            </div>
-
-            <div className="mt-auto space-y-3 border-t border-[#22375d] pt-6">
-              <Link
-                href="https://wa.me/8801344224787"
-                target="_blank"
-                onClick={() => setIsMobileOpen(false)}
-              >
-                <div className="flex items-center gap-3 text-sm text-gray-300 hover:text-white">
-                  <HelpCircle size={18} />
-                  Help & Information
-                </div>
-              </Link>
-
-              {user ? (
+      {portalRoot
+        ? createPortal(
+            <>
+              {servicesMenuOpen ? (
                 <div
-                  onClick={handleLogout}
-                  className="flex cursor-pointer items-center gap-3 pt-2 text-sm text-red-400"
+                  className="fixed inset-x-4 z-[85] flex justify-center lg:hidden"
+                  style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 6.25rem)" }}
                 >
-                  <LogOut size={18} />
-                  {isLoggingOut ? "Logging out..." : "Log out"}
-                </div>
-              ) : (
-                <Link href="/login" onClick={() => setIsMobileOpen(false)}>
-                  <div className="flex items-center gap-3 pt-2 text-sm text-gray-300 hover:text-white">
-                    <LogOut size={18} />
-                    Log in
+                  <div className="dashboard-app-frame sidebar-shell w-full max-w-[21rem] overflow-hidden rounded-[30px] p-3">
+                    <div className="grid gap-2">
+                      {[
+                        { name: "Our Services", href: "/user-dashboard/services", icon: Layers3 },
+                        { name: "Freepik Premium", href: "/user-dashboard/freepik-premium", icon: PackageOpen },
+                        { name: "Premium Service", href: "/user-dashboard/services", icon: Share2 },
+                      ].map((item) => (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          className="dashboard-subpanel flex items-center gap-3 rounded-2xl px-4 py-3"
+                        >
+                          <span className="dashboard-accent-surface flex h-9 w-9 items-center justify-center rounded-2xl">
+                            <item.icon size={16} />
+                          </span>
+                          <span className="dashboard-text-strong text-sm font-semibold">{item.name}</span>
+                        </Link>
+                      ))}
+                    </div>
                   </div>
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+                </div>
+              ) : null}
 
-      <div className="sidebar-shell sticky top-0 hidden h-screen flex-col justify-between border-r p-6 lg:flex lg:w-64 xl:w-72">
-        <div>
-          <div className="mb-10 flex items-center gap-3">
-            <Image src="/Neon Studio icon.png" alt="Logo" width={32} height={32} />
-            <span className="text-2xl font-bold text-white">Neon Code</span>
-          </div>
+              {profileMenuOpen ? (
+                <div
+                  className="fixed inset-x-4 z-[86] flex justify-end lg:hidden"
+                  style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 6.25rem)" }}
+                >
+                  <div className="dashboard-app-frame sidebar-shell w-full max-w-[18.5rem] overflow-hidden rounded-[30px] p-3">
+                    <div className="dashboard-subpanel flex items-center gap-3 p-3">
+                      {user?.photoURL ? (
+                        <Image
+                          src={user.photoURL}
+                          alt={user.displayName || "User"}
+                          width={40}
+                          height={40}
+                          className="h-10 w-10 rounded-2xl object-cover"
+                        />
+                      ) : (
+                        <div className="dashboard-accent-surface flex h-10 w-10 items-center justify-center rounded-2xl text-sm font-black">
+                          {user?.displayName?.slice(0, 1)?.toUpperCase() || "NC"}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="dashboard-text-strong truncate text-sm font-bold">
+                          {user?.displayName || "Neon Client"}
+                        </p>
+                        <p className="dashboard-text-muted truncate text-[11px]">
+                          {user?.email || "Client account"}
+                        </p>
+                      </div>
+                    </div>
 
-          <div className="mb-6">
-            <DashboardThemeToggle theme={theme} toggleTheme={toggleTheme} />
-          </div>
+                    <div className="mt-3 grid gap-2">
+                      {[
+                        { name: "Profile", href: "/user-dashboard/profile", icon: CircleHelp },
+                        { name: "History", href: "/user-dashboard/history", icon: History },
+                        { name: "Live Chat", href: "/user-dashboard/profile?panel=chat", icon: Headset },
+                        { name: "Affiliate", href: "/user-dashboard/affiliate", icon: Share2 },
+                        { name: "Support Tickets", href: "/user-dashboard/support", icon: LifeBuoy },
+                      ].map((item) => (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          onClick={() => setProfileMenuOpen(false)}
+                          className="dashboard-subpanel flex items-center gap-3 rounded-2xl px-4 py-3"
+                        >
+                          <span className="dashboard-subpanel flex h-9 w-9 items-center justify-center rounded-2xl">
+                            <item.icon size={16} className="dashboard-text-muted" />
+                          </span>
+                          <span className="dashboard-text-strong text-sm font-semibold">{item.name}</span>
+                        </Link>
+                      ))}
 
-          {renderMenu(false)}
-        </div>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="dashboard-subpanel flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-red-400"
+                      >
+                        <span className="dashboard-subpanel flex h-9 w-9 items-center justify-center rounded-2xl">
+                          <LogOut size={16} className="text-red-400" />
+                        </span>
+                        <span className="text-sm font-semibold">{isLoggingOut ? "Logging out..." : "Logout"}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
 
-        <div className="space-y-3 border-t border-[#22375d] pt-6">
-          <Link href="https://wa.me/8801344224787" target="_blank">
-            <div className="flex items-center gap-3 text-sm text-gray-300 hover:text-white">
-              <HelpCircle size={18} />
-              Help & Information
-            </div>
-          </Link>
+              <nav
+                className="dashboard-app-frame sidebar-shell fixed left-1/2 z-[70] grid w-[calc(100%-1.25rem)] max-w-[21rem] -translate-x-1/2 grid-cols-4 gap-2 rounded-[30px] px-3 py-2.5 lg:hidden"
+                style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 0.55rem)" }}
+              >
+                {mobileTabs.map((item) => {
+                  const isActive = pathname === item.href;
+                  const isServices = item.name === "Services";
 
-          {user ? (
-            <div
-              onClick={handleLogout}
-              className="flex cursor-pointer items-center gap-3 pt-2 text-sm text-gray-400 hover:text-red-400"
-            >
-              <LogOut size={18} />
-              {isLoggingOut ? "Logging out..." : "Log out"}
-            </div>
-          ) : (
-            <Link href="/login">
-              <div className="flex items-center gap-3 pt-2 text-sm text-gray-300 hover:text-white">
-                <LogOut size={18} />
-                Log in
-              </div>
-            </Link>
-          )}
-        </div>
-      </div>
+                  return (
+                    <button
+                      key={item.name}
+                      type="button"
+                      onClick={() => {
+                        if (isServices) {
+                          setProfileMenuOpen(false);
+                          setServicesMenuOpen((prev) => !prev);
+                          return;
+                        }
+                        setServicesMenuOpen(false);
+                        setProfileMenuOpen(false);
+                        router.push(item.href);
+                      }}
+                      className={`group relative flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-[22px] px-2 py-3 text-center transition-all duration-200 ${
+                        isActive ? "sidebar-active scale-[1.02]" : "sidebar-link"
+                      }`}
+                    >
+                      <span
+                        className={`flex h-10 w-10 items-center justify-center rounded-2xl transition-all ${
+                          isActive ? "dashboard-accent-surface" : "dashboard-subpanel"
+                        }`}
+                      >
+                        <item.icon size={18} strokeWidth={2.2} />
+                      </span>
+                      <span className="sr-only">{item.name}</span>
+                      <span
+                        className="pointer-events-none absolute -top-9 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold opacity-0 transition-all group-hover:-translate-y-1 group-hover:opacity-100"
+                        style={{
+                          borderColor: "var(--dashboard-frame-border)",
+                          background: "var(--dashboard-frame-bg)",
+                          color: "var(--dashboard-text-strong)",
+                        }}
+                      >
+                        {item.tooltip || item.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setServicesMenuOpen(false);
+                  setProfileMenuOpen((prev) => !prev);
+                }}
+                className="dashboard-app-frame sidebar-shell fixed bottom-[calc(env(safe-area-inset-bottom,0px)+5.95rem)] right-4 z-[88] flex h-12 w-12 items-center justify-center rounded-2xl lg:hidden"
+                aria-label="Open profile menu"
+              >
+                {user?.photoURL ? (
+                  <Image
+                    src={user.photoURL}
+                    alt={user.displayName || "User"}
+                    width={38}
+                    height={38}
+                    className="h-9 w-9 rounded-2xl object-cover"
+                  />
+                ) : (
+                  <div className="dashboard-accent-surface flex h-9 w-9 items-center justify-center rounded-2xl text-xs font-black">
+                    {user?.displayName?.slice(0, 1)?.toUpperCase() || "NC"}
+                  </div>
+                )}
+                {profileMenuOpen ? (
+                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-slate-900">
+                    <X size={12} />
+                  </span>
+                ) : null}
+              </button>
+            </>,
+            portalRoot
+          )
+        : null}
     </>
   );
 };

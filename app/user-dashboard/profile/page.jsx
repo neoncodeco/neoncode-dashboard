@@ -1,17 +1,22 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { 
   Camera, User, Mail, Phone, Save, Loader2, 
   CheckCircle, Wallet, Gift, Shield, 
-  ArrowRight, Globe, CreditCard
+  ArrowRight, Globe, CreditCard, History, Headset, X
 } from 'lucide-react';
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import ChatWindow from "@/components/chat/ChatWindow";
 
 export default function FullProfilePage() {
-  const { userData, token, refreshUser } = useFirebaseAuth();
+  const searchParams = useSearchParams();
+  const { userData, user, token, refreshUser } = useFirebaseAuth();
   const [loading, setLoading] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [status, setStatus] = useState({ type: '', message: '' });
 
   // মেইন স্টেট
@@ -35,6 +40,12 @@ export default function FullProfilePage() {
       setPaymentMethods(userData.payoutMethods || {});
     }
   }, [userData]);
+
+  useEffect(() => {
+    if (searchParams.get("panel") === "chat" && user) {
+      setChatOpen(true);
+    }
+  }, [searchParams, user]);
 
   const saveProfile = async (nextFormData, nextPaymentMethods, options = {}) => {
     const { silent = false, successMessage = "Profile updated successfully!" } = options;
@@ -183,6 +194,46 @@ export default function FullProfilePage() {
               </div>
             </div>
           </div>
+
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+            <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <Globe size={18} className="text-indigo-600" /> Quick Access
+            </h3>
+            <div className="space-y-3">
+              <Link
+                href="/user-dashboard/history"
+                className="flex items-center justify-between rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4 transition hover:border-indigo-200 hover:bg-indigo-50/60"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-600">
+                    <History size={18} />
+                  </span>
+                  <div>
+                    <p className="font-bold text-gray-800">Payment History</p>
+                    <p className="text-xs text-gray-500">View transactions and account activity</p>
+                  </div>
+                </div>
+                <ArrowRight size={18} className="text-gray-400" />
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setChatOpen(true)}
+                className="w-full flex items-center justify-between rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4 text-left transition hover:border-emerald-200 hover:bg-emerald-50/60"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
+                    <Headset size={18} />
+                  </span>
+                  <div>
+                    <p className="font-bold text-gray-800">Live Chat Support</p>
+                    <p className="text-xs text-gray-500">Open instant chat with the support team</p>
+                  </div>
+                </div>
+                <ArrowRight size={18} className="text-gray-400" />
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Main Form */}
@@ -260,6 +311,22 @@ export default function FullProfilePage() {
           </form>
         </div>
       </div>
+
+      {chatOpen && user ? (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-[430px]">
+            <button
+              type="button"
+              onClick={() => setChatOpen(false)}
+              className="absolute -top-3 right-0 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-700 shadow-lg"
+              aria-label="Close live chat"
+            >
+              <X size={18} />
+            </button>
+            <ChatWindow user={user} onClose={() => setChatOpen(false)} />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

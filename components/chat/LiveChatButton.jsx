@@ -55,7 +55,7 @@ export default function LiveChatButton() {
   if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed bottom-2 right-3 z-50 sm:bottom-3 sm:right-5">
+    <div className="fixed bottom-[5.8rem] right-3 z-50 sm:bottom-3 sm:right-5 lg:bottom-3">
       {open && user && (
         <div className="absolute bottom-[calc(100%+0.75rem)] right-0 w-[calc(100vw-1.5rem)] max-w-[410px] origin-bottom-right animate-in fade-in zoom-in-95 slide-in-from-bottom-6 duration-300 sm:w-[calc(100vw-2rem)]">
           <ChatWindow user={user} onClose={() => setOpen(false)} />

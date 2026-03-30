@@ -15,14 +15,14 @@ export default function Overview() {
 
   
   return (
-    <div className="min-h-screen space-y-8 bg-transparent px-6 pt-4 md:px-8 md:pt-0">
+    <div className="user-dashboard-theme-scope min-h-screen space-y-8 bg-transparent px-6 pt-4 md:px-8 md:pt-0">
       <ReqAdAcModal
         isOpen={isReqAdAcModalOpen}
         onClose={() => setIsReqAdAcModalOpen(false)}
       />
 
       {/* --- ১. হেডার সেকশন (ওয়েলকাম মেসেজ এবং রিকোয়েস্ট বাটন) --- */}
-      <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(17,31,58,0.95),rgba(9,19,40,0.96))] p-6 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.95)]">
+      <div className="dashboard-subpanel overflow-hidden rounded-[2rem] p-6">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div className="max-w-2xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-blue-100">

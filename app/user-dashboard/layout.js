@@ -2,10 +2,10 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import LiveChatButton from "@/components/chat/LiveChatButton";
 import DashboardMouseGlow from "@/components/DashboardMouseGlow";
 import Loader from "@/components/Loader";
 import UserSidebar from "@/components/UserSidebar";
+import UserDashboardTopbar from "@/components/UserDashboardTopbar";
 import useDashboardTheme from "@/hooks/useDashboardTheme";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 
@@ -41,14 +41,16 @@ export default function MainLayout({ children }) {
   return (
     <div
       data-theme={theme}
-      className={`dashboard-shell dashboard-theme-${theme} neon-grid block min-h-svh w-full overflow-visible lg:flex lg:h-screen lg:flex-row lg:overflow-hidden`}
+      className={`dashboard-shell user-dashboard-shell dashboard-theme-${theme} neon-grid block min-h-svh w-full overflow-visible lg:flex lg:h-screen lg:flex-row lg:overflow-hidden`}
     >
       <DashboardMouseGlow />
       <UserSidebar theme={theme} toggleTheme={toggleTheme} />
-      <div className="dashboard-content min-w-0 w-full overflow-visible pt-16 lg:flex-1 lg:pt-0 lg:overflow-y-auto">
-        {children}
+      <div className="dashboard-content min-w-0 w-full overflow-visible pt-0 pb-28 lg:flex-1 lg:pt-0 lg:pb-0 lg:overflow-y-auto">
+        <UserDashboardTopbar theme={theme} toggleTheme={toggleTheme} />
+        <div className="user-dashboard-stage px-4 pb-5 sm:px-4 lg:pb-6">
+          <div className="user-dashboard-page-surface">{children}</div>
+        </div>
       </div>
-      <LiveChatButton />
     </div>
   );
 }

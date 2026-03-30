@@ -17,19 +17,19 @@ export default function DashboardThemeToggle({
       onClick={toggleTheme}
       aria-label={`Switch to ${isDark ? "light" : "dark"} theme`}
       title={`Switch to ${isDark ? "light" : "dark"} theme`}
-      className={`theme-toggle inline-flex items-center gap-3 rounded-2xl border px-3 py-2 text-sm font-semibold transition ${className}`.trim()}
+      className={`theme-toggle inline-flex items-center gap-3 rounded-2xl border px-3 py-2 text-sm font-semibold transition ${compact ? "compact-toggle" : ""} ${className}`.trim()}
     >
       <span className="theme-toggle__icon inline-flex h-9 w-9 items-center justify-center rounded-xl">
         {isDark ? <Moon size={18} /> : <Sun size={18} />}
       </span>
-      <span className="min-w-0 text-left leading-tight">
-        <span className="block">{label}</span>
-        {!compact ? (
+      {!compact ? (
+        <span className="min-w-0 text-left leading-tight">
+          <span className="block">{label}</span>
           <span className="theme-toggle__meta block text-[11px] font-medium">
             {isDark ? "Current neon look" : "Bright readable layout"}
           </span>
-        ) : null}
-      </span>
+        </span>
+      ) : null}
     </button>
   );
 }

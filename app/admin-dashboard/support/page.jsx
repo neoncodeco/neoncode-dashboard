@@ -118,6 +118,18 @@ export default function AdminSupportLayout() {
                   <MessageSquare size={20} />
                 </div>
                 <div className="flex-1 overflow-hidden">
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    {t.departmentName ? (
+                      <span className="rounded-full bg-[#8ab4ff]/12 px-2 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#c9dcff]">
+                        {t.departmentName}
+                      </span>
+                    ) : null}
+                    {t.priority ? (
+                      <span className="rounded-full bg-[#45cf9b]/12 px-2 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#a7f1d1]">
+                        {t.priority}
+                      </span>
+                    ) : null}
+                  </div>
                   <div className="flex justify-between items-start mb-0.5">
                     <h3 className={`truncate text-sm font-extrabold ${selectedTicket?._id === t._id ? "text-[#8ab4ff]" : "text-gray-100"}`}>{t.subject}</h3>
                   </div>
@@ -149,6 +161,18 @@ export default function AdminSupportLayout() {
                   <ChevronLeft size={24} strokeWidth={3} />
                 </button>
                 <div>
+                  <div className="mb-1 flex flex-wrap items-center gap-2">
+                    {selectedTicket.departmentName ? (
+                      <span className="rounded-full bg-[#8ab4ff]/12 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#dce8ff]">
+                        {selectedTicket.departmentName}
+                      </span>
+                    ) : null}
+                    {selectedTicket.priority ? (
+                      <span className="rounded-full bg-[#45cf9b]/12 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#b8f3da]">
+                        {selectedTicket.priority} priority
+                      </span>
+                    ) : null}
+                  </div>
                   <h2 className="font-black text-gray-100 text-base lg:text-lg tracking-tight leading-tight">{selectedTicket.subject}</h2>
                   <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                     <span className="text-[#8ab4ff]">Official Support</span>

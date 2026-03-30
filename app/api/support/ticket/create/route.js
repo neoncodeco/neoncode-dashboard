@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
+import { getSupportDepartmentById, supportPriorityOptions } from "@/lib/supportDepartments";
 
 const normalizeScreenshots = (screenshots = []) => {
   const isValidImgBb = (url) =>
@@ -19,11 +20,17 @@ export async function POST(req) {
     const decoded = await verifyToken(req);
     if (!decoded) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { subject, message, screenshots = [] } = await req.json();
+    const { subject, message, screenshots = [], departmentId = "", priority = "Medium" } = await req.json();
     const normalizedScreenshots = normalizeScreenshots(screenshots);
     if (screenshots.length && normalizedScreenshots.length !== screenshots.length) {
       return NextResponse.json({ error: "Only ImgBB image URLs are allowed" }, { status: 400 });
     }
+    if (!String(subject || "").trim() || !String(message || "").trim()) {
+      return NextResponse.json({ error: "Subject and message are required" }, { status: 400 });
+    }
+
+    const selectedDepartment = getSupportDepartmentById(departmentId);
+    const normalizedPriority = supportPriorityOptions.includes(priority) ? priority : "Medium";
     const { db } = await getDB();
 
     const user = await db.collection("users").findOne({ userId: decoded.uid });
@@ -32,7 +39,10 @@ export async function POST(req) {
     const ticket = {
       ticketId: "TKT-" + Date.now(),
       userId: decoded.uid,
-      subject,
+      subject: String(subject).trim(),
+      departmentId: selectedDepartment.id,
+      departmentName: selectedDepartment.name,
+      priority: normalizedPriority,
       status: "open",
       messages: [
         {
@@ -41,7 +51,7 @@ export async function POST(req) {
           senderName: user?.name || "User",
           senderRole: "user",
           senderPhoto: user?.photo || "",
-          text: message,
+          text: String(message).trim(),
           screenshots: normalizedScreenshots,
           createdAt: new Date(),
         },

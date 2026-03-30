@@ -97,30 +97,45 @@ export default function UserChatView({ ticketIdFromProps, onBack }) {
   };
 
   if (loading) return (
-    <div className="h-full flex flex-col items-center justify-center space-y-3 bg-white">
+    <div className="dashboard-subpanel h-full flex flex-col items-center justify-center space-y-3">
       <div className="w-8 h-8 border-4 border-[#10B981] border-t-transparent rounded-full animate-spin"></div>
-      <p className="text-gray-400 text-sm animate-pulse font-medium">Loading conversation...</p>
+      <p className="dashboard-text-muted text-sm animate-pulse font-medium">Loading conversation...</p>
     </div>
   );
 
   if (!ticket) return (
-    <div className="h-full flex flex-col items-center justify-center p-5 bg-white">
-      <p className="text-gray-400 text-sm font-medium">Conversation not found.</p>
-      <button onClick={onBack} className="mt-4 text-[#10B981] font-bold underline">Go Back</button>
+    <div className="dashboard-subpanel h-full flex flex-col items-center justify-center p-5">
+      <p className="dashboard-text-muted text-sm font-medium">Conversation not found.</p>
+      <button onClick={onBack} className="mt-4 font-bold underline" style={{ color: "var(--dashboard-accent)" }}>Go Back</button>
     </div>
   );
 
   return (
-    <div className="flex flex-col h-full bg-white lg:bg-[#F8FAFC]">
+    <div className="user-dashboard-theme-scope flex flex-col h-full" style={{ background: "var(--dashboard-page-bg)" }}>
       {/* Header */}
-      <div className="px-4 py-4 sm:py-[22px] bg-white flex items-start sm:items-center justify-between gap-3 sticky top-0 z-10 shadow-sm ">
+      <div
+        className="px-4 py-4 sm:py-[22px] flex items-start sm:items-center justify-between gap-3 sticky top-0 z-10"
+        style={{ background: "var(--dashboard-frame-bg)", borderBottom: "1px solid var(--dashboard-frame-border)" }}
+      >
         <div className="flex items-start sm:items-center gap-3 overflow-hidden min-w-0">
-          <button onClick={onBack} className="lg:hidden p-1.5 hover:bg-gray-100 rounded-full transition">
-            <ChevronLeft size={24} className="text-gray-600" />
+          <button onClick={onBack} className="dashboard-subpanel lg:hidden p-1.5 rounded-full transition">
+            <ChevronLeft size={24} className="dashboard-text-muted" />
           </button>
           <div className="overflow-hidden min-w-0">
-            <h2 className="font-bold text-gray-800 text-sm md:text-xl truncate leading-tight">{ticket.subject}</h2>
-            <p className="text-[10px] md:text-xs text-gray-400 font-medium tracking-tight uppercase">Ticket ID: {ticketId.toString().slice(-6)}</p>
+            <div className="mb-1 flex flex-wrap items-center gap-2">
+              {ticket.departmentName ? (
+                <span className="dashboard-chip px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em]">
+                  {ticket.departmentName}
+                </span>
+              ) : null}
+              {ticket.priority ? (
+                <span className="rounded-full bg-[#e8f7ee] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#108351]">
+                  {ticket.priority} priority
+                </span>
+              ) : null}
+            </div>
+            <h2 className="dashboard-text-strong font-bold text-sm md:text-xl truncate leading-tight">{ticket.subject}</h2>
+            <p className="dashboard-text-muted text-[10px] md:text-xs font-medium tracking-tight uppercase">Ticket ID: {ticketId.toString().slice(-6)}</p>
           </div>
         </div>
         <div className={`shrink-0 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
@@ -138,14 +153,14 @@ export default function UserChatView({ ticketIdFromProps, onBack }) {
             <div key={i} className={`flex w-full ${isMine ? "justify-end" : "justify-start"}`}>
               <div className={`flex flex-col max-w-[92%] sm:max-w-[85%] md:max-w-[70%] ${isMine ? "items-end" : "items-start"}`}>
                 <div className="flex items-center gap-2 mb-1.5 px-1">
-                  {!isMine && <div className="bg-gray-200 p-1 rounded-full"><ShieldCheck size={10} className="text-gray-600" /></div>}
-                  <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tighter">
+                  {!isMine && <div className="dashboard-subpanel p-1 rounded-full"><ShieldCheck size={10} className="dashboard-text-muted" /></div>}
+                  <span className="dashboard-text-muted text-[11px] font-bold uppercase tracking-tighter">
                     {isMine ? "You" : m.senderName}
                   </span>
                   {!isMine && <span className="text-[9px] bg-[#10B981] text-white px-1.5 py-0.5 rounded font-black uppercase tracking-widest">{m.senderRole}</span>}
                 </div>
                 <div className={`relative p-3 md:p-4 rounded-2xl text-sm leading-relaxed shadow-sm transition-all duration-200 ${
-                  isMine ? "bg-[#10B981] text-white rounded-tr-none" : "bg-white border border-gray-100 text-gray-800 rounded-tl-none"
+                  isMine ? "bg-[#10B981] text-white rounded-tr-none" : "dashboard-subpanel dashboard-text-strong rounded-tl-none"
                 }`}>
                   <p className="whitespace-pre-wrap">{m.text}</p>
                   {m.screenshots?.map((img, idx) => (
@@ -162,7 +177,7 @@ export default function UserChatView({ ticketIdFromProps, onBack }) {
       </div>
 
       {/* Input Section */}
-      <div className="p-3 md:p-5 bg-white border-t border-gray-100">
+      <div className="p-3 md:p-5" style={{ background: "var(--dashboard-frame-bg)", borderTop: "1px solid var(--dashboard-frame-border)" }}>
         {ticket.status !== "closed" ? (
           <div className="max-w-4xl mx-auto space-y-3">
             {/* Screenshot Preview */}
@@ -177,9 +192,9 @@ export default function UserChatView({ ticketIdFromProps, onBack }) {
               </div>
             )}
 
-            <div className="flex items-end gap-2 bg-gray-50 p-2 rounded-2xl border border-gray-100 focus-within:border-[#10B981] transition-all min-w-0">
+            <div className="dashboard-subpanel flex items-end gap-2 p-2 rounded-2xl border transition-all min-w-0">
               {/* Image Upload Button */}
-              <label className="p-2.5 text-gray-400 hover:text-[#10B981] cursor-pointer transition-colors">
+              <label className="p-2.5 dashboard-text-muted hover:text-[#10B981] cursor-pointer transition-colors">
                 {isUploading ? <Loader2 size={20} className="animate-spin" /> : <ImageIcon size={20} />}
                 <input type="file" hidden accept="image/*" onChange={handleImageUpload} disabled={isUploading} />
               </label>
@@ -198,7 +213,7 @@ export default function UserChatView({ ticketIdFromProps, onBack }) {
                 disabled={isSending || isUploading || (!messageText.trim() && !attachedScreenshot)} 
                 className={`p-3 rounded-xl transition-all ${
                   isSending || isUploading || (!messageText.trim() && !attachedScreenshot)
-                  ? "bg-gray-200 text-gray-400"
+                  ? "dashboard-muted-button"
                   : "bg-[#10B981] text-white shadow-lg hover:scale-105 active:scale-95"
                 }`}
               >
@@ -207,7 +222,7 @@ export default function UserChatView({ ticketIdFromProps, onBack }) {
             </div>
           </div>
         ) : (
-          <div className="p-4 bg-gray-50 border border-dashed border-gray-200 rounded-2xl text-gray-500 text-xs text-center font-semibold flex items-center justify-center gap-3">
+          <div className="dashboard-subpanel p-4 border border-dashed rounded-2xl dashboard-text-muted text-xs text-center font-semibold flex items-center justify-center gap-3">
              <Lock size={16}/> This conversation is closed
           </div>
         )}

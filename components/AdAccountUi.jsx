@@ -16,41 +16,32 @@ import {
   ArrowUpRight,
   ShieldCheck,
 } from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import IncreaseBudgetModal from "./IncreaseBudgetModal";
 import TopupModal from "./TopupModal";
 import CurrencyAmount from "./CurrencyAmount";
+import MetaSpendingOverview from "./MetaSpendingOverview";
 import { formatUsd, resolveUsdToBdtRate, toSafeNumber } from "@/lib/currency";
 
 const FILTERS = ["All Accounts", "Ready Accounts", "Pending Setup", "Needs Attention"];
-const statCardClass =
-  "overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(160deg,rgba(20,34,63,0.94),rgba(12,23,45,0.96))] p-5 shadow-[0_20px_42px_-28px_rgba(15,23,42,0.88)]";
+const statCardClass = "dashboard-subpanel overflow-hidden rounded-[1.75rem] p-5";
 
 const getAdStatusMeta = (status) => {
   switch (status) {
     case 1:
       return {
         label: "Active",
-        className: "bg-emerald-400/10 text-emerald-200 ring-1 ring-emerald-400/20",
+        className: "bg-[var(--dashboard-success-soft)] text-[var(--dashboard-accent)] ring-1 ring-[var(--dashboard-frame-border)]",
       };
     case 2:
       return {
         label: "Disabled",
-        className: "bg-red-400/10 text-red-200 ring-1 ring-red-400/20",
+        className: "bg-[var(--dashboard-danger-soft)] text-[#ff8b8b] ring-1 ring-[var(--dashboard-frame-border)]",
       };
     default:
       return {
         label: "Unknown",
-        className: "bg-slate-400/10 text-slate-200 ring-1 ring-slate-400/20",
+        className: "bg-[var(--dashboard-panel-soft)] dashboard-text-muted ring-1 ring-[var(--dashboard-frame-border)]",
       };
   }
 };
@@ -100,7 +91,7 @@ const getAccountState = (account, balance) => {
   if (!isFetchableMetaAccount(account)) {
     return {
       label: "Pending Setup",
-      tone: "text-slate-200 bg-slate-400/10 ring-slate-400/20",
+      tone: "dashboard-text-muted bg-[var(--dashboard-panel-soft)] ring-[var(--dashboard-frame-border)]",
       helper: "Waiting for a valid active Meta account ID.",
     };
   }
@@ -108,7 +99,7 @@ const getAccountState = (account, balance) => {
   if (balance?.error) {
     return {
       label: "Needs Attention",
-      tone: "text-amber-200 bg-amber-400/10 ring-amber-400/20",
+      tone: "text-[#efb45d] bg-[var(--dashboard-warn-soft)] ring-[var(--dashboard-frame-border)]",
       helper: balance.readableError || balance.error,
     };
   }
@@ -116,7 +107,7 @@ const getAccountState = (account, balance) => {
   if (!balance || balance.loading) {
     return {
       label: "Syncing",
-      tone: "text-sky-200 bg-sky-400/10 ring-sky-400/20",
+      tone: "dashboard-text-muted bg-[var(--dashboard-panel-soft)] ring-[var(--dashboard-frame-border)]",
       helper: "Refreshing live account balance.",
     };
   }
@@ -297,19 +288,6 @@ export default function AdAccountUi() {
     });
   }, [adAccounts, balances, filter, searchTerm]);
 
-  const performanceData = useMemo(() => {
-    return filteredAccounts
-      .filter(isFetchableMetaAccount)
-      .map((acc) => {
-        const b = balances[acc.MetaAccountID];
-        return {
-          name: acc.accountName || String(acc.MetaAccountID || "").slice(-5),
-          spend: b && !b.error ? toSafeNumber(b.amountSpent) : 0,
-          limit: b && !b.error ? toSafeNumber(b.spendCap) : 0,
-        };
-      });
-  }, [filteredAccounts, balances]);
-
   if (loading) {
                   return (
       <div className="flex justify-center py-20">
@@ -321,43 +299,43 @@ export default function AdAccountUi() {
   return (
     <>
       <div className="space-y-6">
-        <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(10,22,47,0.94),rgba(8,17,37,0.94))] p-6 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.9)]">
+        <section className="dashboard-subpanel overflow-hidden rounded-[2rem] p-6">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-blue-100">
+              <div className="dashboard-chip mb-3 inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em]">
                 <Sparkles size={12} />
                 Meta Ads Control
               </div>
-              <h2 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
+              <h2 className="dashboard-text-strong text-3xl font-black tracking-tight sm:text-4xl">
                 Keep every ad account visible, funded, and ready.
               </h2>
-              <p className="mt-3 text-sm leading-6 text-slate-300">
+              <p className="dashboard-text-muted mt-3 text-sm leading-6">
                 Monitor live spend caps, top up quickly, and act on accounts that still need setup without losing the production flow.
               </p>
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:w-[460px]">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Ready Accounts</p>
-                <p className="mt-2 text-2xl font-black text-white">{accountStats.ready}</p>
-                <p className="mt-1 text-xs text-slate-400">Live Meta balances available</p>
+              <div className="dashboard-subpanel rounded-2xl p-4">
+                <p className="dashboard-text-faint text-[11px] font-bold uppercase tracking-[0.18em]">Ready Accounts</p>
+                <p className="dashboard-text-strong mt-2 text-2xl font-black">{accountStats.ready}</p>
+                <p className="dashboard-text-muted mt-1 text-xs">Live Meta balances available</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Pending Setup</p>
-                <p className="mt-2 text-2xl font-black text-white">{accountStats.pending}</p>
-                <p className="mt-1 text-xs text-slate-400">Need active account mapping</p>
+              <div className="dashboard-subpanel rounded-2xl p-4">
+                <p className="dashboard-text-faint text-[11px] font-bold uppercase tracking-[0.18em]">Pending Setup</p>
+                <p className="dashboard-text-strong mt-2 text-2xl font-black">{accountStats.pending}</p>
+                <p className="dashboard-text-muted mt-1 text-xs">Need active account mapping</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Needs Attention</p>
-                <p className="mt-2 text-2xl font-black text-white">{accountStats.issue}</p>
-                <p className="mt-1 text-xs text-slate-400">Token or balance sync issue</p>
+              <div className="dashboard-subpanel rounded-2xl p-4">
+                <p className="dashboard-text-faint text-[11px] font-bold uppercase tracking-[0.18em]">Needs Attention</p>
+                <p className="dashboard-text-strong mt-2 text-2xl font-black">{accountStats.issue}</p>
+                <p className="dashboard-text-muted mt-1 text-xs">Token or balance sync issue</p>
               </div>
             </div>
           </div>
         </section>
 
         {listError && (
-          <div className="flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-400/10 p-4 text-red-100">
+          <div className="flex items-start gap-3 rounded-2xl border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-danger-soft)] p-4 text-[#ff8b8b]">
             <AlertCircle size={18} className="mt-0.5 shrink-0" />
             <div>
               <p className="font-bold">Couldn&apos;t load ad account requests</p>
@@ -370,19 +348,19 @@ export default function AdAccountUi() {
           <div className={statCardClass}>
             <div className="mb-5 flex items-start justify-between">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Wallet Balance</p>
+                <p className="dashboard-text-faint text-[11px] font-bold uppercase tracking-[0.18em]">Wallet Balance</p>
                 <CurrencyAmount
                   value={userData?.walletBalance}
                   usdToBdtRate={usdRate}
-                  primaryClassName="mt-2 text-[1.8rem] font-black leading-none text-white"
-                  secondaryClassName="mt-2 text-[12px] font-semibold text-slate-200"
+                  primaryClassName="dashboard-text-strong mt-2 text-[1.8rem] font-black leading-none"
+                  secondaryClassName="dashboard-text-muted mt-2 text-[12px] font-semibold"
                 />
               </div>
-              <div className="rounded-2xl bg-blue-400/10 p-3 text-blue-200">
+              <div className="dashboard-subpanel rounded-2xl p-3 dashboard-text-muted">
                 <Wallet size={20} />
               </div>
             </div>
-            <div className="inline-flex rounded-full border border-blue-400/20 bg-blue-400/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
+            <div className="dashboard-chip inline-flex px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em]">
               Available for budget increase
             </div>
           </div>
@@ -450,82 +428,18 @@ export default function AdAccountUi() {
         </div>
 
         <div className="space-y-6">
-          <section className="rounded-[2rem] border border-white/10 bg-[linear-gradient(165deg,rgba(17,31,58,0.96),rgba(10,20,40,0.96))] p-6 shadow-lg">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="rounded-2xl bg-blue-400/10 p-3 text-blue-200">
-                <TrendingUp size={20} />
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-white">Spending Overview</h3>
-                <p className="text-xs text-slate-400">Live spend tracking across synced accounts</p>
-              </div>
-            </div>
+          <MetaSpendingOverview className="p-6" />
 
-            {performanceData.length > 0 ? (
-              <div className="h-[280px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={performanceData} margin={{ top: 10, right: 10, left: -22, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="accountSpend" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#7fb3ff" stopOpacity={0.35} />
-                        <stop offset="95%" stopColor="#7fb3ff" stopOpacity={0.03} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#23375d" />
-                    <XAxis
-                      dataKey="name"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: "#93a9d2", fontSize: 11, fontWeight: 600 }}
-                      dy={10}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: "#93a9d2", fontSize: 11 }}
-                      tickFormatter={(val) => formatUsd(val)}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: "16px",
-                        border: "1px solid rgba(127,179,255,0.16)",
-                        background: "#0f1d38",
-                        color: "#fff",
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="spend"
-                      stroke="#8ab4ff"
-                      strokeWidth={3}
-                      fillOpacity={1}
-                      fill="url(#accountSpend)"
-                      animationDuration={900}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="flex h-[280px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/5 text-center">
-                <Building2 size={32} className="text-slate-400" />
-                <p className="mt-4 font-bold text-white">No synced performance data yet</p>
-                <p className="mt-2 max-w-xs text-sm text-slate-400">
-                  Once an account is active with a valid Meta account ID, its live spend data will appear here.
-                </p>
-              </div>
-            )}
-          </section>
-
-          <section className="rounded-[2rem] border border-white/10 bg-[linear-gradient(165deg,rgba(17,31,58,0.96),rgba(10,20,40,0.96))] shadow-lg">
-            <div className="border-b border-white/10 px-6 py-5">
+          <section className="rounded-[2rem]">
+            <div className="px-1 py-1">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">
+                  <div className="dashboard-chip mb-2 inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em]">
                     <ShieldCheck size={12} />
                     Account Workspace
                   </div>
-                  <h3 className="text-xl font-black text-white">Ad Accounts</h3>
-                  <p className="text-sm text-slate-400">
+                  <h3 className="dashboard-text-strong text-xl font-black">Ad Accounts</h3>
+                  <p className="dashboard-text-muted text-sm">
                     Review account readiness, balance sync, and available actions from one workspace.
                   </p>
                 </div>
@@ -588,18 +502,18 @@ export default function AdAccountUi() {
                     return (
                       <article
                         key={`${account.MetaAccountID || account._id || i}-${i}`}
-                        className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(155deg,rgba(20,36,66,0.96),rgba(12,24,47,0.96))] p-5 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.9)]"
+                        className="dashboard-subpanel overflow-hidden rounded-[1.75rem] p-5"
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0">
-                            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-300">
+                            <div className="dashboard-chip mb-3 inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em]">
                               <Building2 size={12} />
                               {account.status || "pending"}
                             </div>
-                            <h4 className="truncate text-lg font-black text-white">
+                            <h4 className="dashboard-text-strong truncate text-lg font-black">
                               {account.accountName || "Unnamed Ad Account"}
                             </h4>
-                            <p className="mt-1 truncate font-mono text-xs text-slate-400">
+                            <p className="dashboard-text-muted mt-1 truncate font-mono text-xs">
                               {account.MetaAccountID || "Meta ID not assigned yet"}
                             </p>
                           </div>
@@ -633,21 +547,21 @@ export default function AdAccountUi() {
                             return (
                               <div
                                 key={item.label}
-                                className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))] p-4"
+                                className="dashboard-subpanel rounded-[1.35rem] p-4"
                               >
-                                <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                                <p className="dashboard-text-faint text-[9px] font-bold uppercase tracking-[0.18em]">
                                   {item.label}
                                 </p>
 
                                 {showLoading ? (
                                   <div className="mt-3 space-y-2">
-                                    <div className="h-5 w-24 animate-pulse rounded bg-white/10" />
-                                    <div className="h-4 w-20 animate-pulse rounded bg-white/5" />
+                                    <div className="h-5 w-24 animate-pulse rounded bg-[var(--dashboard-frame-border)]" />
+                                    <div className="h-4 w-20 animate-pulse rounded bg-[var(--dashboard-panel-soft)]" />
                                   </div>
                                 ) : showUnavailable ? (
                                   <div className="mt-3">
-                                    <p className="text-[1rem] font-black text-slate-200">Unavailable</p>
-                                    <p className="mt-1 text-[11px] leading-5 text-slate-500">
+                                    <p className="dashboard-text-strong text-[1rem] font-black">Unavailable</p>
+                                    <p className="dashboard-text-muted mt-1 text-[11px] leading-5">
                                       {!canFetchBalance
                                         ? "Awaiting valid Meta setup"
                                         : balance?.readableError || balance?.error || "Live Meta balance unavailable"}
@@ -655,7 +569,7 @@ export default function AdAccountUi() {
                                   </div>
                                 ) : (
                                   <div className="mt-3">
-                                    <p className={`text-[1.2rem] font-black leading-none ${item.tone}`}>
+                                    <p className={`text-[1.2rem] font-black leading-none ${item.tone === "text-white" ? "dashboard-text-strong" : item.tone}`}>
                                       {formatUsd(item.value)}
                                     </p>
                                     <div className="mt-1">
@@ -663,7 +577,7 @@ export default function AdAccountUi() {
                                         value={item.value}
                                         usdToBdtRate={usdRate}
                                         primaryClassName="hidden"
-                                        secondaryClassName="text-[11px] font-semibold text-slate-400"
+                                        secondaryClassName="dashboard-text-muted text-[11px] font-semibold"
                                         secondaryPrefix=""
                                       />
                                     </div>
@@ -674,10 +588,10 @@ export default function AdAccountUi() {
                           })}
                         </div>
 
-                        <div className="mt-4 rounded-2xl border border-white/10 bg-[#0f1d38]/90 px-4 py-3">
+                        <div className="dashboard-subpanel mt-4 rounded-2xl px-4 py-3">
                           <div className="flex items-start gap-2">
-                            <ArrowUpRight size={15} className="mt-0.5 shrink-0 text-blue-300" />
-                            <p className="text-sm text-slate-300">{stateMeta.helper}</p>
+                            <ArrowUpRight size={15} className="mt-0.5 shrink-0 dashboard-text-muted" />
+                            <p className="dashboard-text-muted text-sm">{stateMeta.helper}</p>
                           </div>
                         </div>
 
@@ -691,7 +605,7 @@ export default function AdAccountUi() {
                                   oldLimit: balance?.spendCap,
                                 })
                               }
-                              className="rounded-2xl bg-blue-500 px-4 py-2.5 text-[11px] font-black text-white transition-all hover:bg-blue-600"
+                              className="dashboard-accent-surface rounded-2xl px-4 py-2.5 text-[11px] font-black transition-all"
                             >
                               Increase Budget
                             </button>
@@ -699,7 +613,7 @@ export default function AdAccountUi() {
                           {showTopup && canFetchBalance && !hasError && (
                             <button
                               onClick={() => setTopupModal(true)}
-                              className="rounded-2xl bg-amber-500 px-4 py-2.5 text-[11px] font-black text-white transition-all hover:bg-amber-600"
+                              className="dashboard-accent-surface rounded-2xl px-4 py-2.5 text-[11px] font-black transition-all"
                             >
                               Top Up Wallet
                             </button>
