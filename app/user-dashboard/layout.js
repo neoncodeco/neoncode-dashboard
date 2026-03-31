@@ -6,6 +6,7 @@ import DashboardMouseGlow from "@/components/DashboardMouseGlow";
 import Loader from "@/components/Loader";
 import UserSidebar from "@/components/UserSidebar";
 import UserDashboardTopbar from "@/components/UserDashboardTopbar";
+import LiveChatButton from "@/components/chat/LiveChatButton";
 import useDashboardTheme from "@/hooks/useDashboardTheme";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 
@@ -50,6 +51,7 @@ export default function MainLayout({ children }) {
         <div className="user-dashboard-stage px-4 pb-5 sm:px-4 lg:pb-6">
           <div className="user-dashboard-page-surface">{children}</div>
         </div>
+        <LiveChatButton />
       </div>
     </div>
   );

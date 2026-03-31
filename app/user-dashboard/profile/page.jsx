@@ -1,58 +1,57 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { 
-  Camera, User, Mail, Phone, Save, Loader2, 
-  CheckCircle, Wallet, Gift, Shield, 
-  ArrowRight, Globe, CreditCard, History, Headset, X
-} from 'lucide-react';
+import {
+  Camera, User, Mail, Phone, Save, Loader2,
+  CheckCircle, Shield,
+  ArrowRight, Globe, CreditCard, History, LogOut, MessageSquareText, Sparkles,
+} from "lucide-react";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
-import ChatWindow from "@/components/chat/ChatWindow";
 
 export default function FullProfilePage() {
-  const searchParams = useSearchParams();
-  const { userData, user, token, refreshUser } = useFirebaseAuth();
+  const { userData, token, refreshUser, logout } = useFirebaseAuth();
   const [loading, setLoading] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [status, setStatus] = useState({ type: '', message: '' });
-
-  // মেইন স্টেট
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [status, setStatus] = useState({ type: "", message: "" });
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [otpStatus, setOtpStatus] = useState({ type: "", message: "" });
   const [formData, setFormData] = useState({
-    name: '',
-    photo: '',
-    coverPhoto: '',
+    name: "",
+    photo: "",
+    coverPhoto: "",
   });
-
-  // পেমেন্ট মেথডসের জন্য আলাদা স্টেট
+  const [verificationForm, setVerificationForm] = useState({
+    whatsappNumber: "",
+    code: "",
+  });
   const [paymentMethods, setPaymentMethods] = useState({});
 
   useEffect(() => {
     if (userData) {
       setFormData({
-        name: userData.name || '',
-        photo: userData.photo || '',
-        coverPhoto: userData.coverPhoto || '',
+        name: userData.name || "",
+        photo: userData.photo || "",
+        coverPhoto: userData.coverPhoto || "",
       });
-      // ডাটাবেস থেকে সব পেমেন্ট মেথড লোড করা (bkash, nagad, etc.)
+      setVerificationForm((prev) => ({
+        ...prev,
+        whatsappNumber: userData.whatsappNumber || "",
+      }));
       setPaymentMethods(userData.payoutMethods || {});
     }
   }, [userData]);
 
-  useEffect(() => {
-    if (searchParams.get("panel") === "chat" && user) {
-      setChatOpen(true);
-    }
-  }, [searchParams, user]);
+  const isPhoneVerified = Boolean(userData?.phoneVerification?.verified);
 
   const saveProfile = async (nextFormData, nextPaymentMethods, options = {}) => {
     const { silent = false, successMessage = "Profile updated successfully!" } = options;
     if (!token) return false;
     if (!silent) {
       setLoading(true);
-      setStatus({ type: '', message: '' });
+      setStatus({ type: "", message: "" });
     }
 
     try {
@@ -64,20 +63,20 @@ export default function FullProfilePage() {
         },
         body: JSON.stringify({
           ...nextFormData,
-          payoutMethods: nextPaymentMethods
+          payoutMethods: nextPaymentMethods,
         }),
       });
 
       if (res.ok) {
-        setStatus({ type: 'success', message: successMessage });
+        setStatus({ type: "success", message: successMessage });
         await refreshUser();
         return true;
       }
 
-      setStatus({ type: 'error', message: 'Update failed' });
+      setStatus({ type: "error", message: "Update failed" });
       return false;
     } catch (error) {
-      setStatus({ type: 'error', message: 'Error occurred!' });
+      setStatus({ type: "error", message: "Error occurred!" });
       return false;
     } finally {
       if (!silent) {
@@ -86,7 +85,6 @@ export default function FullProfilePage() {
     }
   };
 
-  // ইমেজ আপলোড (ImgBB)
   const handleImageUpload = async (e, target = "photo") => {
     const file = e.target.files[0];
     if (!file) return;
@@ -105,17 +103,13 @@ export default function FullProfilePage() {
         const key = target === "cover" ? "coverPhoto" : "photo";
         const nextFormData = { ...formData, [key]: data.url };
         setFormData(nextFormData);
-        await saveProfile(
-          nextFormData,
-          paymentMethods,
-          {
-            silent: true,
-            successMessage: target === "cover" ? "Cover photo updated." : "Profile photo updated."
-          }
-        );
+        await saveProfile(nextFormData, paymentMethods, {
+          silent: true,
+          successMessage: target === "cover" ? "Cover photo updated." : "Profile photo updated.",
+        });
       }
     } catch (err) {
-      setStatus({ type: 'error', message: 'Upload failed' });
+      setStatus({ type: "error", message: "Upload failed" });
     } finally {
       if (target === "cover") {
         setUploadingCover(false);
@@ -125,12 +119,84 @@ export default function FullProfilePage() {
     }
   };
 
-  // পেমেন্ট ইনপুট হ্যান্ডলার (ডাইনামিক)
   const handlePaymentChange = (methodKey, value) => {
-    setPaymentMethods(prev => ({
+    setPaymentMethods((prev) => ({
       ...prev,
-      [methodKey]: { ...prev[methodKey], number: value }
+      [methodKey]: { ...prev[methodKey], number: value },
     }));
+  };
+
+  const handleSendOtp = async () => {
+    if (!token) return;
+
+    setOtpLoading(true);
+    setOtpStatus({ type: "", message: "" });
+
+    try {
+      const res = await fetch("/api/otp/send-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          phone: verificationForm.whatsappNumber,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data?.ok) {
+        setOtpStatus({ type: "error", message: data?.error || "Failed to send OTP." });
+        return;
+      }
+
+      const successMessage = data?.devOtp
+        ? `Local test OTP: ${data.devOtp}${data?.providerError ? ` (${data.providerError})` : ""}`
+        : data.message || "OTP sent to your number.";
+
+      setOtpStatus({ type: "success", message: successMessage });
+      await refreshUser();
+    } catch (error) {
+      setOtpStatus({ type: "error", message: "Failed to send OTP." });
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!token) return;
+
+    setVerifyingOtp(true);
+    setOtpStatus({ type: "", message: "" });
+
+    try {
+      const res = await fetch("/api/otp/verify-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          code: verificationForm.code,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data?.ok) {
+        setOtpStatus({ type: "error", message: data?.error || "Failed to verify OTP." });
+        return;
+      }
+
+      setVerificationForm((prev) => ({ ...prev, code: "" }));
+      setOtpStatus({ type: "success", message: data.message || "Number verified successfully." });
+      await refreshUser();
+    } catch (error) {
+      setOtpStatus({ type: "error", message: "Failed to verify OTP." });
+    } finally {
+      setVerifyingOtp(false);
+    }
   };
 
   const handleUpdate = async (e) => {
@@ -138,65 +204,95 @@ export default function FullProfilePage() {
     await saveProfile(formData, paymentMethods, { silent: false });
   };
 
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+    try {
+      await logout("/login");
+    } catch (error) {
+      setStatus({ type: "error", message: "Logout failed. Please try again." });
+      setIsLoggingOut(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen text-black pb-20">
-      {/* Header Banner */}
+    <div className="min-h-screen pb-20 text-black">
       <div
-        className="h-56 md:h-72 relative overflow-hidden bg-gradient-to-r from-indigo-700 to-sky-700"
+        className="relative h-56 overflow-hidden bg-gradient-to-r from-indigo-700 to-sky-700 md:h-72"
         style={
           formData.coverPhoto
-            ? { backgroundImage: `linear-gradient(rgba(2, 6, 23, 0.45), rgba(2, 6, 23, 0.45)), url(${formData.coverPhoto})`, backgroundSize: "cover", backgroundPosition: "center" }
+            ? {
+                backgroundImage: `linear-gradient(rgba(2, 6, 23, 0.45), rgba(2, 6, 23, 0.45)), url(${formData.coverPhoto})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }
             : undefined
         }
       >
-        <label className="absolute right-4 top-4 px-3 py-2 bg-black/40 text-white rounded-xl shadow-lg cursor-pointer hover:bg-black/60 transition text-xs font-bold">
+        <label className="absolute right-4 top-4 cursor-pointer rounded-xl bg-black/40 px-3 py-2 text-xs font-bold text-white shadow-lg transition hover:bg-black/60">
           {uploadingCover ? "Uploading..." : "Change Cover"}
           <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, "cover")} />
         </label>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-12 -mt-14 md:-mt-16 relative z-10">
-        <div className="flex flex-col md:flex-row items-start md:items-end gap-4 md:gap-6 mb-8">
-          <div className="relative group">
-            <div className="w-28 h-28 md:w-36 md:h-36 rounded-3xl bg-white p-1 shadow-2xl overflow-hidden border-4 border-white shrink-0">
+      <div className="relative z-10 mx-auto -mt-14 max-w-7xl px-4 md:-mt-16 md:px-12">
+        <div className="mb-8 flex flex-col items-start gap-4 md:flex-row md:items-end md:gap-6">
+          <div className="group relative">
+            <div className="h-28 w-28 shrink-0 overflow-hidden rounded-3xl border-4 border-white bg-white p-1 shadow-2xl md:h-36 md:w-36">
               {formData.photo ? (
-                <img src={formData.photo} alt="Profile" className="w-full h-full object-cover object-center rounded-2xl" />
+                <img src={formData.photo} alt="Profile" className="h-full w-full rounded-2xl object-cover object-center" />
               ) : (
-                <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-2xl text-gray-300"><User size={50} /></div>
+                <div className="flex h-full w-full items-center justify-center rounded-2xl bg-gray-100 text-gray-300">
+                  <User size={50} />
+                </div>
               )}
-              {uploadingPhoto && <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-2xl"><Loader2 className="text-white animate-spin" /></div>}
+              {uploadingPhoto ? (
+                <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50">
+                  <Loader2 className="animate-spin text-white" />
+                </div>
+              ) : null}
             </div>
-            <label className="absolute bottom-2 right-2 p-2 bg-indigo-600 text-white rounded-xl shadow-lg cursor-pointer hover:scale-110 transition">
+            <label className="absolute bottom-2 right-2 cursor-pointer rounded-xl bg-indigo-600 p-2 text-white shadow-lg transition hover:scale-110">
               <Camera size={18} />
               <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, "photo")} />
             </label>
           </div>
-          <div className="text-white font-medium min-w-0 pb-2">
-            <h1 className="text-2xl md:text-3xl font-black drop-shadow-md truncate">{formData.name || "User"}</h1>
-            <p className="flex items-center gap-2 mt-1 opacity-90 truncate text-sm md:text-base"><Mail size={14} /> {userData?.email}</p>
+          <div className="min-w-0 pb-2 font-medium text-white">
+            <h1 className="truncate text-2xl font-black drop-shadow-md md:text-3xl">{formData.name || "User"}</h1>
+            <p className="mt-1 flex items-center gap-2 truncate text-sm opacity-90 md:text-base">
+              <Mail size={14} /> {userData?.email}
+            </p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-12 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Sidebar Info */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-            <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2"><Shield size={18} className="text-indigo-600"/> Account Info</h3>
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 md:px-12 lg:grid-cols-12">
+        <div className="space-y-6 lg:col-span-4">
+          <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+            <h3 className="mb-4 flex items-center gap-2 font-bold text-gray-800">
+              <Shield size={18} className="text-indigo-600" /> Account Info
+            </h3>
             <div className="space-y-3">
-              <div className="flex justify-between p-3 bg-gray-50 rounded-2xl text-sm">
+              <div className="flex justify-between rounded-2xl bg-gray-50 p-3 text-sm">
                 <span className="text-gray-500">Referral Code</span>
                 <span className="font-black text-indigo-600">{userData?.referralCode}</span>
               </div>
-              <div className="flex justify-between p-3 bg-gray-50 rounded-2xl text-sm">
+              <div className="flex justify-between rounded-2xl bg-gray-50 p-3 text-sm">
                 <span className="text-gray-500">Joined On</span>
-                <span className="font-medium">{userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString() : 'N/A'}</span>
+                <span className="font-medium">{userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString() : "N/A"}</span>
+              </div>
+              <div className="flex justify-between rounded-2xl bg-gray-50 p-3 text-sm">
+                <span className="text-gray-500">Account Verification</span>
+                <span className={`font-bold ${isPhoneVerified ? "text-green-600" : "text-amber-600"}`}>
+                  {isPhoneVerified ? "Verified" : "Pending"}
+                </span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-            <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+            <h3 className="mb-4 flex items-center gap-2 font-bold text-gray-800">
               <Globe size={18} className="text-indigo-600" /> Quick Access
             </h3>
             <div className="space-y-3">
@@ -215,19 +311,19 @@ export default function FullProfilePage() {
                 </div>
                 <ArrowRight size={18} className="text-gray-400" />
               </Link>
-
               <button
                 type="button"
-                onClick={() => setChatOpen(true)}
-                className="w-full flex items-center justify-between rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4 text-left transition hover:border-emerald-200 hover:bg-emerald-50/60"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="flex w-full items-center justify-between rounded-2xl border border-red-100 bg-red-50 px-4 py-4 text-left transition hover:border-red-200 hover:bg-red-100/70 disabled:opacity-60"
               >
                 <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
-                    <Headset size={18} />
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-100 text-red-600">
+                    {isLoggingOut ? <Loader2 size={18} className="animate-spin" /> : <LogOut size={18} />}
                   </span>
                   <div>
-                    <p className="font-bold text-gray-800">Live Chat Support</p>
-                    <p className="text-xs text-gray-500">Open instant chat with the support team</p>
+                    <p className="font-bold text-gray-800">{isLoggingOut ? "Logging out..." : "Logout"}</p>
+                    <p className="text-xs text-gray-500">Sign out from this device safely</p>
                   </div>
                 </div>
                 <ArrowRight size={18} className="text-gray-400" />
@@ -236,73 +332,265 @@ export default function FullProfilePage() {
           </div>
         </div>
 
-        {/* Main Form */}
         <div className="lg:col-span-8">
-          <form onSubmit={handleUpdate} className="bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-gray-100 space-y-10">
-            
-            {/* Personal Info Section */}
+          <form onSubmit={handleUpdate} className="space-y-10 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm md:p-10">
             <section>
-              <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+              <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-800">
                 <User size={20} className="text-indigo-600" /> General Settings
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase ml-1">Full Name</label>
-                  <input 
-                    type="text" 
+                  <label className="ml-1 text-xs font-bold uppercase text-gray-500">Full Name</label>
+                  <input
+                    type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:border-indigo-500 transition outline-none" 
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-3.5 outline-none transition focus:border-indigo-500"
                   />
                 </div>
                 <div className="space-y-2 opacity-60">
-                  <label className="text-xs font-bold text-gray-500 uppercase ml-1">Email (Private)</label>
-                  <input type="email" value={userData?.email || ''} readOnly className="w-full px-5 py-3.5 bg-gray-100 border border-gray-200 rounded-2xl cursor-not-allowed outline-none" />
+                  <label className="ml-1 text-xs font-bold uppercase text-gray-500">Email (Private)</label>
+                  <input
+                    type="email"
+                    value={userData?.email || ""}
+                    readOnly
+                    className="w-full cursor-not-allowed rounded-2xl border border-gray-200 bg-gray-100 px-5 py-3.5 outline-none"
+                  />
                 </div>
               </div>
             </section>
 
-            {/* Dynamic Payment Methods Section */}
+            <section className="dashboard-subpanel overflow-hidden rounded-[28px] border p-0">
+              <div className="flex flex-col gap-6 p-5 sm:p-6 md:p-7">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div className="max-w-2xl">
+                    <span className="dashboard-chip inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em]">
+                      <Sparkles size={13} />
+                      Secure Verification
+                    </span>
+                    <h3 className="dashboard-text-strong mt-3 flex items-center gap-2 text-xl font-black">
+                      <Phone size={20} className="text-green-600" /> Verify Your Account Number
+                    </h3>
+                    <p className="dashboard-text-muted mt-2 text-sm leading-6">
+                      WhatsApp number add kore code receive korun, tarpor OTP diye account verification complete korun.
+                    </p>
+                  </div>
+                  <span className={`inline-flex items-center gap-2 self-start rounded-full px-4 py-2 text-xs font-bold ${isPhoneVerified ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+                    <CheckCircle size={14} />
+                    {isPhoneVerified ? "Verified" : "Not Verified"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_0.9fr]">
+                  <div className="dashboard-panel rounded-[24px] border p-4 sm:p-5">
+                    <div className="mb-4 flex items-center gap-3">
+                      <span className="dashboard-accent-surface flex h-11 w-11 items-center justify-center rounded-2xl">
+                        <MessageSquareText size={18} />
+                      </span>
+                      <div>
+                        <p className="dashboard-text-strong text-sm font-black uppercase tracking-[0.16em]">WhatsApp Number</p>
+                        <p className="dashboard-text-muted text-xs">Use format `8801XXXXXXXXX`</p>
+                      </div>
+                    </div>
+
+                    <label className="ml-1 text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">Phone Number</label>
+                    <div className="dashboard-search mt-2 flex items-center gap-3 rounded-[22px] px-4 py-3">
+                      <span className="dashboard-chip rounded-xl px-3 py-2 text-xs font-black">+880</span>
+                      <input
+                        type="text"
+                        placeholder="1XXXXXXXXX"
+                        value={verificationForm.whatsappNumber.replace(/^880/, "")}
+                        onChange={(e) => {
+                          const rawValue = e.target.value.replace(/\D/g, "").slice(0, 10);
+                          setVerificationForm((prev) => ({
+                            ...prev,
+                            whatsappNumber: rawValue ? `880${rawValue}` : "",
+                          }));
+                          if (otpStatus.message) {
+                            setOtpStatus({ type: "", message: "" });
+                          }
+                        }}
+                        className="w-full bg-transparent text-sm font-semibold outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="dashboard-panel rounded-[24px] border p-4 sm:p-5">
+                    <div className="mb-4 flex items-center gap-3">
+                      <span className="dashboard-muted-button flex h-11 w-11 items-center justify-center rounded-2xl">
+                        <CheckCircle size={18} />
+                      </span>
+                      <div>
+                        <p className="dashboard-text-strong text-sm font-black uppercase tracking-[0.16em]">One-Time Password</p>
+                        <p className="dashboard-text-muted text-xs">Enter the 6-digit security code</p>
+                      </div>
+                    </div>
+
+                    <label className="ml-1 text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">OTP Code</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="000000"
+                      value={verificationForm.code}
+                      onChange={(e) => setVerificationForm((prev) => ({
+                        ...prev,
+                        code: e.target.value.replace(/\D/g, "").slice(0, 6),
+                      }))}
+                      className="mt-2 w-full rounded-[22px] border border-gray-200 bg-gray-50 px-5 py-4 text-center text-lg font-black tracking-[0.35em] outline-none transition focus:border-green-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 md:flex-row">
+                  <button
+                    type="button"
+                    onClick={handleSendOtp}
+                    disabled={otpLoading || verifyingOtp}
+                    className="dashboard-accent-surface flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl px-6 py-3 font-bold transition disabled:opacity-60"
+                  >
+                    {otpLoading ? <Loader2 size={18} className="animate-spin" /> : <Phone size={18} />}
+                    Send Code
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleVerifyOtp}
+                    disabled={otpLoading || verifyingOtp}
+                    className="dashboard-muted-button flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl px-6 py-3 font-bold transition disabled:opacity-60"
+                  >
+                    {verifyingOtp ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
+                    Verify Code
+                  </button>
+                </div>
+
+                {otpStatus.message ? (
+                  <div className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${otpStatus.type === "success" ? "border-green-200 bg-green-50 text-green-700" : "border-red-200 bg-red-50 text-red-600"}`}>
+                    {otpStatus.message}
+                  </div>
+                ) : null}
+              </div>
+            </section>
+
+            <section className="hidden">
+              <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h3 className="flex items-center gap-2 text-lg font-bold text-gray-800">
+                    <Phone size={20} className="text-green-600" /> Verify Your Account Number
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Number দিন, code পাঠান, তারপর OTP paste করে verify করুন।
+                  </p>
+                </div>
+                <span className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold ${isPhoneVerified ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+                  <CheckCircle size={14} />
+                  {isPhoneVerified ? "Verified" : "Not Verified"}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="ml-1 text-xs font-bold uppercase text-gray-500">Phone Number</label>
+                  <input
+                    type="text"
+                    placeholder="8801XXXXXXXXX"
+                    value={verificationForm.whatsappNumber}
+                    onChange={(e) => {
+                      setVerificationForm((prev) => ({
+                        ...prev,
+                        whatsappNumber: e.target.value,
+                      }));
+                      if (otpStatus.message) {
+                        setOtpStatus({ type: "", message: "" });
+                      }
+                    }}
+                    className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-3.5 outline-none transition focus:border-green-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="ml-1 text-xs font-bold uppercase text-gray-500">OTP Code</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="Enter 6-digit code"
+                    value={verificationForm.code}
+                    onChange={(e) => setVerificationForm((prev) => ({
+                      ...prev,
+                      code: e.target.value.replace(/\D/g, "").slice(0, 6),
+                    }))}
+                    className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-3.5 outline-none transition focus:border-green-500"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-col gap-3 md:flex-row">
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={otpLoading || verifyingOtp}
+                  className="flex items-center justify-center gap-2 rounded-2xl bg-green-600 px-6 py-3 font-bold text-white transition hover:bg-green-700 disabled:opacity-60"
+                >
+                  {otpLoading ? <Loader2 size={18} className="animate-spin" /> : <Phone size={18} />}
+                  Send Code
+                </button>
+                <button
+                  type="button"
+                  onClick={handleVerifyOtp}
+                  disabled={otpLoading || verifyingOtp}
+                  className="flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 font-bold text-white transition hover:bg-slate-800 disabled:opacity-60"
+                >
+                  {verifyingOtp ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
+                  Verify Code
+                </button>
+              </div>
+
+              {otpStatus.message ? (
+                <p className={`mt-4 text-sm font-medium ${otpStatus.type === "success" ? "text-green-600" : "text-red-600"}`}>
+                  {otpStatus.message}
+                </p>
+              ) : null}
+            </section>
+
             <section>
-              <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+              <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-800">
                 <CreditCard size={20} className="text-pink-600" /> Payout Methods
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {Object.keys(paymentMethods).length > 0 ? (
                   Object.keys(paymentMethods).map((key) => (
                     <div key={key} className="space-y-2">
-                      <label className="text-xs font-bold text-gray-500 uppercase ml-1">{key} Number</label>
+                      <label className="ml-1 text-xs font-bold uppercase text-gray-500">{key} Number</label>
                       <div className="relative">
-                        <span className="absolute left-5 top-1/2 -translate-y-1/2 font-bold text-pink-500 text-xs uppercase">{key}</span>
-                        <input 
-                          type="text" 
+                        <span className="absolute left-5 top-1/2 -translate-y-1/2 text-xs font-bold uppercase text-pink-500">{key}</span>
+                        <input
+                          type="text"
                           placeholder={`Enter ${key} number`}
-                          value={paymentMethods[key]?.number || ''}
+                          value={paymentMethods[key]?.number || ""}
                           onChange={(e) => handlePaymentChange(key, e.target.value)}
-                          className="w-full pl-20 pr-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:border-pink-500 transition outline-none" 
+                          className="w-full rounded-2xl border border-gray-200 bg-gray-50 py-3.5 pl-20 pr-5 outline-none transition focus:border-pink-500"
                         />
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-gray-400 italic">No payment methods found in database.</p>
+                  <p className="text-sm italic text-gray-400">No payment methods found in database.</p>
                 )}
               </div>
             </section>
 
-            {/* Submit Bar */}
-            <div className="pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex flex-col items-center justify-between gap-4 border-t pt-8 md:flex-row">
               <div className="text-sm">
-                {status.message && (
-                  <p className={`flex items-center gap-2 font-medium ${status.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-                    {status.type === 'success' && <CheckCircle size={18} />} {status.message}
+                {status.message ? (
+                  <p className={`flex items-center gap-2 font-medium ${status.type === "success" ? "text-green-600" : "text-red-600"}`}>
+                    {status.type === "success" ? <CheckCircle size={18} /> : null}
+                    {status.message}
                   </p>
-                )}
+                ) : null}
               </div>
-              <button 
+              <button
                 type="submit"
                 disabled={loading || uploadingPhoto || uploadingCover}
-                className="w-full md:w-auto flex items-center justify-center gap-3 px-12 py-4 rounded-2xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition transform hover:-translate-y-1 active:scale-95"
+                className="flex w-full items-center justify-center gap-3 rounded-2xl bg-indigo-600 px-12 py-4 font-bold text-white shadow-xl shadow-indigo-100 transition hover:-translate-y-1 hover:bg-indigo-700 active:scale-95 md:w-auto"
               >
                 {loading ? <Loader2 className="animate-spin" /> : <Save size={20} />}
                 Save Changes
@@ -311,22 +599,6 @@ export default function FullProfilePage() {
           </form>
         </div>
       </div>
-
-      {chatOpen && user ? (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-[430px]">
-            <button
-              type="button"
-              onClick={() => setChatOpen(false)}
-              className="absolute -top-3 right-0 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-700 shadow-lg"
-              aria-label="Close live chat"
-            >
-              <X size={18} />
-            </button>
-            <ChatWindow user={user} onClose={() => setChatOpen(false)} />
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

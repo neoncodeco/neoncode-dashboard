@@ -528,6 +528,10 @@ textarea {
   background: var(--dashboard-page-bg) !important;
 }
 
+.admin-dashboard-theme-scope > * {
+  background: transparent;
+}
+
 .admin-dashboard-content :is(.bg-white, .bg-gray-50, .bg-slate-50, .bg-gray-100, .bg-slate-100),
 .admin-dashboard-content :is(div, section, article, aside, form)[class*="rounded-"][class*="border"] {
   background: var(--admin-surface) !important;
@@ -577,6 +581,85 @@ textarea {
   color: var(--text-main) !important;
 }
 
+.admin-dashboard-theme-scope :is(.overflow-x-auto, .overflow-y-auto) {
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-dashboard-theme-scope :is(div, section, article, aside, header, footer, span, tr, th, td)[class*="bg-[#"],
+.admin-dashboard-theme-scope :is(div, section, article, aside, header, footer, span, tr, th, td)[class*="bg-white"],
+.admin-dashboard-theme-scope :is(div, section, article, aside, header, footer, span, tr, th, td)[class*="bg-black"],
+.admin-dashboard-theme-scope :is(div, section, article, aside, header, footer, span, tr, th, td)[class*="bg-slate-"],
+.admin-dashboard-theme-scope :is(div, section, article, aside, header, footer, span, tr, th, td)[class*="bg-gray-"],
+.admin-dashboard-theme-scope :is(div, section, article, aside, header, footer, span, tr, th, td)[class*="bg-zinc-"],
+.admin-dashboard-theme-scope :is(div, section, article, aside, header, footer, span, tr, th, td)[class*="bg-red-"],
+.admin-dashboard-theme-scope :is(div, section, article, aside, header, footer, span, tr, th, td)[class*="bg-orange-"],
+.admin-dashboard-theme-scope :is(div, section, article, aside, header, footer, span, tr, th, td)[class*="bg-green-"],
+.admin-dashboard-theme-scope :is(div, section, article, aside, header, footer, span, tr, th, td)[class*="bg-blue-"],
+.admin-dashboard-theme-scope :is(div, section, article, aside, header, footer, span, tr, th, td)[class*="bg-emerald-"],
+.admin-dashboard-theme-scope :is(div, section, article, aside, header, footer, span, tr, th, td)[class*="bg-amber-"] {
+  background: var(--dashboard-panel-soft) !important;
+  border-color: var(--dashboard-frame-border) !important;
+  box-shadow: none !important;
+}
+
+.admin-dashboard-theme-scope :is(h1, h2, h3, h4, p, span, li, label, small, strong, a, button)[class*="text-white"],
+.admin-dashboard-theme-scope :is(h1, h2, h3, h4, p, span, li, label, small, strong, a, button)[class*="text-black"],
+.admin-dashboard-theme-scope :is(h1, h2, h3, h4, p, span, li, label, small, strong, a, button)[class*="text-gray-"],
+.admin-dashboard-theme-scope :is(h1, h2, h3, h4, p, span, li, label, small, strong, a, button)[class*="text-slate-"],
+.admin-dashboard-theme-scope :is(h1, h2, h3, h4, p, span, li, label, small, strong, a, button)[class*="text-zinc-"] {
+  color: var(--dashboard-text-strong) !important;
+}
+
+.admin-dashboard-theme-scope :is(p, span, li, small, label, a)[class*="/"],
+.admin-dashboard-theme-scope :is(p, span, li, small, label, a)[class*="text-gray-3"],
+.admin-dashboard-theme-scope :is(p, span, li, small, label, a)[class*="text-gray-4"],
+.admin-dashboard-theme-scope :is(p, span, li, small, label, a)[class*="text-gray-5"],
+.admin-dashboard-theme-scope :is(p, span, li, small, label, a)[class*="text-gray-6"],
+.admin-dashboard-theme-scope :is(p, span, li, small, label, a)[class*="text-gray-7"],
+.admin-dashboard-theme-scope :is(p, span, li, small, label, a)[class*="text-slate-3"],
+.admin-dashboard-theme-scope :is(p, span, li, small, label, a)[class*="text-slate-4"],
+.admin-dashboard-theme-scope :is(p, span, li, small, label, a)[class*="text-slate-5"],
+.admin-dashboard-theme-scope :is(p, span, li, small, label, a)[class*="text-slate-6"],
+.admin-dashboard-theme-scope :is(p, span, li, small, label, a)[class*="text-slate-7"] {
+  color: var(--dashboard-text-muted) !important;
+}
+
+.admin-dashboard-theme-scope :is(.border-gray-50, .border-gray-100, .border-gray-200, .border-gray-300, .border-slate-700, .border-slate-800, .border-[#22375d], .border-[#2c4167]) {
+  border-color: var(--dashboard-frame-border) !important;
+}
+
+.admin-dashboard-theme-scope :is([class*="shadow-"], [class*="drop-shadow"]) {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.admin-dashboard-theme-scope button[class*="bg-red-"],
+.admin-dashboard-theme-scope a[class*="bg-red-"] {
+  background: rgba(255, 99, 99, 0.1) !important;
+  color: #ef6666 !important;
+  border-color: rgba(239, 102, 102, 0.22) !important;
+}
+
+.admin-dashboard-theme-scope button[class*="bg-green-"],
+.admin-dashboard-theme-scope a[class*="bg-green-"],
+.admin-dashboard-theme-scope button[class*="bg-emerald-"],
+.admin-dashboard-theme-scope a[class*="bg-emerald-"],
+.admin-dashboard-theme-scope button[class*="bg-blue-"],
+.admin-dashboard-theme-scope a[class*="bg-blue-"],
+.admin-dashboard-theme-scope button[class*="bg-indigo-"],
+.admin-dashboard-theme-scope a[class*="bg-indigo-"] {
+  background: linear-gradient(135deg, #8ab4ff, #6f95df) !important;
+  color: #081227 !important;
+  border-color: rgba(122, 156, 221, 0.38) !important;
+}
+
+.admin-dashboard-theme-scope button[class*="bg-white"],
+.admin-dashboard-theme-scope a[class*="bg-white"] {
+  background: var(--dashboard-button-muted) !important;
+  color: var(--dashboard-button-muted-text) !important;
+  border-color: var(--dashboard-frame-border) !important;
+}
+
 @media (max-width: 1023px) {
   .dashboard-shell {
     min-height: 100vh;
@@ -586,6 +669,15 @@ textarea {
   .admin-dashboard-content {
     width: 100%;
     border-left: none !important;
+  }
+
+  .admin-dashboard-content {
+    min-height: 100vh;
+    overflow: visible !important;
+    padding-top: 4.75rem;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 7rem);
+    overscroll-behavior-y: auto;
+    touch-action: pan-y;
   }
 
   .user-dashboard-page-surface {

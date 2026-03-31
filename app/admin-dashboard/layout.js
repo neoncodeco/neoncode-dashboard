@@ -15,7 +15,7 @@ export default function AdminLayout({ children }) {
     >
       <DashboardMouseGlow />
       <AdminSidebar theme={theme} toggleTheme={toggleTheme} />
-      <div className="dashboard-content admin-dashboard-content min-w-0 w-full overflow-visible pt-16 text-[#f5f8ff] lg:flex-1 lg:pt-0 lg:h-full lg:overflow-y-auto">
+      <div className="dashboard-content admin-dashboard-content admin-dashboard-theme-scope min-w-0 w-full overflow-visible pt-16 text-[#f5f8ff] lg:h-full lg:flex-1 lg:overflow-y-auto lg:pt-0">
         {children}
       </div>
     </div>

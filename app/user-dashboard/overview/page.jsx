@@ -6,7 +6,6 @@ import Link from "next/link";
 import {
   Check,
   Copy,
-  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import {
@@ -160,7 +159,7 @@ function MobileWalletCard({
 }
 
 export default function OverviewPage() {
-  const { userData, user, token } = useFirebaseAuth();
+  const { userData, token } = useFirebaseAuth();
   const [copiedReferral, setCopiedReferral] = React.useState(false);
   const [topupHistory, setTopupHistory] = React.useState([]);
   const [lastTopupDate, setLastTopupDate] = React.useState("");
@@ -279,7 +278,7 @@ export default function OverviewPage() {
             meta={`Client ID ${profileId}`}
             variant="accent"
             logoSrc="/Neon Studio icon.png"
-            profileImage={user?.photoURL || userData?.photo || ""}
+            profileImage={userData?.photo || ""}
           />
           <StatCard
             title="Topup Balance"
@@ -288,7 +287,7 @@ export default function OverviewPage() {
             meta={lastTopupDate ? `Last topup ${lastTopupDate}` : "Ready for ad spend and wallet load"}
             variant="muted"
             logoSrc="/Neon Studio icon.png"
-            profileImage={user?.photoURL || userData?.photo || ""}
+            profileImage={userData?.photo || ""}
           />
           <StatCard
             title="Total Payout"
@@ -296,7 +295,7 @@ export default function OverviewPage() {
             usdToBdtRate={usdToBdtRate}
             meta="Payout and transfer actions"
             logoSrc="/Neon Studio icon.png"
-            profileImage={user?.photoURL || userData?.photo || ""}
+            profileImage={userData?.photo || ""}
             actions={
               <div className="grid gap-2 sm:grid-cols-3">
                 <Link
@@ -399,7 +398,13 @@ export default function OverviewPage() {
         <section className="dashboard-subpanel flex flex-col justify-between p-4 sm:p-5">
           <div className="mb-6 flex items-center gap-3">
             <span className="dashboard-accent-surface inline-flex h-12 w-12 items-center justify-center rounded-2xl">
-              <ShieldCheck size={20} />
+              <Image
+                src="/neon-code-logo.jpg"
+                alt="Neon Code logo"
+                width={26}
+                height={26}
+                className="h-[26px] w-[26px] object-contain"
+              />
             </span>
             <div>
               <h3 className="text-[1.3rem] font-semibold tracking-tight dashboard-text-strong">
