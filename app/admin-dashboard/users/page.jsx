@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search, Shield, Trash2, Download, UserCheck, UserX, Clock, Users } from "lucide-react";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import ManageUserModal from "@/components/ManageUserModal";
+import Swal from "sweetalert2";
 
 /* ================= STATUS COLOR ================= */
 const statusColor = (status) => {
@@ -92,14 +93,25 @@ export default function AllUsersPage() {
     if (!token || !targetUser?.userId) return;
 
     if (targetUser.userId === user?.uid) {
-      window.alert("You cannot delete your own admin account.");
+      await Swal.fire({
+        title: "Action blocked",
+        text: "You cannot delete your own admin account.",
+        icon: "warning",
+        confirmButtonColor: "#d97706",
+      });
       return;
     }
 
-    const confirmed = window.confirm(
-      `Delete ${targetUser.email || targetUser.userId}? This action cannot be undone.`
-    );
-    if (!confirmed) return;
+    const confirmResult = await Swal.fire({
+      title: "Delete user?",
+      text: `Delete ${targetUser.email || targetUser.userId}? This action cannot be undone.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete user",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#dc2626",
+    });
+    if (!confirmResult.isConfirmed) return;
 
     setDeletingUserId(targetUser.userId);
 
@@ -121,8 +133,19 @@ export default function AllUsersPage() {
       }
 
       await loadUsers();
+      await Swal.fire({
+        title: "User deleted",
+        text: `${targetUser.email || targetUser.userId} was removed successfully.`,
+        icon: "success",
+        confirmButtonColor: "#2563eb",
+      });
     } catch (err) {
-      window.alert(err.message || "Failed to delete user");
+      await Swal.fire({
+        title: "Delete failed",
+        text: err.message || "Failed to delete user",
+        icon: "error",
+        confirmButtonColor: "#dc2626",
+      });
     } finally {
       setDeletingUserId("");
     }

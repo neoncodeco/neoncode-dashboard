@@ -4,7 +4,7 @@ import {
   hashOtpCode,
   isOtpExpired,
   MAX_OTP_ATTEMPTS,
-} from "@/lib/whatsappOtp";
+} from "@/lib/otpUtils"; // ✅ FIXED
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
@@ -18,13 +18,17 @@ export async function POST(req) {
     const normalizedCode = String(code || "").replace(/\D/g, "");
 
     if (normalizedCode.length !== 6) {
-      return NextResponse.json({ ok: false, error: "Enter the 6-digit OTP code." }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "Enter 6-digit OTP" },
+        { status: 400 }
+      );
     }
 
     const { db } = await getDB();
+
     const user = await db.collection("users").findOne(
       { userId: decoded.uid },
-      { projection: { whatsappNumber: 1, phoneVerification: 1 } }
+      { projection: { phone: 1, phoneVerification: 1 } } // ✅ FIX
     );
 
     if (!user) {
@@ -33,14 +37,28 @@ export async function POST(req) {
 
     const verification = user.phoneVerification || {};
 
-    if (!user.whatsappNumber || !verification.codeHash) {
-      return NextResponse.json({ ok: false, error: "Request an OTP first." }, { status: 400 });
+    
+    // ✅ FIXED
+    if (!user.phone || !verification.codeHash) {
+      return NextResponse.json(
+        { ok: false, error: "Request OTP first" },
+        { status: 400 }
+      );
     }
 
     if (verification.attempts >= MAX_OTP_ATTEMPTS) {
-      return NextResponse.json({ ok: false, error: "Too many wrong attempts. Request a new OTP." }, { status: 429 });
+      return NextResponse.json(
+        { ok: false, error: "Too many attempts" },
+        { status: 429 }
+      );
     }
 
+    if (verification.verified) {
+  return NextResponse.json({
+    ok: true,
+    message: "Already verified ✅",
+  });
+}
     if (isOtpExpired(verification.expiresAt)) {
       await db.collection("users").updateOne(
         { userId: decoded.uid },
@@ -48,28 +66,28 @@ export async function POST(req) {
           $set: {
             "phoneVerification.status": "expired",
             "phoneVerification.codeHash": null,
-            updatedAt: new Date(),
           },
         }
       );
 
-      return NextResponse.json({ ok: false, error: "OTP expired. Request a new code." }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "OTP expired" },
+        { status: 400 }
+      );
     }
 
     if (hashOtpCode(normalizedCode) !== verification.codeHash) {
       await db.collection("users").updateOne(
         { userId: decoded.uid },
         {
-          $inc: {
-            "phoneVerification.attempts": 1,
-          },
-          $set: {
-            updatedAt: new Date(),
-          },
+          $inc: { "phoneVerification.attempts": 1 },
         }
       );
 
-      return NextResponse.json({ ok: false, error: "Invalid OTP code." }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "Invalid OTP" },
+        { status: 400 }
+      );
     }
 
     await db.collection("users").updateOne(
@@ -81,16 +99,14 @@ export async function POST(req) {
           "phoneVerification.status": "verified",
           "phoneVerification.codeHash": null,
           "phoneVerification.expiresAt": null,
-          "phoneVerification.requestedAt": null,
           "phoneVerification.attempts": 0,
-          updatedAt: new Date(),
         },
       }
     );
 
     return NextResponse.json({
       ok: true,
-      message: "WhatsApp number verified successfully.",
+      message: "Phone verified successfully ✅",
     });
   } catch (err) {
     console.error("OTP verify error:", err);

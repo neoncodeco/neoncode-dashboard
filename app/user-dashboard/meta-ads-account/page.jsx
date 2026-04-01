@@ -25,7 +25,7 @@ export default function Overview() {
       <div className="dashboard-subpanel overflow-hidden rounded-[2rem] p-6">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div className="max-w-2xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-blue-100">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-400/20 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] ">
               <Plus size={12} />
               Meta Ads Access
             </div>

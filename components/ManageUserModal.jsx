@@ -200,14 +200,14 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-4">
-      <div className="max-h-[92vh] w-full max-w-6xl space-y-5 overflow-y-auto rounded-2xl bg-white p-4 sm:p-5 md:p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-3 backdrop-blur-sm sm:p-4">
+      <div className="max-h-[92vh] w-full max-w-6xl space-y-5 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.22)] sm:p-5 md:p-6 dark:border-slate-800 dark:bg-slate-950 dark:shadow-[0_30px_80px_-30px_rgba(2,6,23,0.7)]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="text-xl font-black text-gray-900">User Dashboard Mirror Editor</h2>
-            <p className="mt-1 text-xs text-gray-500">UID: {user.userId}</p>
+            <h2 className="text-xl font-black text-slate-900 dark:text-slate-50">User Dashboard Mirror Editor</h2>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">UID: {user.userId}</p>
           </div>
-          <button onClick={onClose} className="rounded-lg border px-3 py-1.5 text-sm">
+          <button onClick={onClose} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
             Close
           </button>
         </div>
@@ -217,8 +217,10 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`rounded-xl border px-4 py-2 text-sm font-bold ${
-                activeTab === tab ? "border-black bg-black text-white" : "border-gray-200 bg-white text-gray-600"
+              className={`rounded-xl border px-4 py-2 text-sm font-bold transition ${
+                activeTab === tab
+                  ? "border-sky-600 bg-sky-600 text-white dark:border-sky-500 dark:bg-sky-500"
+                  : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
               }`}
             >
               {tab}
@@ -228,7 +230,7 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
 
         {activeTab === "Overview" && (
           <div className="space-y-4">
-            <h3 className="font-bold text-gray-800">Overview Tab Values</h3>
+            <h3 className="font-bold text-slate-800 dark:text-slate-100">Overview Tab Values</h3>
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               <Field label="Wallet Balance (USD)" value={walletBalance} onChange={setWalletBalance} type="number" />
               <Field label="Topup Balance (USD)" value={topupBalance} onChange={setTopupBalance} type="number" />
@@ -241,7 +243,7 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
 
         {activeTab === "Affiliate" && (
           <div className="space-y-4">
-            <h3 className="font-bold text-gray-800">Affiliate Tab Values</h3>
+            <h3 className="font-bold text-slate-800 dark:text-slate-100">Affiliate Tab Values</h3>
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               <Field label="Completed Referred Users" value={level1DepositCount} onChange={setLevel1DepositCount} type="number" />
               <Field label="Total Referrers" value={totalReferrers} onChange={setTotalReferrers} type="number" />
@@ -253,7 +255,7 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
 
         {activeTab === "Meta Ads" && (
           <div className="space-y-4">
-            <h3 className="font-bold text-gray-800">Meta Ads Tab Values</h3>
+            <h3 className="font-bold text-slate-800 dark:text-slate-100">Meta Ads Tab Values</h3>
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               <Field label="Wallet Balance (USD)" value={walletBalance} onChange={setWalletBalance} type="number" />
               <Field label="USD Rate" value={usdRate} onChange={setUsdRate} type="number" />
@@ -268,7 +270,7 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
 
         {activeTab === "Profile" && (
           <div className="space-y-4">
-            <h3 className="font-bold text-gray-800">Profile / Access Values</h3>
+            <h3 className="font-bold text-slate-800 dark:text-slate-100">Profile / Access Values</h3>
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               <Field label="Name" value={name} onChange={setName} />
               <Field label="Email" value={email} onChange={setEmail} />
@@ -276,14 +278,16 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
 
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <div>
-                <p className="mb-2 text-xs font-bold text-gray-500">Role</p>
+                <p className="mb-2 text-xs font-bold text-slate-500 dark:text-slate-400">Role</p>
                 <div className="flex flex-wrap gap-2">
                   {["admin", "manager", "team_member", "user"].map((r) => (
                     <button
                       key={r}
                       onClick={() => setRole(r)}
-                      className={`rounded-lg border px-3 py-2 text-sm ${
-                        role === r ? "border-black bg-black text-white" : "border-gray-300"
+                      className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                        role === r
+                          ? "border-sky-600 bg-sky-600 text-white dark:border-sky-500 dark:bg-sky-500"
+                          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                       }`}
                     >
                       {r}
@@ -292,14 +296,16 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
                 </div>
               </div>
               <div>
-                <p className="mb-2 text-xs font-bold text-gray-500">Status</p>
+                <p className="mb-2 text-xs font-bold text-slate-500 dark:text-slate-400">Status</p>
                 <div className="flex flex-wrap gap-2">
                   {["active", "pending", "inactive"].map((s) => (
                     <button
                       key={s}
                       onClick={() => setStatus(s)}
-                      className={`rounded-lg border px-3 py-2 text-sm ${
-                        status === s ? "border-black bg-black text-white" : "border-gray-300"
+                      className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                        status === s
+                          ? "border-sky-600 bg-sky-600 text-white dark:border-sky-500 dark:bg-sky-500"
+                          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                       }`}
                     >
                       {s}
@@ -323,9 +329,9 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
         {activeTab === "Team Card" && (
           <div className="space-y-6">
             <div>
-              <h3 className="font-bold text-gray-800">Team Member Public Card</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Admin ekhane sob data dekhte ar change korte parbe, including username.
+              <h3 className="font-bold text-slate-800 dark:text-slate-100">Team Member Public Card</h3>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                This card will be visible to other team members and stakeholders, including username.
               </p>
             </div>
 
@@ -346,8 +352,8 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
             <TextArea label="About" value={teamAbout} onChange={setTeamAbout} rows={5} />
             <TextArea label="Skills (comma separated)" value={teamSkills} onChange={setTeamSkills} rows={3} />
 
-            <div className="rounded-2xl border p-4">
-              <p className="mb-4 text-sm font-bold text-gray-800">Social Links</p>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+              <p className="mb-4 text-sm font-bold text-slate-800 dark:text-slate-100">Social Links</p>
               <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                 {SOCIAL_KEYS.map((key) => (
                   <Field
@@ -387,10 +393,10 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
         ) : null}
 
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <button onClick={onClose} className="rounded-lg border px-4 py-2">
+          <button onClick={onClose} className="rounded-lg border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
             Cancel
           </button>
-          <button onClick={submit} disabled={loading} className="rounded-lg bg-black px-4 py-2 text-white disabled:opacity-60">
+          <button onClick={submit} disabled={loading} className="rounded-lg bg-sky-600 px-4 py-2 font-semibold text-white transition hover:bg-sky-700 disabled:opacity-60 dark:bg-sky-500 dark:hover:bg-sky-400">
             {loading ? "Saving..." : "Save All Changes"}
           </button>
         </div>
@@ -402,12 +408,12 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
 function Field({ label, value, onChange, type = "text" }) {
   return (
     <div>
-      <label className="text-xs font-bold capitalize text-gray-500">{label}</label>
+      <label className="text-xs font-bold capitalize text-slate-500 dark:text-slate-400">{label}</label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-sky-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-sky-500"
       />
     </div>
   );
@@ -416,12 +422,12 @@ function Field({ label, value, onChange, type = "text" }) {
 function TextArea({ label, value, onChange, rows = 4 }) {
   return (
     <div>
-      <label className="text-xs font-bold capitalize text-gray-500">{label}</label>
+      <label className="text-xs font-bold capitalize text-slate-500 dark:text-slate-400">{label}</label>
       <textarea
         rows={rows}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-sky-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-sky-500"
       />
     </div>
   );
@@ -429,9 +435,9 @@ function TextArea({ label, value, onChange, rows = 4 }) {
 
 function Toggle({ label, value, onChange }) {
   return (
-    <div className="flex items-center justify-between rounded-xl border px-3 py-2">
-      <span className="text-sm text-gray-700">{label}</span>
-      <button onClick={onChange} className={`relative h-6 w-12 rounded-full transition ${value ? "bg-black" : "bg-gray-300"}`}>
+    <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
+      <span className="text-sm text-slate-700 dark:text-slate-200">{label}</span>
+      <button onClick={onChange} className={`relative h-6 w-12 rounded-full transition ${value ? "bg-sky-600 dark:bg-sky-500" : "bg-slate-300 dark:bg-slate-700"}`}>
         <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition ${value ? "right-0.5" : "left-0.5"}`} />
       </button>
     </div>
@@ -440,13 +446,13 @@ function Toggle({ label, value, onChange }) {
 
 function TimelineEditor({ title, items, onChange, onAdd, onRemove }) {
   return (
-    <div className="rounded-2xl border p-4">
+    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm font-bold text-gray-800">{title}</p>
+        <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{title}</p>
         <button
           type="button"
           onClick={onAdd}
-          className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
         >
           <Plus size={15} />
           Add {title === "Experience" ? "Experience" : "Project"}
@@ -455,9 +461,9 @@ function TimelineEditor({ title, items, onChange, onAdd, onRemove }) {
 
       <div className="space-y-4">
         {items.map((item, index) => (
-          <div key={`${title}-${index}`} className="rounded-xl border p-4">
+          <div key={`${title}-${index}`} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/70">
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm font-bold text-gray-700">{title} #{index + 1}</p>
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{title} #{index + 1}</p>
               <button
                 type="button"
                 onClick={() => onRemove(index)}

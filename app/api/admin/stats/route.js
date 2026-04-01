@@ -42,7 +42,16 @@ export async function GET(req) {
       // ২. Total Revenue (String to Number Conversion)
       db.collection("payments").aggregate([
         { $match: { status: "approved", ...dateQuery } },
-        { $group: { _id: null, total: { $sum: { $toDouble: "$amount" } } } }
+        {
+          $group: {
+            _id: null,
+            total: {
+              $sum: {
+                $toDouble: { $ifNull: ["$amountBdt", "$amount"] },
+              },
+            },
+          },
+        }
       ]).toArray(),
       // ৩. Total Withdraw
       db.collection("referral_withdraw_requests").aggregate([

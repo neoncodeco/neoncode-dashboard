@@ -3,10 +3,11 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Camera, User, Mail, Phone, Save, Loader2,
-  CheckCircle, Shield,
+  CheckCircle, Shield, BadgeCheck,
   ArrowRight, Globe, CreditCard, History, LogOut, MessageSquareText, Sparkles,
 } from "lucide-react";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import Swal from "sweetalert2";
 
 export default function FullProfilePage() {
   const { userData, token, refreshUser, logout } = useFirebaseAuth();
@@ -18,6 +19,9 @@ export default function FullProfilePage() {
   const [otpLoading, setOtpLoading] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [otpStatus, setOtpStatus] = useState({ type: "", message: "" });
+  const [hasPendingOtp, setHasPendingOtp] = useState(false);
+  const [isLocallyPhoneVerified, setIsLocallyPhoneVerified] = useState(false);
+  const [isEditingVerifiedPhone, setIsEditingVerifiedPhone] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     photo: "",
@@ -28,23 +32,31 @@ export default function FullProfilePage() {
     code: "",
   });
   const [paymentMethods, setPaymentMethods] = useState({});
+ 
+useEffect(() => {
+  if (userData) {
+    setFormData({
+      name: userData.name || "",
+      photo: userData.photo || "",
+      coverPhoto: userData.coverPhoto || "",
+    });
 
-  useEffect(() => {
-    if (userData) {
-      setFormData({
-        name: userData.name || "",
-        photo: userData.photo || "",
-        coverPhoto: userData.coverPhoto || "",
-      });
-      setVerificationForm((prev) => ({
-        ...prev,
-        whatsappNumber: userData.whatsappNumber || "",
-      }));
-      setPaymentMethods(userData.payoutMethods || {});
-    }
-  }, [userData]);
+    setVerificationForm((prev) => ({
+      ...prev,
+      whatsappNumber: isEditingVerifiedPhone ? prev.whatsappNumber : userData.phone || prev.whatsappNumber || "",
+    }));
 
-  const isPhoneVerified = Boolean(userData?.phoneVerification?.verified);
+    setPaymentMethods(userData.payoutMethods || {});
+  }
+}, [isEditingVerifiedPhone, userData]);
+
+  const hasVerifiedPhone = Boolean(userData?.phoneVerification?.verified || isLocallyPhoneVerified);
+  const isPhoneVerified = hasVerifiedPhone && !isEditingVerifiedPhone;
+  const isOtpSent =
+    hasPendingOtp || (!hasVerifiedPhone && userData?.phoneVerification?.status === "pending");
+  const displayedWhatsappNumber = (
+    isPhoneVerified ? userData?.phone || verificationForm.whatsappNumber : verificationForm.whatsappNumber
+  ).replace(/^880/, "");
 
   const saveProfile = async (nextFormData, nextPaymentMethods, options = {}) => {
     const { silent = false, successMessage = "Profile updated successfully!" } = options;
@@ -126,78 +138,171 @@ export default function FullProfilePage() {
     }));
   };
 
+  //   if (!token) return;
+
+  //   setOtpLoading(true);
+  //   setOtpStatus({ type: "", message: "" });
+
+  //   try {
+  //     const res = await fetch("/api/otp/send-otp", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: JSON.stringify({
+  //         phone: verificationForm.whatsappNumber,
+  //       }),
+  //     });
+
+  //     const data = await res.json();
+
+  //     if (!res.ok || !data?.ok) {
+  //       setOtpStatus({ type: "error", message: data?.error || "Failed to send OTP." });
+  //       return;
+  //     }
+
+  //     const successMessage = data?.devOtp
+  //       ? `Local test OTP: ${data.devOtp}${data?.providerError ? ` (${data.providerError})` : ""}`
+  //       : data.message || "OTP sent to your number.";
+
+  //     setOtpStatus({ type: "success", message: successMessage });
+  //     await refreshUser();
+  //   } catch (error) {
+  //     setOtpStatus({ type: "error", message: "Failed to send OTP." });
+  //   } finally {
+  //     setOtpLoading(false);
+  //   }
+  // };
+
+//  send otp
   const handleSendOtp = async () => {
-    if (!token) return;
+  if (!token) return;
 
-    setOtpLoading(true);
-    setOtpStatus({ type: "", message: "" });
+  if (!verificationForm.whatsappNumber) {
+    Swal.fire({
+      icon: "warning",
+      title: "Oops...",
+      text: "Enter phone number first",
+    });
+    return;
+  }
 
-    try {
-      const res = await fetch("/api/otp/send-otp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          phone: verificationForm.whatsappNumber,
-        }),
+  setOtpLoading(true);
+
+  try {
+    const res = await fetch("/api/otp/send-otp", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        phone: verificationForm.whatsappNumber,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data?.ok) {
+      Swal.fire({
+        icon: "error",
+        title: "Failed",
+        text: data?.error || "Failed to send OTP",
       });
-
-      const data = await res.json();
-
-      if (!res.ok || !data?.ok) {
-        setOtpStatus({ type: "error", message: data?.error || "Failed to send OTP." });
-        return;
-      }
-
-      const successMessage = data?.devOtp
-        ? `Local test OTP: ${data.devOtp}${data?.providerError ? ` (${data.providerError})` : ""}`
-        : data.message || "OTP sent to your number.";
-
-      setOtpStatus({ type: "success", message: successMessage });
-      await refreshUser();
-    } catch (error) {
-      setOtpStatus({ type: "error", message: "Failed to send OTP." });
-    } finally {
-      setOtpLoading(false);
+      return;
     }
-  };
 
-  const handleVerifyOtp = async () => {
-    if (!token) return;
+    Swal.fire({
+      icon: "success",
+      title: "OTP Sent 🚀",
+      text: "Check your WhatsApp",
+      timer: 2000,
+      showConfirmButton: false,
+    });
 
-    setVerifyingOtp(true);
-    setOtpStatus({ type: "", message: "" });
+    setHasPendingOtp(true);
+    setIsLocallyPhoneVerified(false);
+    setOtpStatus({ type: "success", message: data?.message || "OTP sent successfully." });
 
-    try {
-      const res = await fetch("/api/otp/verify-otp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          code: verificationForm.code,
-        }),
+  } catch (err) {
+    Swal.fire({
+      icon: "error",
+      title: "Network Error",
+      text: "Try again later",
+    });
+  } finally {
+    setOtpLoading(false);
+  }
+};
+const handleVerifyOtp = async () => {
+  if (verifyingOtp) return;
+  if (!token) return;
+
+  if (!verificationForm.code) {
+    Swal.fire({
+      icon: "warning",
+      title: "Enter OTP",
+      text: "Please enter 6-digit code",
+    });
+    return;
+  }
+
+  setVerifyingOtp(true);
+
+  try {
+    const res = await fetch("/api/otp/verify-otp", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        code: verificationForm.code,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data?.ok) {
+      Swal.fire({
+        icon: "error",
+        title: "Invalid OTP",
+        text: data?.error || "Verification failed",
       });
-
-      const data = await res.json();
-
-      if (!res.ok || !data?.ok) {
-        setOtpStatus({ type: "error", message: data?.error || "Failed to verify OTP." });
-        return;
-      }
-
-      setVerificationForm((prev) => ({ ...prev, code: "" }));
-      setOtpStatus({ type: "success", message: data.message || "Number verified successfully." });
-      await refreshUser();
-    } catch (error) {
-      setOtpStatus({ type: "error", message: "Failed to verify OTP." });
-    } finally {
-      setVerifyingOtp(false);
+      return;
     }
-  };
+
+    Swal.fire({
+      icon: "success",
+      title: "Verified ✅",
+      text: "Your number is successfully verified",
+      timer: 2000,
+      showConfirmButton: false,
+    });
+
+    setHasPendingOtp(false);
+    setIsLocallyPhoneVerified(true);
+    setIsEditingVerifiedPhone(false);
+
+    setVerificationForm((prev) => ({
+      ...prev,
+      code: "",
+    }));
+
+    await refreshUser();
+
+  } catch (err) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Verification failed",
+    });
+  } finally {
+    setVerifyingOtp(false);
+  }
+};
+
 
   const handleUpdate = async (e) => {
     e.preventDefault();
@@ -258,9 +363,19 @@ export default function FullProfilePage() {
               <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, "photo")} />
             </label>
           </div>
-          <div className="min-w-0 pb-2 font-medium text-white">
-            <h1 className="truncate text-2xl font-black drop-shadow-md md:text-3xl">{formData.name || "User"}</h1>
-            <p className="mt-1 flex items-center gap-2 truncate text-sm opacity-90 md:text-base">
+          <div className="min-w-0 rounded-3xl border border-white/65  px-4 py-3 font-medium text-slate-900 shadow-xl shadow-slate-900/10 backdrop-blur md:px-5 dark:border-slate-700/80 dark:bg-slate-950/80 dark:text-slate-50 dark:shadow-[0_18px_40px_rgba(2,6,23,0.45)]">
+            <div className="flex items-center gap-2">
+              <h1 className="truncate text-2xl font-black md:text-3xl">{formData.name || "User"}</h1>
+              {hasVerifiedPhone ? (
+                <span
+                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white shadow-[0_6px_18px_rgba(14,165,233,0.35)] ring-2 ring-white/70 dark:ring-slate-900/80"
+                  title="Verified account"
+                >
+                  <BadgeCheck size={15} strokeWidth={2.4} />
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-1 flex items-center gap-2 truncate text-sm text-slate-600 md:text-base dark:text-slate-200">
               <Mail size={14} /> {userData?.email}
             </p>
           </div>
@@ -315,18 +430,18 @@ export default function FullProfilePage() {
                 type="button"
                 onClick={handleLogout}
                 disabled={isLoggingOut}
-                className="flex w-full items-center justify-between rounded-2xl border border-red-100 bg-red-50 px-4 py-4 text-left transition hover:border-red-200 hover:bg-red-100/70 disabled:opacity-60"
+                className="flex w-full items-center justify-between rounded-2xl border border-slate-700/70 bg-slate-900/90 px-4 py-4 text-left shadow-[0_12px_30px_rgba(15,23,42,0.25)] backdrop-blur transition hover:-translate-y-0.5 hover:border-slate-600 hover:bg-slate-800/95 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-100 text-red-600">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-800 text-slate-100 ring-1 ring-slate-700/80">
                     {isLoggingOut ? <Loader2 size={18} className="animate-spin" /> : <LogOut size={18} />}
                   </span>
                   <div>
-                    <p className="font-bold text-gray-800">{isLoggingOut ? "Logging out..." : "Logout"}</p>
-                    <p className="text-xs text-gray-500">Sign out from this device safely</p>
+                    <p className="font-bold text-slate-50">{isLoggingOut ? "Logging out..." : "Logout"}</p>
+                    <p className="text-xs text-slate-300">Sign out from this device safely</p>
                   </div>
                 </div>
-                <ArrowRight size={18} className="text-gray-400" />
+                <ArrowRight size={18} className="text-slate-400" />
               </button>
             </div>
           </div>
@@ -372,7 +487,7 @@ export default function FullProfilePage() {
                       <Phone size={20} className="text-green-600" /> Verify Your Account Number
                     </h3>
                     <p className="dashboard-text-muted mt-2 text-sm leading-6">
-                      WhatsApp number add kore code receive korun, tarpor OTP diye account verification complete korun.
+                      To ensure the security of your account and enable seamless transactions, please verify your WhatsApp number by receiving a one-time password (OTP). This verification step helps us confirm your identity and protect your account from unauthorized access.
                     </p>
                   </div>
                   <span className={`inline-flex items-center gap-2 self-start rounded-full px-4 py-2 text-xs font-bold ${isPhoneVerified ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
@@ -399,20 +514,44 @@ export default function FullProfilePage() {
                       <input
                         type="text"
                         placeholder="1XXXXXXXXX"
-                        value={verificationForm.whatsappNumber.replace(/^880/, "")}
+                        value={displayedWhatsappNumber}
+                        disabled={isPhoneVerified || isOtpSent}
                         onChange={(e) => {
-                          const rawValue = e.target.value.replace(/\D/g, "").slice(0, 10);
-                          setVerificationForm((prev) => ({
-                            ...prev,
-                            whatsappNumber: rawValue ? `880${rawValue}` : "",
-                          }));
-                          if (otpStatus.message) {
-                            setOtpStatus({ type: "", message: "" });
-                          }
-                        }}
+                              const rawValue = e.target.value.replace(/\D/g, "").slice(0, 10);
+
+                              setHasPendingOtp(false);
+                              setIsLocallyPhoneVerified(false);
+                              setVerificationForm((prev) => ({
+                                ...prev,
+                                whatsappNumber: rawValue ? `880${rawValue}` : "",
+                                code: "", 
+                              }));
+
+                              if (otpStatus.message) {
+                                setOtpStatus({ type: "", message: "" });
+                              }
+                            }}
                         className="w-full bg-transparent text-sm font-semibold outline-none"
                       />
                     </div>
+                    {hasVerifiedPhone && !isEditingVerifiedPhone ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditingVerifiedPhone(true);
+                          setHasPendingOtp(false);
+                          setIsLocallyPhoneVerified(false);
+                          setOtpStatus({ type: "", message: "" });
+                          setVerificationForm((prev) => ({
+                            ...prev,
+                            code: "",
+                          }));
+                        }}
+                        className="mt-3 inline-flex min-h-11 items-center justify-center rounded-2xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+                      >
+                        Edit Number
+                      </button>
+                    ) : null}
                   </div>
 
                   <div className="dashboard-panel rounded-[24px] border p-4 sm:p-5">
@@ -446,16 +585,17 @@ export default function FullProfilePage() {
                   <button
                     type="button"
                     onClick={handleSendOtp}
-                    disabled={otpLoading || verifyingOtp}
+                  disabled={otpLoading || verifyingOtp || isOtpSent || isPhoneVerified}
                     className="dashboard-accent-surface flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl px-6 py-3 font-bold transition disabled:opacity-60"
                   >
                     {otpLoading ? <Loader2 size={18} className="animate-spin" /> : <Phone size={18} />}
+                    
                     Send Code
                   </button>
                   <button
                     type="button"
                     onClick={handleVerifyOtp}
-                    disabled={otpLoading || verifyingOtp}
+               disabled={otpLoading || verifyingOtp || !isOtpSent || isPhoneVerified}
                     className="dashboard-muted-button flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl px-6 py-3 font-bold transition disabled:opacity-60"
                   >
                     {verifyingOtp ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}

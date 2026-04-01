@@ -159,11 +159,7 @@ const UserSidebar = ({ theme, toggleTheme }) => {
       <div className="space-y-3 border-t pt-5" style={{ borderColor: "var(--dashboard-frame-border)" }}>
         <UserIdentity user={user} />
 
-        <DashboardThemeToggle
-          theme={theme}
-          toggleTheme={toggleTheme}
-          className="w-full justify-start"
-        />
+        
 
         <Link
           href="https://wa.me/8801344224787"

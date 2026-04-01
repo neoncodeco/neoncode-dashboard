@@ -201,10 +201,12 @@ const PaymentHistoryUI = () => {
               <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400">Amount</p>
-                  <p className="mt-1 font-extrabold text-green-600">{formatBdt(p.amountBdt ?? p.amount)}</p>
                   {p.creditedUsdAmount > 0 ? (
-                    <p className="text-xs font-semibold text-gray-500">{formatUsd(p.creditedUsdAmount)} credited</p>
-                  ) : null}
+                    <p className="mt-1 text-lg font-extrabold text-green-600">{formatUsd(p.creditedUsdAmount)}</p>
+                  ) : (
+                    <p className="mt-1 text-lg font-extrabold text-green-600">{formatBdt(p.amountBdt ?? p.amount)}</p>
+                  )}
+                  <p className="text-xs font-semibold text-gray-500">{formatBdt(p.amountBdt ?? p.amount)} deposit</p>
                 </div>
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400">Method</p>
@@ -240,11 +242,13 @@ const PaymentHistoryUI = () => {
                   <td className="px-6 py-4 text-sm font-mono font-medium text-gray-700">{p.id}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{new Date(p.date).toLocaleString()}</td>
                   <td className="px-6 py-4 text-sm text-gray-700">{p.description}</td>
-                  <td className="px-6 py-4 text-sm font-extrabold text-green-600">
-                    {formatBdt(p.amountBdt ?? p.amount)}
+                  <td className="px-6 py-4">
                     {p.creditedUsdAmount > 0 ? (
-                      <div className="text-xs font-semibold text-gray-500">{formatUsd(p.creditedUsdAmount)} credited</div>
-                    ) : null}
+                      <div className="text-sm font-extrabold text-green-600">{formatUsd(p.creditedUsdAmount)}</div>
+                    ) : (
+                      <div className="text-sm font-extrabold text-green-600">{formatBdt(p.amountBdt ?? p.amount)}</div>
+                    )}
+                    <div className="text-xs font-semibold text-gray-500">{formatBdt(p.amountBdt ?? p.amount)} deposit</div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">{p.method}</td>
                   <td className="px-6 py-4">

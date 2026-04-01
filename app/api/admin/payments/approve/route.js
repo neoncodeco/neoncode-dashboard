@@ -14,7 +14,11 @@ const LEVEL1_MILESTONES = [
 
 const getCreditedUsdAmount = async (db, payment) => {
   if (Number(payment.creditedUsdAmount) > 0) {
-    return Number(payment.creditedUsdAmount);
+    return {
+      amountBdt: Number((payment.amountBdt ?? payment.amount) || 0),
+      usdToBdtRate: resolveUsdToBdtRate(payment.usdToBdtRate, DEFAULT_USD_TO_BDT_RATE),
+      creditedUsdAmount: Number(payment.creditedUsdAmount),
+    };
   }
 
   const amountBdt = Number((payment.amountBdt ?? payment.amount) || 0);
@@ -85,12 +89,27 @@ export async function POST(req) {
         );
       }
 
+      const user = await db
+        .collection("users")
+        .findOne({ userId: userUid });
+
+      if (!user) {
+        return NextResponse.json(
+          { ok: false, error: "User not found" },
+          { status: 404 }
+        );
+      }
+
+      const nextWalletBalance = Number(user.walletBalance || 0) + creditedUsdAmount;
+      const nextTopupBalance = Number(user.topupBalance || 0) + creditedUsdAmount;
+
       await db.collection("users").updateOne(
         { userId: userUid },
         {
-          $inc: {
-            walletBalance: creditedUsdAmount,
-            topupBalance: creditedUsdAmount,
+          $set: {
+            walletBalance: nextWalletBalance,
+            topupBalance: nextTopupBalance,
+            updatedAt: new Date(),
           },
         }
       );
@@ -109,14 +128,10 @@ export async function POST(req) {
         }
       );
 
-      const user = await db
-        .collection("users")
-        .findOne({ userId: userUid });
-
       if (
         user?.referredBy &&
         !user.thresholdRewardGiven &&
-        Number(user.topupBalance || 0) >= REQUIRED_TOTAL
+        nextTopupBalance >= REQUIRED_TOTAL
       ) {
         const referrer = await db
           .collection("users")
@@ -141,7 +156,7 @@ export async function POST(req) {
           await db.collection("referral_history").insertOne({
             referrerId: referrer.userId,
             referredUserId: userUid,
-            reachedAmount: user.topupBalance,
+            reachedAmount: nextTopupBalance,
             reward: ONE_TIME_COMMISSION,
             type: "level1-2000-threshold",
             createdAt: new Date(),

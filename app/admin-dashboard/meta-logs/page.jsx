@@ -176,7 +176,7 @@ export default function BudgetLogsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-5 text-center font-mono text-xs font-bold tracking-tighter text-[#c7d9ff]">
+                    <td className="px-8 py-5 text-center font-mono text-xs font-bold tracking-tighter text-slate-700 dark:text-slate-100">
                       {log.ad_account_id}
                     </td>
                     <td className="px-8 py-5 text-center">

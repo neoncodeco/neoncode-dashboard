@@ -46,36 +46,13 @@ export default function PaymentPageClient() {
     loadPaymentStatus();
   }, []);
 
+
+
   return (
     <div className="p-4 md:p-8 space-y-8 bg-gray-50 min-h-screen text-gray-800">
       <h1 className="text-3xl font-extrabold text-blue-600 border-b pb-2">
         Make Payments
       </h1>
-
-      <section className="grid gap-4 lg:grid-cols-2">
-        <StatusCard
-          title="Automatic Gateway"
-          icon={paymentStatus?.automaticPayment?.ready ? CheckCircle2 : AlertTriangle}
-          tone={paymentStatus?.automaticPayment?.ready ? "green" : "amber"}
-          description={
-            paymentStatus?.automaticPayment?.ready
-              ? "Automatic checkout is configured and ready to send users to the gateway."
-              : "Automatic checkout needs gateway configuration before it can complete payments."
-          }
-          details={[
-            `Gateway URL: ${paymentStatus?.automaticPayment?.gatewayBaseUrl || "Not set"}`,
-            `Webhook: ${paymentStatus?.automaticPayment?.webhookUrl || "Not set"}`,
-          ]}
-        />
-        <StatusCard
-          title="Manual Bank Payment"
-          icon={ShieldCheck}
-          tone="green"
-          description="Manual payment requests are available. Users can submit transfer proof and wait for approval."
-          details={["Bank transfer flow is enabled.", "Payment history records both manual and online payments."]}
-        />
-      </section>
-
       {paymentStatus?.issues?.length ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
           <p className="font-semibold">Payment system attention needed</p>
@@ -147,11 +124,7 @@ function StatusCard({ title, icon: Icon, tone, description, details }) {
         <div>
           <h2 className="text-lg font-bold">{title}</h2>
           <p className="mt-1 text-sm">{description}</p>
-          <div className="mt-3 space-y-1 text-xs opacity-90">
-            {details.map((detail) => (
-              <p key={detail}>{detail}</p>
-            ))}
-          </div>
+          
         </div>
       </div>
     </div>

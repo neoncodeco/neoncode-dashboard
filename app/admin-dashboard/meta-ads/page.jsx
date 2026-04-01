@@ -201,21 +201,21 @@ export default function AdminAdAccountApprove() {
     <div className="min-h-screen space-y-6 bg-[#fcfcfc] p-4 sm:p-6 md:space-y-8 md:p-8">
       
       {/* HEADER SECTION (Original) */}
-      <div className="overflow-hidden rounded-[2rem] border border-[#22375d] bg-[linear-gradient(135deg,rgba(19,37,70,0.96),rgba(11,24,48,0.96))] p-5 shadow-xl sm:p-6">
+      <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-[linear-gradient(135deg,#ffffff,#eef4ff)] p-5 shadow-xl shadow-slate-200/70 sm:p-6 dark:border-[#22375d] dark:bg-[linear-gradient(135deg,rgba(19,37,70,0.96),rgba(11,24,48,0.96))] dark:shadow-black/30">
         <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#8ab4ff]/20 bg-[#8ab4ff]/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-[#cfe0ff]">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-sky-600 dark:border-[#8ab4ff]/20 dark:bg-[#8ab4ff]/10 dark:text-[#cfe0ff]">
               <Layers size={12} /> Meta Ads Workspace
             </div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-[#f5f8ff] sm:text-3xl">Ad Account Panel</h1>
-            <p className="mt-1 max-w-2xl text-sm font-medium text-[#9fb3de]">Review and manage requests with smart mapping.</p>
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl dark:text-white">Ad Account Panel</h1>
+            <p className="mt-1 max-w-2xl text-sm font-medium text-slate-500 dark:text-[#9fb3de]">Review and manage requests with smart mapping.</p>
           </div>
           <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
             <div className="group relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7f96c7]" size={18} />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search records..." className="w-full rounded-xl border border-[#2c4167] bg-[#132546] py-2.5 pl-10 pr-4 text-sm text-[#f5f8ff] focus:outline-none sm:w-72" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#7f96c7]" size={18} />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search records..." className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-sky-400 sm:w-72 dark:border-[#2c4167] dark:bg-[#132546] dark:text-[#f5f8ff]" />
             </div>
-            <button onClick={load} className="admin-secondary-button flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold active:scale-95"><RefreshCcw size={16} /> Refresh</button>
+            <button onClick={load} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-95 dark:border-[#2c4167] dark:bg-[#132546] dark:text-[#dbe8ff] dark:hover:bg-[#1a2f57]"><RefreshCcw size={16} /> Refresh</button>
           </div>
         </div>
       </div>

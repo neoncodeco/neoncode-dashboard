@@ -53,12 +53,12 @@ export default function ChatMessages({ chatId, currentRole = "user" }) {
   return (
     <div 
       ref={scrollRef} 
-      className="flex-1 space-y-4 overflow-y-auto bg-[#0c1830] p-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      className="flex-1 space-y-4 overflow-y-auto bg-slate-50 p-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden dark:bg-[#0c1830]"
       style={{ height: "100%" }}
     >
       {messages.length === 0 && (
         <div className="flex items-center justify-center h-full">
-          <p className="rounded-full border border-[#2c4167] bg-[#132546] px-4 py-2 text-xs text-[#9fb3de] shadow-sm">
+          <p className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs text-slate-500 shadow-sm dark:border-[#2c4167] dark:bg-[#132546] dark:text-[#9fb3de]">
             Start the conversation...
           </p>
         </div>
@@ -76,8 +76,8 @@ export default function ChatMessages({ chatId, currentRole = "user" }) {
             <div
               className={`max-w-[75%] px-4 py-2.5 shadow-sm transition-all ${
                 isMe
-                  ? "ml-12 rounded-[20px] rounded-tr-[4px] bg-[#8ab4ff] text-[#081227]"
-                  : "mr-12 rounded-[20px] rounded-tl-[4px] border border-[#2c4167] bg-[#132546] text-[#f5f8ff]"
+                  ? "ml-12 rounded-[20px] rounded-tr-[4px] bg-sky-500 text-white dark:bg-[#8ab4ff] dark:text-[#081227]"
+                  : "mr-12 rounded-[20px] rounded-tl-[4px] border border-slate-200 bg-white text-slate-800 dark:border-[#2c4167] dark:bg-[#132546] dark:text-[#f5f8ff]"
               }`}
             >
               {/* Message Content */}
@@ -99,7 +99,7 @@ export default function ChatMessages({ chatId, currentRole = "user" }) {
               )}
 
               {/* Timestamp */}
-              <div className={`mt-1.5 flex text-[10px] ${isMe ? "justify-end text-[#29426d]" : "justify-start text-[#8fa5cf]"}`}>
+              <div className={`mt-1.5 flex text-[10px] ${isMe ? "justify-end text-sky-100 dark:text-[#29426d]" : "justify-start text-slate-400 dark:text-[#8fa5cf]"}`}>
                 {m.createdAt ? (
                   new Date(m.createdAt).toLocaleTimeString([], {
                     hour: "2-digit",

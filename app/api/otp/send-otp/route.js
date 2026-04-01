@@ -1,13 +1,13 @@
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
-import { sendZavuOtp } from "@/lib/zavuSms";
+import { sendZavuTemplateOtp } from "@/lib/zavuSms";
 import {
   canResendOtp,
   generateOtpCode,
   getOtpExpiryDate,
   hashOtpCode,
   OTP_RESEND_COOLDOWN_MS,
-} from "@/lib/otpUtils"; // rename later if you want
+} from "@/lib/otpUtils"; 
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
@@ -52,7 +52,7 @@ export async function POST(req) {
     const expiresAt = getOtpExpiryDate();
 
     // 🔥 ZAVU SEND
-    const sendResult = await sendZavuOtp({ to: phone, code: otp });
+  const sendResult = await sendZavuTemplateOtp({ to: phone, code: otp });
 
     if (!sendResult.ok) {
       return NextResponse.json(

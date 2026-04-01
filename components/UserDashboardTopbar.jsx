@@ -102,45 +102,11 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
   return (
     <div className="sticky top-0 z-30 hidden px-3 pt-1.5 sm:px-4 sm:pt-3 lg:block">
       <div className="dashboard-panel flex items-center gap-2.5 px-3 py-2.5 sm:gap-3 sm:px-4 lg:flex-row lg:items-center lg:justify-between lg:px-5">
-        <button
-          type="button"
-          onClick={() => router.push("/user-dashboard/overview")}
-          className="dashboard-subpanel flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl p-2 lg:hidden"
-          aria-label="Go to overview"
-        >
-          <Image src="/Neon Studio icon.png" alt="Neon Code" width={22} height={22} />
-        </button>
+      
 
-        <div className="hidden items-center gap-3 lg:flex">
-          <button
-            type="button"
-            onClick={() => router.push("/user-dashboard/overview")}
-            className="dashboard-subpanel flex h-11 w-11 items-center justify-center rounded-2xl p-2"
-            aria-label="Go to overview"
-          >
-            <Image src="/Neon Studio icon.png" alt="Neon Code" width={24} height={24} />
-          </button>
-          <div>
-            <p className="dashboard-text-strong text-base font-semibold">Neon Code</p>
-            <p className="dashboard-text-faint text-[10px] uppercase tracking-[0.24em]">Client Dashboard</p>
-          </div>
-        </div>
 
         <div className="relative min-w-0 flex-1 lg:max-w-[52%]">
-          <div className="dashboard-search flex items-center gap-3 rounded-2xl px-4 py-3.5">
-            <Search size={19} className="dashboard-text-faint" />
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => window.setTimeout(() => setIsFocused(false), 120)}
-              onKeyDown={handleKeyDown}
-              aria-label="Search dashboard pages"
-              placeholder="Search pages, support, payment, profile..."
-              className="w-full min-w-0 text-[15px]"
-            />
-          </div>
+        
 
           {isFocused && query.trim() ? (
             <div className="dashboard-subpanel absolute left-0 top-[calc(100%+0.6rem)] z-20 w-full overflow-hidden rounded-[20px] p-2 sm:w-[360px] lg:left-auto lg:right-0">

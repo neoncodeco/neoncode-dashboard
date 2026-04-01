@@ -381,7 +381,7 @@ export default function AdAccountUi() {
                 <DollarSign size={20} />
               </div>
             </div>
-            <div className="inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
+            <div className="inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ">
               BDT to USD working rate
             </div>
           </div>
@@ -393,7 +393,7 @@ export default function AdAccountUi() {
                 <CurrencyAmount
                   value={userData?.topupBalance}
                   usdToBdtRate={usdRate}
-                  primaryClassName="mt-2 text-[1.8rem] font-black leading-none text-white"
+                  primaryClassName="mt-2 text-[1.8rem] font-black leading-none "
                   secondaryClassName="mt-2 text-[12px] font-semibold text-slate-200"
                 />
               </div>
@@ -401,7 +401,7 @@ export default function AdAccountUi() {
                 <CreditCard size={20} />
               </div>
             </div>
-            <div className="inline-flex rounded-full border border-indigo-400/20 bg-indigo-400/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
+            <div className="inline-flex rounded-full border border-indigo-400/20 bg-indigo-400/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ">
               Cumulative wallet top-ups
             </div>
           </div>
@@ -421,7 +421,7 @@ export default function AdAccountUi() {
                 <TrendingUp size={20} />
               </div>
             </div>
-            <div className="inline-flex rounded-full border border-amber-400/20 bg-amber-400/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
+            <div className="inline-flex rounded-full border border-amber-400/20 bg-amber-400/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em">
               Sum of synced active accounts
             </div>
           </div>

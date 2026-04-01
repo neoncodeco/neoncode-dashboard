@@ -204,10 +204,12 @@ const PaymentHistory = () => {
                     {p.description}
                   </td>
                   <td className="px-6 py-4 text-sm font-extrabold text-green-600">
-                    {formatBdt(p.amountBdt ?? p.amount)}
-                    {p.creditedUsdAmount > 0 ? (
-                      <div className="text-xs font-semibold text-gray-500">{formatUsd(p.creditedUsdAmount)} credited</div>
-                    ) : null}
+                    {(Number(p.creditedUsdAmount) || 0) > 0 ? (
+                      <div className="text-sm font-extrabold text-green-600">{formatUsd(p.creditedUsdAmount)}</div>
+                    ) : (
+                      <div className="text-sm font-extrabold text-green-600">{formatBdt(p.amountBdt ?? p.amount)}</div>
+                    )}
+                    <div className="text-xs font-semibold text-gray-500">{formatBdt(p.amountBdt ?? p.amount)} deposit</div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {p.method}

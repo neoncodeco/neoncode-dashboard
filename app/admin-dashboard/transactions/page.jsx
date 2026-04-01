@@ -14,6 +14,7 @@ import {
   XCircle
 } from "lucide-react";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import Swal from "sweetalert2";
 
 export default function TransactionsPage() {
 
@@ -58,6 +59,21 @@ export default function TransactionsPage() {
 
   // ------------ Approve / Reject Handler --------------
   const handleAction = async (userUid, action) => {
+    const actionLabel = action === "approve" ? "approve" : "reject";
+    const confirmResult = await Swal.fire({
+      title: `${action === "approve" ? "Approve" : "Reject"} payment?`,
+      text: `You are about to ${actionLabel} this transaction.`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: action === "approve" ? "Yes, approve" : "Yes, reject",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: action === "approve" ? "#059669" : "#dc2626",
+      background: "#ffffff",
+      color: "#0f172a",
+    });
+
+    if (!confirmResult.isConfirmed) return;
+
     const res = await fetch("/api/admin/payments/approve", {
       method: "POST",
       headers: {
@@ -70,10 +86,24 @@ export default function TransactionsPage() {
     const data = await res.json();
 
     if (data.ok) {
-      alert(data.message);
+      await Swal.fire({
+        title: action === "approve" ? "Payment approved" : "Payment rejected",
+        text: data.message,
+        icon: "success",
+        confirmButtonColor: action === "approve" ? "#059669" : "#2563eb",
+        background: "#ffffff",
+        color: "#0f172a",
+      });
       loadPayments(); // reload table
     } else {
-      alert("Error: " + data.error);
+      await Swal.fire({
+        title: "Action failed",
+        text: data.error || "Something went wrong.",
+        icon: "error",
+        confirmButtonColor: "#dc2626",
+        background: "#ffffff",
+        color: "#0f172a",
+      });
     }
   };
 
@@ -160,11 +190,15 @@ export default function TransactionsPage() {
                         {p.userUid}
                       </td>
 
-                      <td className="p-4 font-bold text-emerald-300">
-                        +{formatBdt(p.amountBdt ?? p.amount)}
+                      <td className="p-4">
                         {(Number(p.creditedUsdAmount) || 0) > 0 ? (
-                          <div className="text-xs font-semibold text-gray-500">{formatUsd(p.creditedUsdAmount)} wallet credit</div>
-                        ) : null}
+                          <div className="text-lg font-extrabold text-emerald-600">{formatUsd(p.creditedUsdAmount)}</div>
+                        ) : (
+                          <div className="text-lg font-extrabold text-emerald-600">{formatBdt(p.amountBdt ?? p.amount)}</div>
+                        )}
+                        <div className="text-xs font-semibold text-gray-500">
+                          {formatBdt(p.amountBdt ?? p.amount)} deposit
+                        </div>
                       </td>
 
                       <td className="p-4 text-gray-600">{p.method || "N/A"}</td>

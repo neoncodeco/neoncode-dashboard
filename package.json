@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@zavudev/sdk": "^0.31.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.26",
     "lottie-react": "^2.4.1",
