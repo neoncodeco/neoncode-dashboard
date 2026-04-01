@@ -554,54 +554,58 @@ const handleVerifyOtp = async () => {
                     ) : null}
                   </div>
 
-                  <div className="dashboard-panel rounded-[24px] border p-4 sm:p-5">
-                    <div className="mb-4 flex items-center gap-3">
-                      <span className="dashboard-muted-button flex h-11 w-11 items-center justify-center rounded-2xl">
-                        <CheckCircle size={18} />
-                      </span>
-                      <div>
-                        <p className="dashboard-text-strong text-sm font-black uppercase tracking-[0.16em]">One-Time Password</p>
-                        <p className="dashboard-text-muted text-xs">Enter the 6-digit security code</p>
+                  {!isPhoneVerified ? (
+                    <div className="dashboard-panel rounded-[24px] border p-4 sm:p-5">
+                      <div className="mb-4 flex items-center gap-3">
+                        <span className="dashboard-muted-button flex h-11 w-11 items-center justify-center rounded-2xl">
+                          <CheckCircle size={18} />
+                        </span>
+                        <div>
+                          <p className="dashboard-text-strong text-sm font-black uppercase tracking-[0.16em]">One-Time Password</p>
+                          <p className="dashboard-text-muted text-xs">Enter the 6-digit security code</p>
+                        </div>
                       </div>
+
+                      <label className="ml-1 text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">OTP Code</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        placeholder="000000"
+                        value={verificationForm.code}
+                        onChange={(e) => setVerificationForm((prev) => ({
+                          ...prev,
+                          code: e.target.value.replace(/\D/g, "").slice(0, 6),
+                        }))}
+                        className="mt-2 w-full rounded-[22px] border border-gray-200 bg-gray-50 px-5 py-4 text-center text-lg font-black tracking-[0.35em] outline-none transition focus:border-green-500"
+                      />
                     </div>
+                  ) : null}
+                </div>
 
-                    <label className="ml-1 text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">OTP Code</label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={6}
-                      placeholder="000000"
-                      value={verificationForm.code}
-                      onChange={(e) => setVerificationForm((prev) => ({
-                        ...prev,
-                        code: e.target.value.replace(/\D/g, "").slice(0, 6),
-                      }))}
-                      className="mt-2 w-full rounded-[22px] border border-gray-200 bg-gray-50 px-5 py-4 text-center text-lg font-black tracking-[0.35em] outline-none transition focus:border-green-500"
-                    />
+                {!isPhoneVerified ? (
+                  <div className="flex flex-col gap-3 md:flex-row">
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                    disabled={otpLoading || verifyingOtp || isOtpSent || isPhoneVerified}
+                      className="dashboard-accent-surface flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl px-6 py-3 font-bold transition disabled:opacity-60"
+                    >
+                      {otpLoading ? <Loader2 size={18} className="animate-spin" /> : <Phone size={18} />}
+                      
+                      Send Code
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleVerifyOtp}
+                 disabled={otpLoading || verifyingOtp || !isOtpSent || isPhoneVerified}
+                      className="dashboard-muted-button flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl px-6 py-3 font-bold transition disabled:opacity-60"
+                    >
+                      {verifyingOtp ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
+                      Verify Code
+                    </button>
                   </div>
-                </div>
-
-                <div className="flex flex-col gap-3 md:flex-row">
-                  <button
-                    type="button"
-                    onClick={handleSendOtp}
-                  disabled={otpLoading || verifyingOtp || isOtpSent || isPhoneVerified}
-                    className="dashboard-accent-surface flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl px-6 py-3 font-bold transition disabled:opacity-60"
-                  >
-                    {otpLoading ? <Loader2 size={18} className="animate-spin" /> : <Phone size={18} />}
-                    
-                    Send Code
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleVerifyOtp}
-               disabled={otpLoading || verifyingOtp || !isOtpSent || isPhoneVerified}
-                    className="dashboard-muted-button flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl px-6 py-3 font-bold transition disabled:opacity-60"
-                  >
-                    {verifyingOtp ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
-                    Verify Code
-                  </button>
-                </div>
+                ) : null}
 
                 {otpStatus.message ? (
                   <div className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${otpStatus.type === "success" ? "border-green-200 bg-green-50 text-green-700" : "border-red-200 bg-red-50 text-red-600"}`}>
