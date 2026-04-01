@@ -19,6 +19,7 @@ import {
   X,
   MessageCircle,
   ClipboardList,
+  Newspaper,
   Sun,
   Moon,
 } from "lucide-react";
@@ -104,6 +105,12 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
       permissionKey: "affiliateAccess",
     },
     {
+      name: "News",
+      icon: Newspaper,
+      href: "/admin-dashboard/news",
+      adminOnly: true,
+    },
+    {
       name: "Controls & APIs",
       icon: Settings,
       href: "/admin-dashboard/settings",
@@ -138,6 +145,7 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
         items: [
           findMenuItem("/admin-dashboard/meta-ads"),
           findMenuItem("/admin-dashboard/meta-logs"),
+          findMenuItem("/admin-dashboard/news"),
           findMenuItem("/admin-dashboard/settings"),
         ].filter(Boolean),
       },

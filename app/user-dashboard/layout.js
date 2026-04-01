@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import DashboardMouseGlow from "@/components/DashboardMouseGlow";
 import Loader from "@/components/Loader";
+import UserNotificationsBar from "@/components/UserNotificationsBar";
+import { UserNotificationsProvider } from "@/components/UserNotificationsProvider";
 import UserSidebar from "@/components/UserSidebar";
 import UserDashboardTopbar from "@/components/UserDashboardTopbar";
 import LiveChatButton from "@/components/chat/LiveChatButton";
@@ -47,11 +49,14 @@ export default function MainLayout({ children }) {
       <DashboardMouseGlow />
       <UserSidebar theme={theme} toggleTheme={toggleTheme} />
       <div className="dashboard-content min-w-0 w-full overflow-visible pt-0 pb-28 lg:flex-1 lg:pt-0 lg:pb-0 lg:overflow-y-auto">
-        <UserDashboardTopbar theme={theme} toggleTheme={toggleTheme} />
-        <div className="user-dashboard-stage px-4 pb-5 sm:px-4 lg:pb-6">
-          <div className="user-dashboard-page-surface">{children}</div>
-        </div>
-        <LiveChatButton />
+        <UserNotificationsProvider>
+          <UserDashboardTopbar theme={theme} toggleTheme={toggleTheme} />
+          <div className="user-dashboard-stage px-4 pb-5 sm:px-4 lg:pb-6">
+            <UserNotificationsBar />
+            <div className="user-dashboard-page-surface">{children}</div>
+          </div>
+          <LiveChatButton />
+        </UserNotificationsProvider>
       </div>
     </div>
   );

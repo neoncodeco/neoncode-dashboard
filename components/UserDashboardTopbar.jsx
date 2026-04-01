@@ -5,18 +5,36 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { Bell, ChevronRight, CreditCard, LifeBuoy, LogOut, Search, Settings, Share2, UserRound } from "lucide-react";
 import DashboardThemeToggle from "@/components/DashboardThemeToggle";
+import { useUserNotifications } from "@/components/UserNotificationsProvider";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import { userDashboardMenuItems } from "@/lib/userDashboardNav";
+
+function formatNotificationTime(value) {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
 
 export default function UserDashboardTopbar({ theme, toggleTheme }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, userData, logout } = useFirebaseAuth();
+  const { notifications, unseenCount, isMarkingSeen, markAllSeen } = useUserNotifications();
   const [query, setQuery] = React.useState("");
   const [isFocused, setIsFocused] = React.useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = React.useState(false);
+  const [notificationsOpen, setNotificationsOpen] = React.useState(false);
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const profileMenuRef = React.useRef(null);
+  const notificationsRef = React.useRef(null);
   const profileName = user?.displayName || userData?.name || "Neon Client";
   const profileId = userData?.referralCode || userData?.userId?.slice(-6) || "585D93";
   const initials = profileName
@@ -79,6 +97,25 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [profileMenuOpen]);
+
+  React.useEffect(() => {
+    if (!notificationsOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!notificationsRef.current?.contains(event.target)) {
+        setNotificationsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [notificationsOpen]);
+
+  React.useEffect(() => {
+    if (notificationsOpen && unseenCount > 0) {
+      markAllSeen();
+    }
+  }, [markAllSeen, notificationsOpen, unseenCount]);
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -154,13 +191,77 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
             Top Up
           </button>
 
-          <button
-            type="button"
-            className="dashboard-subpanel flex h-11 w-11 items-center justify-center rounded-2xl dashboard-text-muted"
-            aria-label="Notifications"
-          >
-            <Bell size={18} />
-          </button>
+          <div ref={notificationsRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setNotificationsOpen((prev) => !prev)}
+              className="dashboard-subpanel relative flex h-11 w-11 items-center justify-center rounded-2xl dashboard-text-muted"
+              aria-label="Notifications"
+            >
+              <Bell size={18} />
+              {unseenCount > 0 ? (
+                <span className="absolute -right-1 -top-1 inline-flex min-w-[1.2rem] items-center justify-center rounded-full bg-sky-500 px-1.5 py-0.5 text-[10px] font-black text-white">
+                  {unseenCount > 9 ? "9+" : unseenCount}
+                </span>
+              ) : null}
+            </button>
+
+            {notificationsOpen ? (
+              <div className="dashboard-app-frame absolute right-0 top-[calc(100%+0.65rem)] z-30 w-[360px] rounded-[26px] p-3">
+                <div className="flex items-center justify-between gap-3 px-2 py-1">
+                  <div>
+                    <p className="dashboard-text-strong text-sm font-black">Notifications</p>
+                    <p className="dashboard-text-muted text-[11px]">
+                      {unseenCount > 0 ? `${unseenCount} unread update${unseenCount > 1 ? "s" : ""}` : "All caught up"}
+                    </p>
+                  </div>
+                  {notifications.length ? (
+                    <button
+                      type="button"
+                      onClick={markAllSeen}
+                      disabled={isMarkingSeen || unseenCount <= 0}
+                      className="dashboard-muted-button rounded-xl px-3 py-2 text-[11px] font-bold disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isMarkingSeen ? "Updating..." : "Mark read"}
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="mt-2 max-h-[360px] space-y-2 overflow-y-auto pr-1">
+                  {notifications.length ? (
+                    notifications.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`rounded-2xl border px-3 py-3 ${
+                          item.isSeen
+                            ? "border-transparent dashboard-subpanel"
+                            : "border-sky-400/30 bg-sky-500/10"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="dashboard-text-strong text-sm font-bold">{item.title}</p>
+                          {!item.isSeen ? (
+                            <span className="rounded-full bg-sky-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-white">
+                              New
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="dashboard-text-muted mt-1 text-xs leading-6">{item.message}</p>
+                        <p className="dashboard-text-faint mt-2 text-[10px] font-bold uppercase tracking-[0.14em]">
+                          {formatNotificationTime(item.publishedAt)}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="dashboard-subpanel rounded-2xl px-4 py-5">
+                      <p className="dashboard-text-strong text-sm font-bold">No notifications yet</p>
+                      <p className="dashboard-text-muted mt-1 text-xs">Admin announcements will show up here for every user.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </div>
 
           <DashboardThemeToggle
             theme={theme}
