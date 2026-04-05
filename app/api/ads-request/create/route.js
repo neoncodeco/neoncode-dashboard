@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
+import { ensureWritableUser } from "@/lib/userAccess";
 
 
 export async function POST(req) {
@@ -17,6 +18,10 @@ export async function POST(req) {
     const body = await req.json();
 
     const { db } = await getDB();
+    const access = await ensureWritableUser(db, decoded.uid);
+    if (!access.ok) {
+      return access.response;
+    }
     await db.collection("adAccountRequests").insertOne({
       ...body,
       userEmail: decoded.email,

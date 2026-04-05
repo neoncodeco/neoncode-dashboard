@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
+import { ensureWritableUser } from "@/lib/userAccess";
 
 const getCreditCost = (assetType) => {
   return String(assetType || "").toLowerCase() === "video" ? 2 : 1;
@@ -145,6 +146,10 @@ export async function POST(req) {
     }
 
     const { db } = await getDB();
+    const access = await ensureWritableUser(db, decoded.uid);
+    if (!access.ok) {
+      return access.response;
+    }
     const now = new Date();
 
     const user = await db

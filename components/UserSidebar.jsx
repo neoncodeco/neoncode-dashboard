@@ -157,19 +157,6 @@ const UserSidebar = ({ theme, toggleTheme }) => {
       </div>
 
       <div className="space-y-3 border-t pt-5" style={{ borderColor: "var(--dashboard-frame-border)" }}>
-        <UserIdentity user={user} />
-
-        
-
-        <Link
-          href="https://wa.me/8801344224787"
-          target="_blank"
-          className="dashboard-subpanel flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium dashboard-text-muted transition"
-        >
-          <CircleHelp size={18} />
-          Help & Information
-        </Link>
-
         {user ? (
           <button
             type="button"
@@ -239,7 +226,7 @@ const UserSidebar = ({ theme, toggleTheme }) => {
                   style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 6.25rem)" }}
                 >
                   <div className="dashboard-app-frame sidebar-shell w-full max-w-[18.5rem] overflow-hidden rounded-[30px] p-3">
-                    <div className="dashboard-subpanel flex items-center gap-3 p-3">
+                    <div className="dashboard-subpanel flex items-center justify-center p-3">
                       {user?.photoURL ? (
                         <Image
                           src={user.photoURL}
@@ -253,14 +240,6 @@ const UserSidebar = ({ theme, toggleTheme }) => {
                           {user?.displayName?.slice(0, 1)?.toUpperCase() || "NC"}
                         </div>
                       )}
-                      <div className="min-w-0">
-                        <p className="dashboard-text-strong truncate text-sm font-bold">
-                          {user?.displayName || "Neon Client"}
-                        </p>
-                        <p className="dashboard-text-muted truncate text-[11px]">
-                          {user?.email || "Client account"}
-                        </p>
-                      </div>
                     </div>
 
                     <div className="mt-3 grid gap-2">
@@ -338,7 +317,13 @@ const UserSidebar = ({ theme, toggleTheme }) => {
                       >
                         <item.icon size={18} strokeWidth={2.2} />
                       </span>
-                      <span className="sr-only">{item.name}</span>
+                      <span
+                        className={`text-[10px] font-semibold leading-none ${
+                          isActive ? "text-white" : "dashboard-text-muted"
+                        }`}
+                      >
+                        {item.name}
+                      </span>
                       <span
                         className="pointer-events-none absolute -top-9 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold opacity-0 transition-all group-hover:-translate-y-1 group-hover:opacity-100"
                         style={{

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import { Crown, Wallet, Image as ImageIcon, Video } from "lucide-react";
+import CurrencyAmount from "@/components/CurrencyAmount";
+import { convertBdtToUsd, formatBdt, resolveUsdToBdtRate } from "@/lib/currency";
 
 const formatDate = (value) => {
   if (!value) return "N/A";
@@ -22,6 +24,7 @@ export default function FreepikPremiumPage() {
   const [walletBalance, setWalletBalance] = useState(0);
   const [credits, setCredits] = useState(0);
   const [subscription, setSubscription] = useState(null);
+  const [usdToBdtRate, setUsdToBdtRate] = useState(150);
 
   const [assetUrl, setAssetUrl] = useState("");
   const [assetType, setAssetType] = useState("image");
@@ -52,6 +55,7 @@ export default function FreepikPremiumPage() {
       setWalletBalance(Number(json.walletBalance || 0));
       setCredits(Number(json.freepikCredits || 0));
       setSubscription(json.subscription || null);
+      setUsdToBdtRate(resolveUsdToBdtRate(json.usdToBdtRate));
     } catch (error) {
       Swal.fire("Error", error.message || "Could not load data", "error");
     } finally {
@@ -126,6 +130,8 @@ export default function FreepikPremiumPage() {
     }
   };
 
+  const rate = resolveUsdToBdtRate(usdToBdtRate);
+
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen text-gray-800 space-y-8">
       <div className="border-b pb-3">
@@ -139,7 +145,12 @@ export default function FreepikPremiumPage() {
             <Wallet size={16} />
             Wallet Balance
           </div>
-          <p className="text-2xl font-bold mt-2">BDT {walletBalance}</p>
+          <CurrencyAmount
+            value={walletBalance}
+            usdToBdtRate={usdToBdtRate}
+            primaryClassName="mt-2 text-2xl font-bold"
+            secondaryClassName="mt-1 text-sm text-gray-500"
+          />
         </div>
         <div className="bg-white rounded-xl border p-5 shadow-sm">
           <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -161,13 +172,19 @@ export default function FreepikPremiumPage() {
           <p className="text-gray-500">Loading plans...</p>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {plans.map((plan) => (
-              <div key={plan.id} className="bg-white border rounded-xl p-5 shadow-sm space-y-4">
+            {plans.map((plan) => {
+              const planPriceUsd = convertBdtToUsd(plan.price, rate);
+
+              return (
+                <div key={plan.id} className="bg-white border rounded-xl p-5 shadow-sm space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xl font-bold">{plan.name}</h3>
                   <span className="text-sm font-semibold text-blue-700">{plan.durationDays} days</span>
                 </div>
-                <p className="text-3xl font-extrabold text-gray-900">BDT {plan.price}</p>
+                <div>
+                  <p className="text-3xl font-extrabold text-gray-900">{planPriceUsd > 0 ? `$${planPriceUsd.toFixed(2)}` : "$0.00"}</p>
+                  <p className="mt-1 text-sm font-medium text-gray-500">{formatBdt(plan.price)}</p>
+                </div>
                 <p className="text-sm text-gray-500">{plan.description}</p>
                 <ul className="text-sm text-gray-700 list-disc pl-5 space-y-1">
                   {(plan.features || []).map((f) => (
@@ -181,8 +198,9 @@ export default function FreepikPremiumPage() {
                 >
                   {buyingPlan === plan.id ? "Buying..." : `Buy ${plan.name}`}
                 </button>
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         )}
       </section>

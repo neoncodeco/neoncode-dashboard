@@ -6,6 +6,7 @@ import {
   getSupportSystemPrompt,
   resolveReplyLanguage,
 } from "@/lib/chatAutoReply";
+import { ensureWritableUser } from "@/lib/userAccess";
 
 async function generateOpenAIReply({
   text,
@@ -76,6 +77,10 @@ export async function POST(req) {
     const safeType = imageUrl ? "image" : type || "text";
 
     const { db } = await getDB();
+    const access = await ensureWritableUser(db, decoded.uid);
+    if (!access.ok) {
+      return access.response;
+    }
 
     await db.collection("live_chats").updateOne(
       { chatId, userId: decoded.uid },

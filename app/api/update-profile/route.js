@@ -2,6 +2,7 @@
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import { NextResponse } from "next/server";
+import { ensureWritableUser } from "@/lib/userAccess";
 
 
 
@@ -14,6 +15,10 @@ export async function POST(req) {
 
     const { name, photo, coverPhoto, payoutMethods } = await req.json();
      const { db } = await getDB();
+    const access = await ensureWritableUser(db, decoded.uid);
+    if (!access.ok) {
+      return access.response;
+    }
     const result = await db.collection("users").updateOne(
       { userId: decoded.uid }, 
       {

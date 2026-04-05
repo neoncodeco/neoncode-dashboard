@@ -2,26 +2,10 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Copy } from "lucide-react";
+import { getBankLogoSrc } from "@/lib/bankDetails";
 
-const banks = [
-  {
-    name: "Southeast Bank",
-    accName: "Soft it bd",
-    accNumber: "701413100000440",
-    branch: "Pahartali",
-    ref: "Soft it Bd",
-    logo: "/seb.png",
-  },
-  {
-    name: "The City Bank",
-    accName: "Md Maksudur Rahaman",
-    accNumber: "2304002358001",
-    branch: "Halishahar",
-    ref: "MD MAKSUDUR RAHAMAN",
-    logo: "/city.png",
-  },
-];
+const MIN_BANK_PAYMENT_AMOUNT_BDT = 1000;
 
 // ⭐ Upload to imgbb
 const uploadToImgbb = async (imageFile) => {
@@ -40,7 +24,7 @@ const uploadToImgbb = async (imageFile) => {
   return data.data.url; // final image URL
 };
 
-export default function BankPayForm({ token, setMethod }) {
+export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
   const [amount, setAmount] = useState("");
   const [trxId, setTrxId] = useState("");
   const [screenshot, setScreenshot] = useState(null);
@@ -48,6 +32,21 @@ export default function BankPayForm({ token, setMethod }) {
   const inputStyle =
     "w-full border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg p-3 bg-white text-gray-800 placeholder-gray-400";
   const labelStyle = "text-sm font-semibold text-gray-700 block mb-1";
+
+  const copyField = async (label, value) => {
+    const Swal = (await import("sweetalert2")).default;
+
+    if (!String(value || "").trim()) {
+      return Swal.fire("Empty", `${label} is not available`, "warning");
+    }
+
+    try {
+      await navigator.clipboard.writeText(String(value));
+      Swal.fire("Copied", `${label} copied to clipboard`, "success");
+    } catch {
+      Swal.fire("Error", `Could not copy ${label.toLowerCase()}`, "error");
+    }
+  };
 
   // ⭐ Manual Bank Payment
   const handleManualPayment = async () => {
@@ -57,6 +56,13 @@ export default function BankPayForm({ token, setMethod }) {
     }
     if (!token) {
       return Swal.fire("Error", "You must login first", "error");
+    }
+    if (Number(amount) < MIN_BANK_PAYMENT_AMOUNT_BDT) {
+      return Swal.fire(
+        "Error",
+        `Bank payment requires at least Tk ${MIN_BANK_PAYMENT_AMOUNT_BDT}. Use another method for smaller amounts.`,
+        "error"
+      );
     }
 
     try {
@@ -113,37 +119,68 @@ export default function BankPayForm({ token, setMethod }) {
           Bank Account Details (Transfer To)
         </h3>
 
-        {banks.map((bank, index) => (
-          <div
-            key={index}
-            className="bg-gray-100 p-4 rounded-lg flex items-center space-x-4 border border-gray-200 hover:shadow-md"
-          >
-            <Image
-              src={bank.logo}
-              alt={bank.name}
-              width={40}
-              height={40}
-              className="rounded-full border border-gray-300"
-            />
+        {bankDetails.length ? (
+          bankDetails.map((bank) => (
+            <div
+              key={bank.id}
+              className="w-full rounded-lg border border-gray-200 bg-gray-100 p-4"
+            >
+              <div className="flex items-start space-x-4">
+                <Image
+                  src={getBankLogoSrc(bank)}
+                  alt={bank.bankName}
+                  width={40}
+                  height={40}
+                  unoptimized={Boolean(bank.logoUrl)}
+                  className="rounded-full border border-gray-300"
+                />
 
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 w-full text-sm">
-              <p className="col-span-2 font-bold text-gray-900">{bank.name}</p>
-              <p className="text-gray-600">
-                <span className="font-medium">A/C Name:</span> {bank.accName}
-              </p>
-              <p className="text-gray-600">
-                <span className="font-medium">A/C Number:</span>{" "}
-                <span className="text-blue-700 font-mono">{bank.accNumber}</span>
-              </p>
-              <p className="text-gray-600">
-                <span className="font-medium">Branch:</span> {bank.branch}
-              </p>
-              <p className="text-gray-600">
-                <span className="font-medium">Reference:</span> {bank.ref}
-              </p>
+                <div className="grid w-full grid-cols-1 gap-2 text-sm md:grid-cols-2">
+                  {[
+                    { label: "Bank Name", value: bank.bankName, mono: false, wide: true },
+                    { label: "A/C Name", value: bank.accountName, mono: false },
+                    { label: "A/C Number", value: bank.accountNumber, mono: true },
+                    { label: "Branch", value: bank.branch || "N/A", mono: false },
+                    { label: "District", value: bank.district || "N/A", mono: false },
+                    { label: "Routing No", value: bank.routingNumber || "N/A", mono: true },
+                    { label: "SWIFT", value: bank.swiftCode || "N/A", mono: true },
+                    { label: "Reference", value: bank.reference || "N/A", mono: false, wide: true },
+                  ].map((field) => (
+                    <div
+                      key={`${bank.id}-${field.label}`}
+                      className={field.wide ? "md:col-span-2" : ""}
+                    >
+                      <div className="flex items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-gray-500">{field.label}</p>
+                          <p
+                            className={`truncate text-gray-800 ${
+                              field.mono ? "font-mono text-blue-700" : "font-medium"
+                            }`}
+                          >
+                            {field.value}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => copyField(field.label, field.value === "N/A" ? "" : field.value)}
+                          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-blue-200 text-blue-700 transition hover:bg-blue-50"
+                          aria-label={`Copy ${field.label}`}
+                        >
+                          <Copy size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
+          ))
+        ) : (
+          <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
+            No bank payment details configured by admin yet.
           </div>
-        ))}
+        )}
       </div>
 
       <hr className="border-gray-200" />
@@ -155,11 +192,14 @@ export default function BankPayForm({ token, setMethod }) {
           <input
             type="number"
             className={inputStyle}
-            placeholder="Enter the amount transferred"
+            placeholder={`Enter minimum Tk ${MIN_BANK_PAYMENT_AMOUNT_BDT}`}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            min="1"
+            min={MIN_BANK_PAYMENT_AMOUNT_BDT}
           />
+          <p className="mt-1 text-xs text-amber-600">
+            Bank transfer is available only for amounts of Tk {MIN_BANK_PAYMENT_AMOUNT_BDT} or more.
+          </p>
         </div>
 
         <div>

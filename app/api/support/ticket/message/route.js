@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import { ObjectId } from "mongodb";
+import { ensureWritableUser } from "@/lib/userAccess";
 
 const normalizeScreenshots = (screenshots = []) => {
   const isValidImgBb = (url) =>
@@ -26,6 +27,8 @@ export async function POST(req) {
     return NextResponse.json({ error: "Only ImgBB image URLs are allowed" }, { status: 400 });
   }
   const { db } = await getDB();
+  const access = await ensureWritableUser(db, decoded.uid);
+  if (!access.ok) return access.response;
 
   const user = await db.collection("users").findOne({ userId: decoded.uid });
 

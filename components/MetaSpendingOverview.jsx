@@ -30,7 +30,7 @@ const formatAccountLabel = (value) => {
 };
 
 export default function MetaSpendingOverview({ className = "" }) {
-  const gradientId = React.useId().replace(/:/g, "");
+  const spendGradientId = React.useId().replace(/:/g, "");
   const { token } = useFirebaseAuth();
   const [performanceData, setPerformanceData] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
@@ -38,7 +38,7 @@ export default function MetaSpendingOverview({ className = "" }) {
   const chartData = React.useMemo(
     () =>
       [...performanceData]
-        .sort((a, b) => b.spend - a.spend)
+        .sort((a, b) => a.spend - b.spend)
         .map((item) => ({
           ...item,
           shortName: formatAccountLabel(item.name),
@@ -50,6 +50,23 @@ export default function MetaSpendingOverview({ className = "" }) {
     () => chartData.reduce((max, item) => Math.max(max, toSafeNumber(item.spend)), 0),
     [chartData]
   );
+
+  const summary = React.useMemo(() => {
+    if (!chartData.length) {
+      return {
+        averageSpend: 0,
+        topAccount: null,
+      };
+    }
+
+    const totalSpend = chartData.reduce((sum, item) => sum + toSafeNumber(item.spend), 0);
+    const topAccount = [...chartData].sort((a, b) => b.spend - a.spend)[0] || null;
+
+    return {
+      averageSpend: totalSpend / chartData.length,
+      topAccount,
+    };
+  }, [chartData]);
 
   React.useEffect(() => {
     if (!token) return;
@@ -106,13 +123,13 @@ export default function MetaSpendingOverview({ className = "" }) {
     <section className={`dashboard-subpanel relative overflow-hidden rounded-[24px] p-4 sm:p-5 ${className}`.trim()}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-        <span className="dashboard-subpanel inline-flex h-11 w-11 items-center justify-center rounded-2xl">
-          <TrendingUp size={18} className="dashboard-text-muted" />
-        </span>
-        <div>
-          <h3 className="dashboard-text-strong text-lg font-black">Spending Overview</h3>
-          <p className="dashboard-text-muted text-xs">Live spend tracking across synced accounts</p>
-        </div>
+          <span className="dashboard-subpanel inline-flex h-11 w-11 items-center justify-center rounded-2xl">
+            <TrendingUp size={18} className="dashboard-text-muted" />
+          </span>
+          <div>
+            <h3 className="dashboard-text-strong text-lg font-black">Spending Overview</h3>
+            <p className="dashboard-text-muted text-xs">Live spend tracking across synced accounts</p>
+          </div>
         </div>
         {!loading && performanceData.length > 0 ? (
           <div className="dashboard-chip shrink-0 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em]">
@@ -121,45 +138,49 @@ export default function MetaSpendingOverview({ className = "" }) {
         ) : null}
       </div>
 
+      {!loading && chartData.length > 0 ? null : null}
+
       {loading ? (
         <div className="dashboard-subpanel flex h-[240px] items-center justify-center rounded-[20px] dashboard-text-muted">
           Loading spending data...
         </div>
       ) : chartData.length > 0 ? (
-        <div className="dashboard-analytics-grid h-[280px] rounded-[20px] bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-3 pb-3 pt-1 sm:px-4 sm:pb-4 sm:pt-1">
+        <div className="dashboard-analytics-grid h-[260px] rounded-[12px] border border-[rgba(138,180,255,0.08)] bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01))] px-2 pb-2 pt-2 sm:h-[280px] sm:px-3 sm:pb-3">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 10, bottom: 2 }}>
+            <AreaChart data={chartData} margin={{ top: 0, right: 0, left: -26, bottom: 0 }}>
               <defs>
-                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8ab4ff" stopOpacity={0.38} />
-                  <stop offset="95%" stopColor="#8ab4ff" stopOpacity={0.03} />
+                <linearGradient id={spendGradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#8ab4ff" stopOpacity={0.95} />
+                  <stop offset="42%" stopColor="#a79dff" stopOpacity={0.58} />
+                  <stop offset="100%" stopColor="#ffffff" stopOpacity={0.08} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 5" vertical={false} stroke="rgba(122, 146, 201, 0.28)" />
+              <CartesianGrid strokeDasharray="2 6" vertical={false} stroke="rgba(138,180,255,0.12)" />
               <XAxis
                 dataKey="shortName"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "var(--dashboard-text-muted)", fontSize: 11, fontWeight: 700 }}
+                tick={{ fill: "var(--dashboard-text-muted)", fontSize: 10, fontWeight: 600 }}
                 dy={10}
+                interval="preserveStartEnd"
               />
               <YAxis
-                width={72}
+                width={44}
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "var(--dashboard-text-muted)", fontSize: 11 }}
-                domain={[0, Math.max(maxSpend, 1)]}
+                tick={{ fill: "rgba(143,165,207,0.8)", fontSize: 10 }}
+                domain={[0, Math.max(maxSpend * 1.12, 1)]}
                 tickFormatter={formatChartUsd}
               />
               <Tooltip
                 formatter={(value) => [formatUsd(Number(value || 0)), "Spend"]}
                 labelFormatter={(label, payload) => payload?.[0]?.payload?.name || label}
                 contentStyle={{
-                  borderRadius: "16px",
-                  border: "1px solid rgba(138,180,255,0.22)",
-                  background: "rgba(10,18,35,0.94)",
+                  borderRadius: "14px",
+                  border: "1px solid rgba(138,180,255,0.18)",
+                  background: "rgba(10,18,35,0.92)",
                   color: "#dbe8ff",
-                  boxShadow: "0 20px 50px rgba(0,0,0,0.25)",
+                  boxShadow: "0 14px 36px rgba(0,0,0,0.24)",
                 }}
                 itemStyle={{ color: "#dbe8ff" }}
                 labelStyle={{ color: "#8ea5cf", fontWeight: 700 }}
@@ -168,10 +189,12 @@ export default function MetaSpendingOverview({ className = "" }) {
                 type="monotone"
                 dataKey="spend"
                 stroke="#8ab4ff"
-                strokeWidth={3}
+                strokeWidth={2.5}
                 fillOpacity={1}
-                fill={`url(#${gradientId})`}
+                fill={`url(#${spendGradientId})`}
                 animationDuration={900}
+                dot={false}
+                activeDot={{ r: 4, strokeWidth: 0, fill: "#8ab4ff" }}
               />
             </AreaChart>
           </ResponsiveContainer>

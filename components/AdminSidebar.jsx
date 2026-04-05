@@ -1,7 +1,7 @@
 "use client";
 
 import { createPortal } from "react-dom";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -10,6 +10,7 @@ import {
   Users,
   FolderKanban,
   Banknote,
+  Landmark,
   LifeBuoy,
   Share2,
   Settings,
@@ -111,6 +112,12 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
       adminOnly: true,
     },
     {
+      name: "Payment Details",
+      icon: Landmark,
+      href: "/admin-dashboard/payment-details",
+      adminOnly: true,
+    },
+    {
       name: "Controls & APIs",
       icon: Settings,
       href: "/admin-dashboard/settings",
@@ -129,48 +136,43 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
     return false;
   };
 
-  const visibleMenuItems = useMemo(
-    () => menuItems.filter(canShowMenu),
-    [role, userData]
-  );
+  const visibleMenuItems = menuItems.filter(canShowMenu);
 
   const findMenuItem = (href) => visibleMenuItems.find((item) => item.href === href);
 
-  const mobilePanels = useMemo(
-    () => [
-      {
-        key: "meta",
-        label: "Meta",
-        icon: FolderKanban,
-        items: [
-          findMenuItem("/admin-dashboard/meta-ads"),
-          findMenuItem("/admin-dashboard/meta-logs"),
-          findMenuItem("/admin-dashboard/news"),
-          findMenuItem("/admin-dashboard/settings"),
-        ].filter(Boolean),
-      },
-      {
-        key: "support",
-        label: "Support",
-        icon: LifeBuoy,
-        items: [
-          findMenuItem("/admin-dashboard/support"),
-          findMenuItem("/admin-dashboard/chats"),
-          findMenuItem("/admin-dashboard/affiliates"),
-        ].filter(Boolean),
-      },
-      {
-        key: "manage",
-        label: "Manage",
-        icon: Users,
-        items: [
-          findMenuItem("/admin-dashboard/users"),
-          findMenuItem("/admin-dashboard/transactions"),
-        ].filter(Boolean),
-      },
-    ],
-    [visibleMenuItems]
-  );
+  const mobilePanels = [
+    {
+      key: "meta",
+      label: "Meta",
+      icon: FolderKanban,
+      items: [
+        findMenuItem("/admin-dashboard/meta-ads"),
+        findMenuItem("/admin-dashboard/meta-logs"),
+        findMenuItem("/admin-dashboard/news"),
+        findMenuItem("/admin-dashboard/payment-details"),
+        findMenuItem("/admin-dashboard/settings"),
+      ].filter(Boolean),
+    },
+    {
+      key: "support",
+      label: "Support",
+      icon: LifeBuoy,
+      items: [
+        findMenuItem("/admin-dashboard/support"),
+        findMenuItem("/admin-dashboard/chats"),
+        findMenuItem("/admin-dashboard/affiliates"),
+      ].filter(Boolean),
+    },
+    {
+      key: "manage",
+      label: "Manage",
+      icon: Users,
+      items: [
+        findMenuItem("/admin-dashboard/users"),
+        findMenuItem("/admin-dashboard/transactions"),
+      ].filter(Boolean),
+    },
+  ];
 
   const activeMobilePanel = mobilePanels.find((panel) => panel.key === mobilePanel) || null;
 
@@ -279,7 +281,7 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
                     style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 6.35rem)" }}
                   >
                     <div className="dashboard-app-frame sidebar-shell w-full max-w-[20rem] overflow-hidden rounded-[30px] p-3">
-                      <div className="dashboard-subpanel flex items-center gap-3 p-3">
+                      <div className="dashboard-subpanel flex items-center justify-center p-3">
                         <div className="dashboard-accent-surface flex h-10 w-10 items-center justify-center rounded-2xl overflow-hidden">
                           {userData?.photo ? (
                             <Image
@@ -298,14 +300,6 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
                               priority
                             />
                           )}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="dashboard-text-strong truncate text-sm font-bold">
-                            {activeMobilePanel ? activeMobilePanel.label : userData?.name || "Neon Admin"}
-                          </p>
-                          <p className="dashboard-text-muted truncate text-[11px]">
-                            {activeMobilePanel ? "Quick access shortcuts" : role === "admin" ? "Administrator shortcuts" : "Manager shortcuts"}
-                          </p>
                         </div>
                       </div>
 
@@ -333,7 +327,10 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
                               setMobilePanel(item.key);
                             }}
                             className={`dashboard-subpanel flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition ${
-                              activeMobilePanel && pathname === item.href ? "sidebar-active" : ""
+                              activeMobilePanel &&
+                              pathname === item.href
+                                ? "sidebar-active"
+                                : ""
                             }`}
                           >
                             <span className="dashboard-subpanel flex h-9 w-9 items-center justify-center rounded-2xl">
@@ -433,7 +430,13 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
                       >
                         <item.icon size={18} strokeWidth={2.2} />
                       </span>
-                      <span className="sr-only">{item.name}</span>
+                      <span
+                        className={`text-[10px] font-semibold leading-none ${
+                          isActive ? "text-white" : "dashboard-text-muted"
+                        }`}
+                      >
+                        {item.name}
+                      </span>
                       <span
                         className="pointer-events-none absolute -top-9 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold opacity-0 transition-all group-hover:-translate-y-1 group-hover:opacity-100"
                         style={{

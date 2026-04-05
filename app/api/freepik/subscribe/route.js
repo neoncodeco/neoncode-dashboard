@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import { getFreepikPlanById } from "@/lib/freepikPlans";
+import { convertBdtToUsd, DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@/lib/currency";
+import { ensureWritableUser } from "@/lib/userAccess";
 
 export async function POST(req) {
   try {
@@ -18,19 +20,40 @@ export async function POST(req) {
     }
 
     const { db } = await getDB();
+    const access = await ensureWritableUser(db, decoded.uid);
+    if (!access.ok) {
+      return access.response;
+    }
     const now = new Date();
     const expiresAt = new Date(now.getTime() + plan.durationDays * 24 * 60 * 60 * 1000);
+    const rateSetting = await db.collection("settings").findOne({ key: "USD_TO_BDT_RATE" });
+    const usdToBdtRate = resolveUsdToBdtRate(rateSetting?.value, DEFAULT_USD_TO_BDT_RATE);
+    const planPriceUsd = convertBdtToUsd(plan.price, usdToBdtRate);
+
+    if (plan.id === "free") {
+      const existingFreePlan = await db.collection("freepik_subscriptions").findOne(
+        { userUid: decoded.uid, planId: "free" },
+        { projection: { _id: 1 } }
+      );
+
+      if (existingFreePlan) {
+        return NextResponse.json(
+          { ok: false, error: "Free plan can only be activated once per account" },
+          { status: 400 }
+        );
+      }
+    }
 
     const query = { userId: decoded.uid };
-    if (plan.price > 0) {
-      query.walletBalance = { $gte: plan.price };
+    if (planPriceUsd > 0) {
+      query.walletBalance = { $gte: planPriceUsd };
     }
 
     const updateResult = await db.collection("users").findOneAndUpdate(
       query,
       {
         $inc: {
-          walletBalance: -plan.price,
+          walletBalance: -planPriceUsd,
           freepikCredits: plan.credits,
         },
         $set: {
@@ -63,7 +86,9 @@ export async function POST(req) {
       email: updatedUser.email || decoded.email || "",
       planId: plan.id,
       planName: plan.name,
-      price: plan.price,
+      priceBdt: plan.price,
+      priceUsd: planPriceUsd,
+      usdToBdtRate,
       creditsAdded: plan.credits,
       walletAfter: Number(updatedUser.walletBalance || 0),
       freepikCreditsAfter: Number(updatedUser.freepikCredits || 0),
@@ -76,7 +101,7 @@ export async function POST(req) {
       userUid: decoded.uid,
       type: "freepik_subscription",
       title: `Subscribed to ${plan.name}`,
-      description: `${plan.credits} credits added. Wallet debited ${plan.price} BDT.`,
+      description: `${plan.credits} credits added. Wallet debited $${planPriceUsd.toFixed(2)} (${plan.price} BDT).`,
       status: "active",
       createdAt: now,
     });

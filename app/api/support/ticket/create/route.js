@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import { getSupportDepartmentById, supportPriorityOptions } from "@/lib/supportDepartments";
+import { ensureWritableUser } from "@/lib/userAccess";
 
 const normalizeScreenshots = (screenshots = []) => {
   const isValidImgBb = (url) =>
@@ -32,6 +33,10 @@ export async function POST(req) {
     const selectedDepartment = getSupportDepartmentById(departmentId);
     const normalizedPriority = supportPriorityOptions.includes(priority) ? priority : "Medium";
     const { db } = await getDB();
+    const access = await ensureWritableUser(db, decoded.uid);
+    if (!access.ok) {
+      return access.response;
+    }
 
     const user = await db.collection("users").findOne({ userId: decoded.uid });
 
@@ -77,7 +82,7 @@ export async function POST(req) {
     return NextResponse.json({ 
       ok: true, 
       message: "Ticket created and history recorded",
-      ticketId: res.insertedId 
+      ticketId: String(res.insertedId)
     });
 
   } catch (err) {

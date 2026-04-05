@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
+import { ensureWritableUser } from "@/lib/userAccess";
 
 
 function validateAccount(method, account) {
@@ -52,6 +53,10 @@ export async function POST(req) {
 
     /* ---------- DB ---------- */
     const { db } = await getDB();
+    const access = await ensureWritableUser(db, decoded.uid);
+    if (!access.ok) {
+      return access.response;
+    }
     const user = await db
       .collection("users")
       .findOne({ userId: decoded.uid });

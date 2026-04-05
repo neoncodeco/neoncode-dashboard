@@ -1,8 +1,8 @@
-
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import { DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@/lib/currency";
+import { createDefaultBankPaymentDetails, normalizeBankPaymentDetails } from "@/lib/bankDetails";
 
 export async function GET(req) {
   try {
@@ -16,17 +16,17 @@ export async function GET(req) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // মাল্টিপল বিএম সেটিংস (FB_BM_CONFIGS) এবং ইউএসডি রেট লোড করা
-    const [bmConfigSetting, usdRateSetting] = await Promise.all([
+    const [bmConfigSetting, usdRateSetting, bankDetailsSetting] = await Promise.all([
       db.collection("settings").findOne({ key: "FB_BM_CONFIGS" }),
       db.collection("settings").findOne({ key: "USD_TO_BDT_RATE" }),
+      db.collection("settings").findOne({ key: "BANK_PAYMENT_DETAILS" }),
     ]);
 
     return NextResponse.json({
       ok: true,
-      // ডাটাবেসে বিএম লিস্ট না থাকলে খালি অ্যারে [] পাঠাবে
-      bmConfigs: bmConfigSetting?.value || [], 
+      bmConfigs: bmConfigSetting?.value || [],
       usdToBdtRate: resolveUsdToBdtRate(usdRateSetting?.value, DEFAULT_USD_TO_BDT_RATE),
+      bankPaymentDetails: normalizeBankPaymentDetails(bankDetailsSetting?.value || createDefaultBankPaymentDetails()),
     });
   } catch (err) {
     console.error("GET Settings Error:", err);
@@ -42,15 +42,13 @@ export async function POST(req) {
     const { db } = await getDB();
     const admin = await db.collection("users").findOne({ userId: decoded.uid });
 
-    // শুধুমাত্র Admin সেটিংস পরিবর্তন করতে পারবে
     if (!admin || admin.role !== "admin") {
       return NextResponse.json({ error: "Forbidden. Only Admin can change settings." }, { status: 403 });
     }
 
-    const { bmConfigs, usdToBdtRate } = await req.json();
+    const { bmConfigs, usdToBdtRate, bankPaymentDetails } = await req.json();
     const updates = [];
 
-    // ১. মাল্টিপল বিএম সেটিংস আপডেট (bmConfigs এখন একটি Array হিসেবে আসবে)
     if (Array.isArray(bmConfigs)) {
       updates.push(
         db.collection("settings").updateOne(
@@ -61,7 +59,6 @@ export async function POST(req) {
       );
     }
 
-    // ২. কারেন্সি রেট আপডেট
     if (usdToBdtRate !== undefined) {
       const normalizedRate = resolveUsdToBdtRate(usdToBdtRate, DEFAULT_USD_TO_BDT_RATE);
       if (normalizedRate <= 0) {
@@ -77,13 +74,24 @@ export async function POST(req) {
       );
     }
 
+    if (bankPaymentDetails !== undefined) {
+      const normalizedBankDetails = normalizeBankPaymentDetails(bankPaymentDetails);
+      updates.push(
+        db.collection("settings").updateOne(
+          { key: "BANK_PAYMENT_DETAILS" },
+          { $set: { value: normalizedBankDetails, updatedAt: new Date() } },
+          { upsert: true }
+        )
+      );
+    }
+
     if (!updates.length) {
       return NextResponse.json({ error: "No settings payload provided." }, { status: 400 });
     }
 
     await Promise.all(updates);
 
-    return NextResponse.json({ ok: true, message: "Multi-BM settings updated successfully" });
+    return NextResponse.json({ ok: true, message: "Settings updated successfully" });
   } catch (err) {
     console.error("POST Settings Error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

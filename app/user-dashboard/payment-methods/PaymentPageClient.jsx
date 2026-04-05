@@ -104,7 +104,13 @@ export default function PaymentPageClient() {
       )}
 
       {method === "uddoktapay" && <UddoktaPayForm token={token} setMethod={setMethod} />}
-      {method === "bank" && <BankPayForm token={token} setMethod={setMethod} />}
+      {method === "bank" && (
+        <BankPayForm
+          token={token}
+          setMethod={setMethod}
+          bankDetails={paymentStatus?.manualPayment?.bankPaymentDetails || []}
+        />
+      )}
 
       <PaymentHistory />
     </div>

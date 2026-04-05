@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyToken } from "@/lib/verifyToken";
 import getDB from "@/lib/mongodb";
+import { ensureWritableUser } from "@/lib/userAccess";
 
 export async function POST(req) {
   try {
@@ -23,6 +24,11 @@ export async function POST(req) {
 
     // 🧮 Difference
     const diff = newLimit - oldLimit;
+
+    const access = await ensureWritableUser(db, user.uid);
+    if (!access.ok) {
+      return access.response;
+    }
 
     // 👤 Fetch user
     const userData = await db.collection("users").findOne({

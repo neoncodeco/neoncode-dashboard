@@ -2,8 +2,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import Swal from "sweetalert2";
-import { 
+import {
   Key, Save, Loader2, ShieldCheck, AlertCircle, Activity, 
   Server, Clock, RefreshCw, Info, Database, Terminal, Plus, Trash2,
   Building2, User, Link2, ChevronDown, ChevronRight, LayoutGrid, Users
@@ -97,7 +98,10 @@ export default function TokenSettings() {
       const res = await fetch("/api/admin/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ bmConfigs, usdToBdtRate: Number(usdToBdtRate) }),
+        body: JSON.stringify({
+          bmConfigs,
+          usdToBdtRate: Number(usdToBdtRate),
+        }),
       });
       if (res.ok) Swal.fire({ icon: "success", title: "Updated", text: "Settings and Slots saved successfully.", timer: 1500 });
     } catch (err) { Swal.fire({ icon: "error", title: "Error", text: "Update failed." }); }
@@ -214,7 +218,13 @@ export default function TokenSettings() {
                                 {/* ইউজার প্রোফাইল ফটো বা এভাটার */}
                                 <div className="relative">
                                    {client.photoURL ? (
-                                      <img src={client.photoURL} alt="profile" className="h-9 w-9 rounded-full object-cover border-2 border-blue-500/20 group-hover:border-blue-500" />
+                                      <Image
+                                        src={client.photoURL}
+                                        alt="profile"
+                                        width={36}
+                                        height={36}
+                                        className="h-9 w-9 rounded-full object-cover border-2 border-blue-500/20 group-hover:border-blue-500"
+                                      />
                                    ) : (
                                       <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white font-bold text-xs shadow-lg border-2 border-white/10">
                                          {client.accountName?.charAt(0).toUpperCase() || <User size={16}/>}

@@ -3,6 +3,7 @@ import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import crypto from "crypto";
 import { convertBdtToUsd, DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@/lib/currency";
+import { ensureWritableUser } from "@/lib/userAccess";
 
 const withInvoiceId = (url, trackingId) => {
   const separator = url.includes("?") ? "&" : "?";
@@ -107,6 +108,10 @@ export async function POST(req) {
     }
 
     const { db } = await getDB();
+    const access = await ensureWritableUser(db, decoded.uid);
+    if (!access.ok) {
+      return access.response;
+    }
     const usdToBdtRate = await getCurrentUsdToBdtRate(db);
     const creditedUsdAmount = convertBdtToUsd(numericAmountBdt, usdToBdtRate);
 

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import getDB from "@/lib/mongodb";
+import { createDefaultBankPaymentDetails, normalizeBankPaymentDetails } from "@/lib/bankDetails";
 
 const getGatewayApiKey = () =>
   process.env.UDDOKTAPAY_API_KEY?.trim() ||
@@ -42,6 +44,15 @@ export async function GET() {
     issues.push("Webhook URL is using localhost, which external gateways cannot reach.");
   }
 
+  let bankPaymentDetails = [];
+  try {
+    const { db } = await getDB();
+    const bankDetailsSetting = await db.collection("settings").findOne({ key: "BANK_PAYMENT_DETAILS" });
+    bankPaymentDetails = normalizeBankPaymentDetails(bankDetailsSetting?.value || createDefaultBankPaymentDetails());
+  } catch (error) {
+    console.error("PAYMENT STATUS SETTINGS LOAD ERROR:", error);
+  }
+
   return NextResponse.json({
     ok: true,
     automaticPayment: {
@@ -54,6 +65,7 @@ export async function GET() {
     },
     manualPayment: {
       ready: true,
+      bankPaymentDetails,
     },
     issues,
   });
