@@ -25,6 +25,7 @@ import { formatUsd, resolveUsdToBdtRate, toSafeNumber } from "@/lib/currency";
 
 const FILTERS = ["All Accounts", "Ready Accounts", "Pending Setup", "Needs Attention"];
 const statCardClass = "dashboard-subpanel overflow-hidden rounded-[1.75rem] p-5";
+const adAccountPageCache = new Map();
 
 const getAdStatusMeta = (status) => {
   switch (status) {
@@ -121,9 +122,10 @@ const getAccountState = (account, balance) => {
 };
 
 export default function AdAccountUi() {
-  const { token, userData } = useFirebaseAuth();
+  const { token, userData, user } = useFirebaseAuth();
   const metaAdsConfig = userData?.metaAdsConfig || {};
   const usdRate = resolveUsdToBdtRate(userData?.currencyConfig?.usdToBdtRate ?? metaAdsConfig.usdRate);
+  const cacheKey = user?.uid || "anonymous";
   const allowBudgetIncrease = metaAdsConfig.allowBudgetIncrease !== false;
   const allowTopupAction = metaAdsConfig.allowTopupAction !== false;
   const remainingOverride =
@@ -140,6 +142,7 @@ export default function AdAccountUi() {
   const [listError, setListError] = useState("");
   const [filter, setFilter] = useState("All Accounts");
   const [searchTerm, setSearchTerm] = useState("");
+  const didRestoreCacheRef = useRef(false);
 
   const [increaseModal, setIncreaseModal] = useState({
     open: false,
@@ -151,6 +154,37 @@ export default function AdAccountUi() {
   useEffect(() => {
     balancesRef.current = balances;
   }, [balances]);
+
+  useEffect(() => {
+    if (didRestoreCacheRef.current) return;
+
+    const cachedState = adAccountPageCache.get(cacheKey);
+    if (!cachedState) {
+      didRestoreCacheRef.current = true;
+      return;
+    }
+
+    setAdAccounts(Array.isArray(cachedState.adAccounts) ? cachedState.adAccounts : []);
+    setBalances(cachedState.balances && typeof cachedState.balances === "object" ? cachedState.balances : {});
+    setFilter(cachedState.filter || "All Accounts");
+    setSearchTerm(cachedState.searchTerm || "");
+    setListError(cachedState.listError || "");
+    setLoading(false);
+    didRestoreCacheRef.current = true;
+  }, [cacheKey]);
+
+  useEffect(() => {
+    if (!didRestoreCacheRef.current || loading) return;
+
+    adAccountPageCache.set(cacheKey, {
+      hydrated: true,
+      adAccounts,
+      balances,
+      filter,
+      searchTerm,
+      listError,
+    });
+  }, [adAccounts, balances, cacheKey, filter, listError, loading, searchTerm]);
 
   const loadAccounts = useCallback(async () => {
     if (!token) return;
@@ -173,8 +207,14 @@ export default function AdAccountUi() {
   }, [token]);
 
   useEffect(() => {
+    const cachedState = adAccountPageCache.get(cacheKey);
+    if (cachedState?.hydrated) {
+      setLoading(false);
+      return;
+    }
+
     loadAccounts();
-  }, [loadAccounts]);
+  }, [cacheKey, loadAccounts]);
 
   const fetchBalance = useCallback(
     async (adAccountId, force = false) => {
@@ -234,11 +274,28 @@ export default function AdAccountUi() {
   const refreshBalances = async () => {
     setRefreshing(true);
     try {
+      const res = await fetch("/api/ads-request/list", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        throw new Error(json?.message || "Failed to load ad accounts");
+      }
+
+      const freshAccounts = Array.isArray(json.data) ? json.data : [];
+      setListError("");
+      setAdAccounts(freshAccounts);
+      setBalances({});
+      balancesRef.current = {};
+      adAccountPageCache.delete(cacheKey);
+
       await Promise.all(
-        adAccounts
+        freshAccounts
           .filter(isFetchableMetaAccount)
           .map((acc) => fetchBalance(acc.MetaAccountID, true))
       );
+    } catch (err) {
+      setListError(err.message || "Failed to refresh ad accounts");
     } finally {
       setRefreshing(false);
     }
@@ -635,7 +692,9 @@ export default function AdAccountUi() {
         oldLimit={increaseModal.oldLimit}
         onClose={() => setIncreaseModal({ open: false, adAccountId: null, oldLimit: null })}
         onSuccess={() => {
+          adAccountPageCache.delete(cacheKey);
           setBalances({});
+          balancesRef.current = {};
           refreshBalances();
         }}
       />

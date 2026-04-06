@@ -150,7 +150,7 @@ export default function TransactionsPage() {
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by UID or amount..."
+              placeholder="Search by name, UID or amount..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition"
@@ -166,7 +166,7 @@ export default function TransactionsPage() {
           <table className="w-full min-w-[760px] border-collapse text-left">
             <thead>
               <tr className="bg-gray-50 text-xs font-bold text-gray-500 uppercase border-b border-gray-200">
-                <th className="p-4 pl-6">User UID</th>
+                <th className="p-4 pl-6">User</th>
                 <th className="p-4">Amount</th>
                 <th className="p-4">Method</th>
                 <th className="p-4">Date</th>
@@ -181,13 +181,20 @@ export default function TransactionsPage() {
               ) : (
                 payments
                   .filter((p) =>
-                    p.userUid.toLowerCase().includes(search.toLowerCase())
+                    `${p.userName || ""} ${p.userUid || ""} ${p.userEmail || ""}`.toLowerCase().includes(search.toLowerCase())
                   )
                   .map((p, index) => (
                     <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition group">
                       
-                      <td className="p-4 pl-6 font-mono font-bold text-gray-700">
-                        {p.userUid}
+                      <td className="p-4 pl-6">
+                        <div className="min-w-0">
+                          <p className="truncate font-bold text-gray-900">
+                            {p.userName || "Unknown User"}
+                          </p>
+                          <p className="truncate font-mono text-xs font-semibold text-gray-500">
+                            {p.userUid}
+                          </p>
+                        </div>
                       </td>
 
                       <td className="p-4">

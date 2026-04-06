@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Tag, KeyRound, Clock, Facebook, Mail, Info, X, ChevronDown, Calendar } from 'lucide-react';
 import useFirebaseAuth from '@/hooks/useFirebaseAuth';
 
@@ -13,40 +13,53 @@ const timezones = [
 ];
 
 // Reusable Input Component
-const InputField = ({ label, name, type = "text", icon: Icon, required = true, placeholder, helpText, prefix, formData, handleChange }) => (
-  <div className="space-y-1">
-    <label className="block text-sm font-medium text-gray-800">
-      {label}{" "}
-      {!required && <span className="text-xs text-gray-500 font-normal">(Optional)</span>}
-    </label>
+const InputField = ({ label, name, type = "text", icon: Icon, required = true, placeholder, helpText, prefix, formData, handleChange }) => {
+  const dateInputRef = useRef(null);
 
-    <div className="relative">
-      <div className="absolute left-3 top-1/2 -translate-y-1/2">
-        {prefix ? (
-          <span className="text-gray-500">{prefix}</span>
-        ) : (
-          Icon && <Icon className="h-5 w-5 text-gray-400" />
-        )}
+  const openDatePicker = () => {
+    if (type !== "date") return;
+    const input = dateInputRef.current;
+    if (!input) return;
+
+    input.focus();
+    if (typeof input.showPicker === "function") {
+      input.showPicker();
+    }
+  };
+
+  return (
+    <div className="space-y-1">
+      <label className="block text-sm font-medium text-gray-800">
+        {label}{" "}
+        {!required && <span className="text-xs text-gray-500 font-normal">(Optional)</span>}
+      </label>
+
+      <div className="relative">
+        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
+          {prefix ? (
+            <span className="text-gray-500">{prefix}</span>
+          ) : (
+            Icon && <Icon className="h-5 w-5 text-gray-400" />
+          )}
+        </div>
+
+        <input
+          ref={type === "date" ? dateInputRef : null}
+          type={type}
+          name={name}
+          placeholder={placeholder}
+          required={required}
+          value={formData[name]}
+          onChange={handleChange}
+          onClick={type === "date" ? openDatePicker : undefined}
+          className="w-full rounded-xl border border-gray-300 bg-gray-50 p-3 pl-10 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+        />
       </div>
 
-      <input
-        type={type}
-        name={name}
-        placeholder={placeholder}
-        required={required}
-        value={formData[name]}
-        onChange={handleChange}
-        className={`w-full rounded-xl border border-gray-300 bg-gray-50 p-3 pl-10 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none`}
-      />
-
-      {type === "date" && (
-        <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-      )}
+      {helpText && <p className="text-xs text-gray-500">{helpText}</p>}
     </div>
-
-    {helpText && <p className="text-xs text-gray-500">{helpText}</p>}
-  </div>
-);
+  );
+};
 
 export default function ReqAdAcModal({ isOpen, onClose }) {
   const { user, token } = useFirebaseAuth();

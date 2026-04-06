@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { XMarkIcon, PaperClipIcon, CheckIcon } from '@heroicons/react/24/solid';
 
-export default function ImageUploader({ onUploadSuccess }) {
+export default function ImageUploader({ onUploadSuccess, customIcon = null }) {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
@@ -74,8 +74,8 @@ export default function ImageUploader({ onUploadSuccess }) {
   return (
     <div className="flex flex-col items-start gap-2 p-2 bg-gray-100 rounded-lg">
       <div className="flex items-center gap-2">
-        <label htmlFor="image-upload" className="cursor-pointer text-gray-500 hover:text-blue-600 p-1 rounded-full transition duration-150 border border-dashed border-gray-400 hover:border-blue-600">
-          <PaperClipIcon className="h-5 w-5" />
+        <label htmlFor="image-upload" className="cursor-pointer text-gray-500 hover:text-blue-600 transition duration-150">
+          {customIcon || <PaperClipIcon className="h-5 w-5" />}
           <input 
             id="image-upload" 
             type="file" 

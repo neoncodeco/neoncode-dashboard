@@ -134,7 +134,9 @@ export default function AdminSupportLayout() {
                     <h3 className={`truncate text-sm font-extrabold ${selectedTicket?._id === t._id ? "text-sky-700 dark:text-[#8ab4ff]" : "text-slate-900 dark:text-gray-100"}`}>{t.subject}</h3>
                   </div>
                   <div className="flex justify-between items-center">
-                    <p className="truncate text-[12px] font-medium uppercase tracking-tighter text-slate-500 dark:text-gray-400">User: {t.userId?.slice(-6)}</p>
+                    <p className="truncate text-[12px] font-medium uppercase tracking-tighter text-slate-500 dark:text-gray-400">
+                      User: {t.userName || "Unknown User"}{t.userId ? ` • ${t.userId.slice(-6)}` : ""}
+                    </p>
                     <span className={`rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${t.status === 'open' ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200' : 'border-red-200 bg-red-50 text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-200'}`}>
                       {t.status}
                     </span>
@@ -176,6 +178,8 @@ export default function AdminSupportLayout() {
                   <h2 className="text-base font-black leading-tight tracking-tight text-slate-900 lg:text-lg dark:text-gray-100">{selectedTicket.subject}</h2>
                   <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-gray-400">
                     <span className="text-sky-600 dark:text-[#8ab4ff]">Official Support</span>
+                    <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-gray-600" />
+                    <span>{selectedTicket.userName || "Unknown User"}</span>
                     <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-gray-600" />
                     <span>UID: {selectedTicket.userId}</span>
                   </div>

@@ -23,7 +23,28 @@ export async function GET(req) {
       .sort({ createdAt: -1 })
       .toArray();
 
-    return NextResponse.json({ ok: true, payments });
+    const userIds = [...new Set(payments.map((payment) => payment.userUid).filter(Boolean))];
+    const users = userIds.length
+      ? await db
+          .collection("users")
+          .find(
+            { userId: { $in: userIds } },
+            { projection: { userId: 1, name: 1, email: 1 } }
+          )
+          .toArray()
+      : [];
+
+    const userMap = new Map(users.map((item) => [item.userId, item]));
+    const paymentsWithUser = payments.map((payment) => {
+      const matchedUser = userMap.get(payment.userUid);
+      return {
+        ...payment,
+        userName: payment.userName || matchedUser?.name || "",
+        userEmail: payment.userEmail || matchedUser?.email || "",
+      };
+    });
+
+    return NextResponse.json({ ok: true, payments: paymentsWithUser });
 
   } catch (err) {
     return NextResponse.json({ ok: false, error: err.message });

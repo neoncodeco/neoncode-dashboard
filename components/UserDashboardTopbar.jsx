@@ -1,9 +1,8 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, ChevronRight, CreditCard, LifeBuoy, LogOut, Search, Settings, Share2, UserRound } from "lucide-react";
+import { Bell, ChevronRight, CreditCard, LifeBuoy, LogOut, Menu, Search, Settings, Share2, UserRound, Headset, History } from "lucide-react";
 import DashboardThemeToggle from "@/components/DashboardThemeToggle";
 import { useUserNotifications } from "@/components/UserNotificationsProvider";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
@@ -75,6 +74,20 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
       .slice(0, 6);
   }, [query, quickLinks]);
 
+  const mobileDrawerItems = React.useMemo(
+    () => [
+      ...userDashboardMenuItems.map((item) => ({
+        label: item.name,
+        href: item.href,
+        icon: item.icon,
+      })),
+      { label: "History", href: "/user-dashboard/history", icon: History },
+      { label: "Live Chat", href: "/user-dashboard/profile?panel=chat", icon: Headset },
+      { label: "Settings", href: "/user-dashboard/profile", icon: Settings },
+    ],
+    []
+  );
+
   const openTarget = React.useCallback(
     (href) => {
       setQuery("");
@@ -137,8 +150,8 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
   };
 
   return (
-    <div className="sticky top-0 z-30 hidden px-3 pt-1.5 sm:px-4 sm:pt-3 lg:block">
-      <div className="dashboard-panel flex items-center gap-2.5 px-3 py-2.5 sm:gap-3 sm:px-4 lg:flex-row lg:items-center lg:justify-between lg:px-5">
+    <div className="sticky top-0 z-30 px-3 pt-1.5 sm:px-4 sm:pt-3">
+      <div className="dashboard-panel hidden items-center gap-2.5 px-3 py-2.5 sm:gap-3 sm:px-4 lg:flex lg:flex-row lg:items-center lg:justify-between lg:px-5">
       
 
 
@@ -291,65 +304,74 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
           </div>
         </div>
 
-        <div ref={profileMenuRef} className="relative lg:hidden">
+      </div>
+
+      <div ref={profileMenuRef} className="relative mt-2 lg:hidden">
+        <div className="flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => setProfileMenuOpen((prev) => !prev)}
-            className="dashboard-accent-surface flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-black"
-            aria-label="Open profile menu"
+            className="dashboard-app-frame sidebar-shell flex h-12 w-12 items-center justify-center rounded-[20px]"
+            aria-label="Open dashboard menu"
           >
-            {initials}
+            <span className="dashboard-accent-surface flex h-9 w-9 items-center justify-center rounded-2xl">
+              <Menu size={18} />
+            </span>
           </button>
 
-          {profileMenuOpen ? (
-            <div className="dashboard-app-frame absolute right-0 top-[calc(100%+0.55rem)] w-64 rounded-[24px] p-3">
-              <div className="dashboard-subpanel flex items-center gap-3 p-3">
-                <div className="dashboard-accent-surface flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-black">
-                  {initials}
-                </div>
-                <div className="min-w-0">
-                  <p className="dashboard-text-strong truncate text-sm font-bold">{profileName}</p>
-                  <p className="dashboard-text-muted truncate text-[11px]">ID {profileId}</p>
-                </div>
+          <DashboardThemeToggle
+            theme={theme}
+            toggleTheme={toggleTheme}
+            iconOnly
+            className="dashboard-app-frame sidebar-shell h-12 w-12 rounded-[20px] border-0"
+          />
+        </div>
+
+        {profileMenuOpen ? (
+          <div className="dashboard-app-frame absolute left-0 top-[calc(100%+0.55rem)] z-30 w-[min(22rem,calc(100vw-2rem))] rounded-[28px] p-3">
+            <div className="dashboard-subpanel flex items-center gap-3 p-3">
+              <div className="dashboard-accent-surface flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-black">
+                {initials}
               </div>
-
-              <div className="mt-3 space-y-1.5">
-                {[
-                  { label: "Profile", href: "/user-dashboard/profile", icon: UserRound },
-                  { label: "Settings", href: "/user-dashboard/profile", icon: Settings },
-                  { label: "Affiliate", href: "/user-dashboard/affiliate", icon: Share2 },
-                  { label: "Support Tickets", href: "/user-dashboard/support", icon: LifeBuoy },
-                ].map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => openTarget(item.href)}
-                    className="dashboard-subpanel flex w-full items-center justify-between rounded-2xl px-3 py-3 text-left"
-                  >
-                    <span className="flex items-center gap-3">
-                      <span className="dashboard-subpanel flex h-8 w-8 items-center justify-center rounded-xl">
-                        <item.icon size={15} className="dashboard-text-muted" />
-                      </span>
-                      <span className="dashboard-text-strong text-sm font-semibold">{item.label}</span>
-                    </span>
-                    <ChevronRight size={15} className="dashboard-text-faint" />
-                  </button>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="dashboard-subpanel flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-semibold text-red-400"
-                >
-                  <span className="dashboard-subpanel flex h-8 w-8 items-center justify-center rounded-xl">
-                    <LogOut size={15} className="text-red-400" />
-                  </span>
-                  {isLoggingOut ? "Logging out..." : "Logout"}
-                </button>
+              <div className="min-w-0">
+                <p className="dashboard-text-strong truncate text-sm font-bold">{profileName}</p>
+                <p className="dashboard-text-muted truncate text-[11px]">ID {profileId}</p>
               </div>
             </div>
-          ) : null}
-        </div>
+
+            <div className="mt-3 space-y-1.5">
+              {mobileDrawerItems.map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => openTarget(item.href)}
+                  className={`dashboard-subpanel flex w-full items-center justify-between rounded-2xl px-3 py-3 text-left ${
+                    pathname === item.href ? "sidebar-active" : ""
+                  }`}
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="dashboard-subpanel flex h-8 w-8 items-center justify-center rounded-xl">
+                      <item.icon size={15} className="dashboard-text-muted" />
+                    </span>
+                    <span className="dashboard-text-strong text-sm font-semibold">{item.label}</span>
+                  </span>
+                  <ChevronRight size={15} className="dashboard-text-faint" />
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="dashboard-subpanel flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-semibold text-red-400"
+              >
+                <span className="dashboard-subpanel flex h-8 w-8 items-center justify-center rounded-xl">
+                  <LogOut size={15} className="text-red-400" />
+                </span>
+                {isLoggingOut ? "Logging out..." : "Logout"}
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

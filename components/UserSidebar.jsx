@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   CircleHelp,
   CreditCard,
+  Ellipsis,
   Headset,
   Home,
   LogOut,
@@ -29,7 +30,7 @@ const mobileTabs = [
   { name: "Home", icon: Home, href: "/user-dashboard/overview", tooltip: "Overview" },
   { name: "Services", icon: Layers3, href: "/user-dashboard/services", tooltip: "Our Services" },
   { name: "Meta Ads", icon: WalletCards, href: "/user-dashboard/meta-ads-account", tooltip: "Meta Ads Account" },
-  { name: "Wallet", icon: CreditCard, href: "/user-dashboard/payment-methods" },
+  { name: "More", icon: Ellipsis, href: "#more", tooltip: "More Menu" },
 ];
 
 function UserIdentity({ user }) {
@@ -194,7 +195,7 @@ const UserSidebar = ({ theme, toggleTheme }) => {
             <>
               {servicesMenuOpen ? (
                 <div
-                  className="fixed inset-x-4 z-[85] flex justify-center lg:hidden"
+                  className="fixed inset-x-4 z-[85] hidden justify-center"
                   style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 6.25rem)" }}
                 >
                   <div className="dashboard-app-frame sidebar-shell w-full max-w-[21rem] overflow-hidden rounded-[30px] p-3">
@@ -222,7 +223,7 @@ const UserSidebar = ({ theme, toggleTheme }) => {
 
               {profileMenuOpen ? (
                 <div
-                  className="fixed inset-x-4 z-[86] flex justify-end lg:hidden"
+                  className="fixed inset-x-4 z-[86] hidden justify-end"
                   style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 6.25rem)" }}
                 >
                   <div className="dashboard-app-frame sidebar-shell w-full max-w-[18.5rem] overflow-hidden rounded-[30px] p-3">
@@ -250,6 +251,7 @@ const UserSidebar = ({ theme, toggleTheme }) => {
                       />
 
                       {[
+                        { name: "Wallet", href: "/user-dashboard/payment-methods", icon: CreditCard },
                         { name: "Profile", href: "/user-dashboard/profile", icon: CircleHelp },
                         { name: "History", href: "/user-dashboard/history", icon: History },
                         { name: "Live Chat", href: "/user-dashboard/profile?panel=chat", icon: Headset },
@@ -285,12 +287,13 @@ const UserSidebar = ({ theme, toggleTheme }) => {
               ) : null}
 
               <nav
-                className="dashboard-app-frame sidebar-shell fixed left-1/2 z-[70] grid w-[calc(100%-1.25rem)] max-w-[21rem] -translate-x-1/2 grid-cols-4 gap-2 rounded-[30px] px-3 py-2.5 lg:hidden"
+                className="dashboard-app-frame sidebar-shell fixed left-1/2 z-[70] hidden w-[calc(100%-1.25rem)] max-w-[21rem] -translate-x-1/2 grid-cols-4 gap-2 rounded-[30px] px-3 py-2.5"
                 style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 0.55rem)" }}
               >
                 {mobileTabs.map((item) => {
                   const isActive = pathname === item.href;
                   const isServices = item.name === "Services";
+                  const isMore = item.name === "More";
 
                   return (
                     <button
@@ -302,24 +305,29 @@ const UserSidebar = ({ theme, toggleTheme }) => {
                           setServicesMenuOpen((prev) => !prev);
                           return;
                         }
+                        if (isMore) {
+                          setServicesMenuOpen(false);
+                          setProfileMenuOpen((prev) => !prev);
+                          return;
+                        }
                         setServicesMenuOpen(false);
                         setProfileMenuOpen(false);
                         router.push(item.href);
                       }}
                       className={`group relative flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-[22px] px-2 py-3 text-center transition-all duration-200 ${
-                        isActive ? "sidebar-active scale-[1.02]" : "sidebar-link"
+                        isActive || (isMore && profileMenuOpen) ? "sidebar-active scale-[1.02]" : "sidebar-link"
                       }`}
                     >
                       <span
                         className={`flex h-10 w-10 items-center justify-center rounded-2xl transition-all ${
-                          isActive ? "dashboard-accent-surface" : "dashboard-subpanel"
+                          isActive || (isMore && profileMenuOpen) ? "dashboard-accent-surface" : "dashboard-subpanel"
                         }`}
                       >
                         <item.icon size={18} strokeWidth={2.2} />
                       </span>
                       <span
                         className={`text-[10px] font-semibold leading-none ${
-                          isActive ? "text-white" : "dashboard-text-muted"
+                          isActive || (isMore && profileMenuOpen) ? "text-white" : "dashboard-text-muted"
                         }`}
                       >
                         {item.name}
@@ -339,46 +347,6 @@ const UserSidebar = ({ theme, toggleTheme }) => {
                 })}
               </nav>
 
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className="dashboard-app-frame sidebar-shell fixed bottom-[calc(env(safe-area-inset-bottom,0px)+5.95rem)] left-4 z-[88] flex h-12 w-12 items-center justify-center rounded-2xl lg:hidden"
-                aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-                title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-              >
-                <span className="dashboard-accent-surface flex h-9 w-9 items-center justify-center rounded-2xl">
-                  {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setServicesMenuOpen(false);
-                  setProfileMenuOpen((prev) => !prev);
-                }}
-                className="dashboard-app-frame sidebar-shell fixed bottom-[calc(env(safe-area-inset-bottom,0px)+5.95rem)] right-4 z-[88] flex h-12 w-12 items-center justify-center rounded-2xl lg:hidden"
-                aria-label="Open profile menu"
-              >
-                {user?.photoURL ? (
-                  <Image
-                    src={user.photoURL}
-                    alt={user.displayName || "User"}
-                    width={38}
-                    height={38}
-                    className="h-9 w-9 rounded-2xl object-cover"
-                  />
-                ) : (
-                  <div className="dashboard-accent-surface flex h-9 w-9 items-center justify-center rounded-2xl text-xs font-black">
-                    {user?.displayName?.slice(0, 1)?.toUpperCase() || "NC"}
-                  </div>
-                )}
-                {profileMenuOpen ? (
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-slate-900">
-                    <X size={12} />
-                  </span>
-                ) : null}
-              </button>
             </>,
             portalRoot
           )

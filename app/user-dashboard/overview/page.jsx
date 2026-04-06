@@ -22,6 +22,7 @@ import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import CurrencyAmount from "@/components/CurrencyAmount";
 import MetaSpendingOverview from "@/components/MetaSpendingOverview";
 import { formatUsd, resolveUsdToBdtRate } from "@/lib/currency";
+import MobileWalletCard from "@/components/MobileWalletCard";
 
 const chartPalette = ["#99D85A", "#8ED868", "#73C8FF", "#45CF9B", "#A4E05F", "#67A3FF", "#7A8DF3"];
 
@@ -102,61 +103,61 @@ function StatusRow({ label, value, tone = "success" }) {
   );
 }
 
-function MobileWalletCard({
-  userData,
-  usdToBdtRate,
-  totalPayout,
-}) {
-  return (
-    <div className="mx-auto w-full max-w-[320px] rounded-[30px] border border-[var(--dashboard-frame-border)] bg-[linear-gradient(180deg,var(--dashboard-frame-bg),var(--dashboard-panel-bg))] p-4 shadow-[var(--dashboard-phone-shadow)]">
-      <div className="dashboard-subpanel rounded-[24px] border border-[var(--dashboard-frame-border)] bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] p-5">
-        <p className="text-[11px] font-black uppercase tracking-[0.18em] dashboard-text-faint">
-          Current Balance
-        </p>
-        <CurrencyAmount
-          value={userData.walletBalance}
-          usdToBdtRate={usdToBdtRate}
-          primaryClassName="mt-2 text-[1.95rem] font-black leading-none dashboard-text-strong"
-          secondaryClassName="mt-1 text-[11px] font-semibold dashboard-text-muted"
-        />
+// function MobileWalletCard({
+//   userData,
+//   usdToBdtRate,
+//   totalPayout,
+// }) {
+//   return (
+//     <div className="mx-auto w-full max-w-[320px] rounded-[30px] border border-[var(--dashboard-frame-border)] bg-[linear-gradient(180deg,var(--dashboard-frame-bg),var(--dashboard-panel-bg))] p-4 shadow-[var(--dashboard-phone-shadow)]">
+//       <div className="dashboard-subpanel rounded-[24px] border border-[var(--dashboard-frame-border)] bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] p-5">
+//         <p className="text-[11px] font-black uppercase tracking-[0.18em] dashboard-text-faint">
+//           Current Balance
+//         </p>
+//         <CurrencyAmount
+//           value={userData.walletBalance}
+//           usdToBdtRate={usdToBdtRate}
+//           primaryClassName="mt-2 text-[1.95rem] font-black leading-none dashboard-text-strong"
+//           secondaryClassName="mt-1 text-[11px] font-semibold dashboard-text-muted"
+//         />
 
-        <div className="mt-5 grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] dashboard-text-faint">
-              Topup
-            </p>
-            <p className="mt-1 text-[1rem] font-black leading-none dashboard-text-strong">
-              {formatUsd(Number(userData.topupBalance || 0))}
-            </p>
-          </div>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] dashboard-text-faint">
-              Payout
-            </p>
-            <p className="mt-1 text-[1rem] font-black leading-none dashboard-text-strong">
-              {formatUsd(totalPayout)}
-            </p>
-          </div>
-        </div>
+//         <div className="mt-5 grid grid-cols-2 gap-4">
+//           <div>
+//             <p className="text-[10px] font-black uppercase tracking-[0.16em] dashboard-text-faint">
+//               Topup
+//             </p>
+//             <p className="mt-1 text-[1rem] font-black leading-none dashboard-text-strong">
+//               {formatUsd(Number(userData.topupBalance || 0))}
+//             </p>
+//           </div>
+//           <div>
+//             <p className="text-[10px] font-black uppercase tracking-[0.16em] dashboard-text-faint">
+//               Payout
+//             </p>
+//             <p className="mt-1 text-[1rem] font-black leading-none dashboard-text-strong">
+//               {formatUsd(totalPayout)}
+//             </p>
+//           </div>
+//         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-2.5">
-          <Link
-            href="/user-dashboard/payment-methods"
-            className="dashboard-accent-surface rounded-2xl px-3 py-3 text-center text-sm font-bold"
-          >
-            Send Money
-          </Link>
-          <Link
-            href="/user-dashboard/payment-methods"
-            className="dashboard-muted-button rounded-2xl px-3 py-3 text-center text-sm font-bold"
-          >
-            Add Money
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
+//         <div className="mt-5 grid grid-cols-2 gap-2.5">
+//           <Link
+//             href="/user-dashboard/payment-methods"
+//             className="dashboard-accent-surface rounded-2xl px-3 py-3 text-center text-sm font-bold"
+//           >
+//             Send Money
+//           </Link>
+//           <Link
+//             href="/user-dashboard/payment-methods"
+//             className="dashboard-muted-button rounded-2xl px-3 py-3 text-center text-sm font-bold"
+//           >
+//             Add Money
+//           </Link>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
 
 export default function OverviewPage() {
   const { userData, token } = useFirebaseAuth();
@@ -248,6 +249,18 @@ export default function OverviewPage() {
     { name: "Affiliate", value: totalReferIncome, fill: "#73C8FF" },
     { name: "Payout", value: totalPayout, fill: "#67A3FF" },
   ];
+  const mobileSummaryItems = [
+    {
+      label: "Referral Income",
+      value: formatUsd(totalReferIncome),
+      meta: `${totalReferrers} referrer${totalReferrers === 1 ? "" : "s"}`,
+    },
+    {
+      label: "Last Topup",
+      value: lastTopupDate || "No topup yet",
+      meta: "Recent approved payment",
+    },
+  ];
 
   const copyReferralLink = async () => {
     try {
@@ -261,7 +274,29 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-4 p-3 sm:p-4">
-      <div className="xl:hidden">
+      <div className="lg:hidden">
+        <section className="dashboard-subpanel overflow-hidden rounded-[24px] p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.24em] dashboard-text-faint">
+                Overview
+              </p>
+              <h1 className="mt-1 text-[1.65rem] font-black leading-none dashboard-text-strong">
+                {userData?.name || userData?.displayName || "Client"}
+              </h1>
+              <p className="mt-2 text-xs dashboard-text-muted">
+                Wallet, payout, and activity in one compact view.
+              </p>
+            </div>
+            <Link
+              href="/user-dashboard/payment-methods"
+              className="dashboard-accent-surface inline-flex min-h-11 items-center rounded-[16px] px-4 text-xs font-black"
+            >
+              Top Up
+            </Link>
+          </div>
+        </section>
+
         <MobileWalletCard
           userData={userData}
           usdToBdtRate={usdToBdtRate}
@@ -323,7 +358,7 @@ export default function OverviewPage() {
       </section>
 
       <section>
-        <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="mb-4 flex flex-col gap-3 md:mb-5 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-[1.65rem] font-semibold tracking-tight dashboard-text-strong">
               Activity Analytics
@@ -333,7 +368,7 @@ export default function OverviewPage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="hidden flex-wrap items-center gap-2 sm:flex">
             <button type="button" className="dashboard-accent-surface rounded-2xl px-4 py-2 text-sm font-bold">
               Weekly
             </button>
@@ -351,7 +386,7 @@ export default function OverviewPage() {
           </div>
         </div>
 
-        <div className="dashboard-analytics-grid h-[320px] rounded-[22px] bg-[var(--dashboard-panel-soft)] p-3 sm:p-4">
+        <div className="dashboard-analytics-grid h-[250px] rounded-[22px] bg-[var(--dashboard-panel-soft)] p-3 sm:h-[320px] sm:p-4">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 8, right: 6, left: -16, bottom: 4 }}>
               <CartesianGrid vertical={false} strokeDasharray="4 7" />

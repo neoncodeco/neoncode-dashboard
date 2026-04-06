@@ -19,5 +19,26 @@ export async function GET(req) {
     .sort({ updatedAt: -1 })
     .toArray();
 
-  return NextResponse.json({ ok: true, data: tickets });
+  const userIds = [...new Set(tickets.map((ticket) => ticket.userId).filter(Boolean))];
+  const users = userIds.length
+    ? await db
+        .collection("users")
+        .find(
+          { userId: { $in: userIds } },
+          { projection: { userId: 1, name: 1, email: 1 } }
+        )
+        .toArray()
+    : [];
+
+  const userMap = new Map(users.map((item) => [item.userId, item]));
+  const ticketsWithUserName = tickets.map((ticket) => {
+    const matchedUser = userMap.get(ticket.userId);
+    return {
+      ...ticket,
+      userName: ticket.userName || matchedUser?.name || "",
+      userEmail: ticket.userEmail || matchedUser?.email || "",
+    };
+  });
+
+  return NextResponse.json({ ok: true, data: ticketsWithUserName });
 }

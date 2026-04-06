@@ -51,9 +51,20 @@ export async function GET(req, { params }) {
       );
     }
 
+    const ticketUser = ticket.userId
+      ? await db.collection("users").findOne(
+          { userId: ticket.userId },
+          { projection: { userId: 1, name: 1, email: 1 } }
+        )
+      : null;
+
     return NextResponse.json({
       ok: true,
-      data: ticket,
+      data: {
+        ...ticket,
+        userName: ticket.userName || ticketUser?.name || "",
+        userEmail: ticket.userEmail || ticketUser?.email || "",
+      },
     });
 
   } catch (err) {

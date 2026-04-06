@@ -48,7 +48,7 @@ export default function AdminChatsPage() {
               </button>
               <div className="ml-2 min-w-0">
                 <p className="truncate text-sm font-bold leading-none text-slate-900 dark:text-[#f5f8ff]">
-                  {activeChat.guestName || "Guest User"}
+                  {activeChat.userName || activeChat.guestName || "Guest User"}
                 </p>
                 <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-300">Active</p>
               </div>
