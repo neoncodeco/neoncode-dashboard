@@ -48,7 +48,9 @@ export async function GET() {
   try {
     const { db } = await getDB();
     const bankDetailsSetting = await db.collection("settings").findOne({ key: "BANK_PAYMENT_DETAILS" });
-    bankPaymentDetails = normalizeBankPaymentDetails(bankDetailsSetting?.value || createDefaultBankPaymentDetails());
+    bankPaymentDetails = normalizeBankPaymentDetails(
+      bankDetailsSetting?.value || createDefaultBankPaymentDetails()
+    );
   } catch (error) {
     console.error("PAYMENT STATUS SETTINGS LOAD ERROR:", error);
   }

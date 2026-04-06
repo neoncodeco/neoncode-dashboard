@@ -59,6 +59,16 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
     () => bankDetails.find((bank) => bank.id === selectedBankId) || bankDetails[0] || null,
     [bankDetails, selectedBankId]
   );
+  const getBankOptionLabel = (bank, index) => {
+    const name = String(bank?.bankName || "").trim();
+    const accountName = String(bank?.accountName || "").trim();
+    const accountNumber = String(bank?.accountNumber || "").trim();
+
+    if (name) return name;
+    if (accountName) return `${accountName} (${index + 1})`;
+    if (accountNumber) return `Bank Account ${accountNumber}`;
+    return `Bank ${index + 1}`;
+  };
 
   const copyField = async (label, value) => {
     const Swal = (await import("sweetalert2")).default;
@@ -157,9 +167,9 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
                   onChange={(e) => setSelectedBankId(e.target.value)}
                   className="w-full appearance-none rounded-xl border border-green-200 bg-white py-2.5 pl-11 pr-11 text-sm font-semibold text-gray-900 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100 sm:rounded-2xl sm:py-3 sm:pl-12 sm:pr-12"
                 >
-                  {bankDetails.map((bank) => (
+                  {bankDetails.map((bank, index) => (
                     <option key={bank.id} value={bank.id}>
-                      {bank.bankName}
+                      {getBankOptionLabel(bank, index)}
                     </option>
                   ))}
                 </select>
@@ -185,7 +195,9 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
                       Selected Account
                     </p>
                     <div className="mt-1 flex flex-wrap items-center gap-2">
-                      <h4 className="text-base font-bold text-gray-900 sm:text-lg">{selectedBank.bankName}</h4>
+                      <h4 className="text-base font-bold text-gray-900 sm:text-lg">
+                        {getBankOptionLabel(selectedBank, bankDetails.findIndex((bank) => bank.id === selectedBank.id))}
+                      </h4>
                       <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-bold text-green-700">
                         <CheckCircle2 size={12} />
                         Transfer To
