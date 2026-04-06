@@ -30,12 +30,18 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
   const [query, setQuery] = React.useState("");
   const [isFocused, setIsFocused] = React.useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = React.useState(false);
+  const [profileSectionOpen, setProfileSectionOpen] = React.useState(false);
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const profileMenuRef = React.useRef(null);
   const notificationsRef = React.useRef(null);
   const profileName = user?.displayName || userData?.name || "Neon Client";
   const profileId = userData?.referralCode || userData?.userId?.slice(-6) || "585D93";
+  const isProfileSectionActive =
+    pathname === "/user-dashboard/profile" ||
+    pathname === "/user-dashboard/support" ||
+    pathname === "/user-dashboard/affiliate";
+  const isProfileSectionVisible = profileSectionOpen || isProfileSectionActive;
   const initials = profileName
     .split(/\s+/)
     .map((part) => part[0])
@@ -76,13 +82,22 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
 
   const mobileDrawerItems = React.useMemo(
     () => [
-      ...userDashboardMenuItems.map((item) => ({
-        label: item.name,
-        href: item.href,
-        icon: item.icon,
-      })),
+      ...userDashboardMenuItems
+        .filter((item) => !["Support Tickets", "Affiliate"].includes(item.name))
+        .map((item) => ({
+          label: item.name,
+          href: item.href,
+          icon: item.icon,
+        })),
+    ],
+    []
+  );
+  const profileMenuItems = React.useMemo(
+    () => [
       { label: "History", href: "/user-dashboard/history", icon: History },
       { label: "Live Chat", href: "/user-dashboard/profile?panel=chat", icon: Headset },
+      { label: "Support Tickets", href: "/user-dashboard/support", icon: LifeBuoy },
+      { label: "Affiliate", href: "/user-dashboard/affiliate", icon: Share2 },
       { label: "Settings", href: "/user-dashboard/profile", icon: Settings },
     ],
     []
@@ -329,7 +344,11 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
 
         {profileMenuOpen ? (
           <div className="dashboard-app-frame absolute left-0 top-[calc(100%+0.55rem)] z-30 w-[min(22rem,calc(100vw-2rem))] rounded-[28px] p-3">
-            <div className="dashboard-subpanel flex items-center gap-3 p-3">
+            <button
+              type="button"
+              onClick={() => openTarget("/user-dashboard/overview")}
+              className="dashboard-subpanel flex w-full items-center gap-3 p-3 text-left transition hover:bg-[var(--sidebar-link-hover-bg)]"
+            >
               <div className="dashboard-accent-surface flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-black">
                 {initials}
               </div>
@@ -337,26 +356,54 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
                 <p className="dashboard-text-strong truncate text-sm font-bold">{profileName}</p>
                 <p className="dashboard-text-muted truncate text-[11px]">ID {profileId}</p>
               </div>
-            </div>
+            </button>
 
             <div className="mt-3 space-y-1.5">
               {mobileDrawerItems.map((item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={() => openTarget(item.href)}
-                  className={`dashboard-subpanel flex w-full items-center justify-between rounded-2xl px-3 py-3 text-left ${
-                    pathname === item.href ? "sidebar-active" : ""
-                  }`}
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="dashboard-subpanel flex h-8 w-8 items-center justify-center rounded-xl">
-                      <item.icon size={15} className="dashboard-text-muted" />
+                <React.Fragment key={item.label}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (item.label === "Profile") {
+                        setProfileSectionOpen(!isProfileSectionVisible);
+                        return;
+                      }
+                      openTarget(item.href);
+                    }}
+                    className={`dashboard-subpanel flex w-full items-center justify-between rounded-2xl px-3 py-3 text-left ${
+                      pathname === item.href || (item.label === "Profile" && isProfileSectionActive) ? "sidebar-active" : ""
+                    }`}
+                  >
+                    <span className="flex items-center gap-3">
+                      <span className="dashboard-subpanel flex h-8 w-8 items-center justify-center rounded-xl">
+                        <item.icon size={15} className="dashboard-text-muted" />
+                      </span>
+                      <span className="dashboard-text-strong text-sm font-semibold">{item.label}</span>
                     </span>
-                    <span className="dashboard-text-strong text-sm font-semibold">{item.label}</span>
-                  </span>
-                  <ChevronRight size={15} className="dashboard-text-faint" />
-                </button>
+                    <ChevronRight size={15} className="dashboard-text-faint" />
+                  </button>
+
+                  {item.label === "Profile" && isProfileSectionVisible ? (
+                    <div className="ml-4 space-y-1.5 border-l border-[var(--dashboard-frame-border)] pl-3">
+                      {profileMenuItems.map((subItem) => (
+                        <button
+                          key={subItem.label}
+                          type="button"
+                          onClick={() => openTarget(subItem.href)}
+                          className="dashboard-subpanel flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left"
+                        >
+                          <span className="flex items-center gap-3">
+                            <span className="dashboard-subpanel flex h-8 w-8 items-center justify-center rounded-xl">
+                              <subItem.icon size={15} className="dashboard-text-muted" />
+                            </span>
+                            <span className="dashboard-text-strong text-sm font-semibold">{subItem.label}</span>
+                          </span>
+                          <ChevronRight size={15} className="dashboard-text-faint" />
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </React.Fragment>
               ))}
 
               <button

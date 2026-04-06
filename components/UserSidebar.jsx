@@ -4,9 +4,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { createPortal } from "react-dom";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   CircleHelp,
+  ChevronRight,
   CreditCard,
   Ellipsis,
   Headset,
@@ -33,7 +34,15 @@ const mobileTabs = [
   { name: "More", icon: Ellipsis, href: "#more", tooltip: "More Menu" },
 ];
 
-function UserIdentity({ user }) {
+const profileSubItems = [
+  { name: "History", href: "/user-dashboard/history", icon: History },
+  { name: "Live Chat", href: "/user-dashboard/profile?panel=chat", icon: Headset },
+  { name: "Support Tickets", href: "/user-dashboard/support", icon: LifeBuoy },
+  { name: "Affiliate", href: "/user-dashboard/affiliate", icon: Share2 },
+  { name: "Settings", href: "/user-dashboard/profile", icon: CircleHelp },
+];
+
+function UserIdentity({ user, href = "/user-dashboard/overview" }) {
   const initials = useMemo(() => {
     const base = user?.displayName || user?.email || "NC";
     return base
@@ -45,7 +54,7 @@ function UserIdentity({ user }) {
   }, [user]);
 
   return (
-    <div className="dashboard-subpanel flex items-center gap-3 p-3">
+    <Link href={href} className="dashboard-subpanel flex items-center gap-3 p-3 transition hover:bg-[var(--sidebar-link-hover-bg)]">
       {user?.photoURL ? (
         <Image
           src={user.photoURL}
@@ -67,18 +76,25 @@ function UserIdentity({ user }) {
           {user?.email || "Premium Tier"}
         </p>
       </div>
-    </div>
+    </Link>
   );
 }
 
 const UserSidebar = ({ theme, toggleTheme }) => {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [servicesMenuOpen, setServicesMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [profileSectionOpen, setProfileSectionOpen] = useState(false);
   const { user, logout } = useFirebaseAuth();
   const portalRoot = typeof document !== "undefined" ? document.body : null;
+  const isProfileSectionActive =
+    pathname === "/user-dashboard/profile" ||
+    pathname === "/user-dashboard/support" ||
+    pathname === "/user-dashboard/affiliate";
+  const isProfileSectionVisible = profileSectionOpen || isProfileSectionActive;
 
   useEffect(() => {
     if (!servicesMenuOpen && !profileMenuOpen) return undefined;
@@ -108,30 +124,78 @@ const UserSidebar = ({ theme, toggleTheme }) => {
     }
   };
 
+  const mainMenuItems = useMemo(
+    () => userDashboardMenuItems.filter((item) => !["Support Tickets", "Affiliate"].includes(item.name)),
+    []
+  );
+
   const renderMenu = () => (
     <nav className="space-y-1.5">
-      {userDashboardMenuItems.map((item) => {
+      {mainMenuItems.map((item) => {
         const isActive = pathname === item.href;
+        const isProfileItem = item.name === "Profile";
 
         return (
-          <Link
-            key={item.name}
-            href={item.href}
-            className={`group flex items-center gap-3 rounded-2xl px-4 py-3 transition-all ${
-              isActive
-                ? "sidebar-active border text-white shadow-[0_10px_26px_rgba(183,223,105,0.12)]"
-                : "sidebar-link border border-transparent"
-            }`}
-          >
-            <span
-              className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all ${
-                isActive ? "dashboard-accent-surface" : "dashboard-subpanel"
+          <div key={item.name} className="space-y-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (isProfileItem) {
+                  setProfileSectionOpen(!isProfileSectionVisible);
+                  return;
+                }
+                router.push(item.href);
+              }}
+              className={`group flex items-center gap-3 rounded-2xl px-4 py-3 transition-all ${
+                isActive || (isProfileItem && isProfileSectionActive)
+                  ? "sidebar-active border text-white shadow-[0_10px_26px_rgba(183,223,105,0.12)]"
+                  : "sidebar-link border border-transparent"
               }`}
             >
-              <item.icon size={16} />
-            </span>
-            <span className="text-sm font-semibold">{item.name}</span>
-          </Link>
+              <span
+                className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all ${
+                  isActive || (isProfileItem && isProfileSectionActive) ? "dashboard-accent-surface" : "dashboard-subpanel"
+                }`}
+              >
+                <item.icon size={16} />
+              </span>
+              <span className="flex-1 text-left text-sm font-semibold">{item.name}</span>
+              {isProfileItem ? (
+                <ChevronRight
+                  size={16}
+                  className={`transition-transform ${isProfileSectionVisible ? "rotate-90" : ""}`}
+                />
+              ) : null}
+            </button>
+
+            {isProfileItem && isProfileSectionVisible ? (
+              <div className="ml-4 space-y-1.5 border-l border-[var(--dashboard-frame-border)] pl-3">
+                {profileSubItems.map((subItem) => {
+                  const isSubActive =
+                    pathname === subItem.href ||
+                    (subItem.href.includes("?panel=chat") &&
+                      pathname === "/user-dashboard/profile" &&
+                      searchParams.get("panel") === "chat");
+
+                  return (
+                    <Link
+                      key={subItem.name}
+                      href={subItem.href}
+                      onClick={() => setProfileSectionOpen(true)}
+                      className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-all ${
+                        isSubActive ? "sidebar-active" : "sidebar-link"
+                      }`}
+                    >
+                      <span className="dashboard-subpanel flex h-8 w-8 items-center justify-center rounded-xl">
+                        <subItem.icon size={15} className="dashboard-text-muted" />
+                      </span>
+                      <span className="font-medium">{subItem.name}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
         );
       })}
     </nav>
@@ -152,6 +216,10 @@ const UserSidebar = ({ theme, toggleTheme }) => {
               Client Dashboard
             </p>
           </div>
+        </div>
+
+        <div className="mb-4">
+          <UserIdentity user={user} />
         </div>
 
         {renderMenu()}

@@ -249,19 +249,6 @@ export default function OverviewPage() {
     { name: "Affiliate", value: totalReferIncome, fill: "#73C8FF" },
     { name: "Payout", value: totalPayout, fill: "#67A3FF" },
   ];
-  const mobileSummaryItems = [
-    {
-      label: "Referral Income",
-      value: formatUsd(totalReferIncome),
-      meta: `${totalReferrers} referrer${totalReferrers === 1 ? "" : "s"}`,
-    },
-    {
-      label: "Last Topup",
-      value: lastTopupDate || "No topup yet",
-      meta: "Recent approved payment",
-    },
-  ];
-
   const copyReferralLink = async () => {
     try {
       await navigator.clipboard.writeText(referralLink);
@@ -274,29 +261,7 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-4 p-3 sm:p-4">
-      <div className="lg:hidden">
-        <section className="dashboard-subpanel overflow-hidden rounded-[24px] p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.24em] dashboard-text-faint">
-                Overview
-              </p>
-              <h1 className="mt-1 text-[1.65rem] font-black leading-none dashboard-text-strong">
-                {userData?.name || userData?.displayName || "Client"}
-              </h1>
-              <p className="mt-2 text-xs dashboard-text-muted">
-                Wallet, payout, and activity in one compact view.
-              </p>
-            </div>
-            <Link
-              href="/user-dashboard/payment-methods"
-              className="dashboard-accent-surface inline-flex min-h-11 items-center rounded-[16px] px-4 text-xs font-black"
-            >
-              Top Up
-            </Link>
-          </div>
-        </section>
-
+      <div className="xl:hidden">
         <MobileWalletCard
           userData={userData}
           usdToBdtRate={usdToBdtRate}

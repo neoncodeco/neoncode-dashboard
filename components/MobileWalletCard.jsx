@@ -2,7 +2,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Hash, DollarSign, Banknote, Landmark, Wallet } from 'lucide-react';
-import CurrencyAmount from './CurrencyAmount';
 import { formatUsd } from '@/lib/currency';
 
 export default function MobileWalletCard({
@@ -13,11 +12,10 @@ export default function MobileWalletCard({
   const walletBalance = Number(userData?.walletBalance || 0);
   const topupBalance = Number(userData?.topupBalance || 0);
 
-  // Grid items setup according to your image
   const stats = [
     {
       label: 'Total Transactions',
-      value: '0', // Ba dynamic data: userData?.totalTransactions || 0
+      value: '0',
       icon: <Hash className="w-5 h-5 text-gray-400" />,
       type: 'text'
     },
@@ -29,13 +27,13 @@ export default function MobileWalletCard({
     },
     {
       label: 'Buying Dollars',
-      value: `৳${(topupBalance * (usdToBdtRate || 115)).toLocaleString()}`, 
+      value: `৳${(topupBalance * (usdToBdtRate || 115)).toLocaleString()}`,
       icon: <Banknote className="w-5 h-5 text-blue-500" />,
       type: 'bdt'
     },
     {
       label: 'Current Liability',
-      value: `৳0.00`, 
+      value: `৳0.00`,
       icon: <Landmark className="w-5 h-5 text-gray-500" />,
       type: 'bdt-muted'
     }
@@ -43,7 +41,6 @@ export default function MobileWalletCard({
 
   return (
     <div className="w-full max-w-[400px] mx-auto space-y-4">
-      {/* 2x2 Grid System (Like your image) */}
       <div className="grid grid-cols-2 gap-3">
         {stats.map((item, index) => (
           <motion.div
@@ -58,7 +55,7 @@ export default function MobileWalletCard({
               {item.label}
             </p>
             <p className={`text-lg font-black tracking-tight ${
-              item.type === 'usd' ? 'text-emerald-500' : 
+              item.type === 'usd' ? 'text-emerald-500' :
               item.type === 'bdt' ? 'text-blue-500' : 'dashboard-text-strong'
             }`}>
               {item.value}
@@ -67,7 +64,6 @@ export default function MobileWalletCard({
         ))}
       </div>
 
-      {/* Main USD Balance (Wide Card at bottom like image) */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -79,7 +75,6 @@ export default function MobileWalletCard({
         <p className="text-[12px] font-bold uppercase tracking-[0.2em] dashboard-text-faint mb-1">
           USD Balance
         </p>
-        
         <div className="text-center">
             <p className="text-3xl font-black text-emerald-500 leading-none">
                 {formatUsd(walletBalance)}

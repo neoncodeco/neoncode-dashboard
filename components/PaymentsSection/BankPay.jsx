@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { ArrowLeft, Copy } from "lucide-react";
+import { ArrowLeft, Building2, CheckCircle2, Copy, Landmark } from "lucide-react";
 import { getBankLogoSrc } from "@/lib/bankDetails";
 
 const MIN_BANK_PAYMENT_AMOUNT_BDT = 1000;
@@ -28,10 +28,37 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
   const [amount, setAmount] = useState("");
   const [trxId, setTrxId] = useState("");
   const [screenshot, setScreenshot] = useState(null);
+  const [selectedBankId, setSelectedBankId] = useState("");
 
   const inputStyle =
     "w-full border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg p-3 bg-white text-gray-800 placeholder-gray-400";
   const labelStyle = "text-sm font-semibold text-gray-700 block mb-1";
+  const fieldRows = [
+    { label: "Bank Name", key: "bankName", mono: false, wide: true },
+    { label: "A/C Name", key: "accountName", mono: false },
+    { label: "A/C Number", key: "accountNumber", mono: true },
+    { label: "Branch", key: "branch", mono: false },
+    { label: "District", key: "district", mono: false },
+    { label: "Routing No", key: "routingNumber", mono: true },
+    { label: "SWIFT", key: "swiftCode", mono: true },
+    { label: "Reference", key: "reference", mono: false, wide: true },
+  ];
+
+  useEffect(() => {
+    if (!bankDetails.length) {
+      setSelectedBankId("");
+      return;
+    }
+
+    setSelectedBankId((current) =>
+      bankDetails.some((bank) => bank.id === current) ? current : bankDetails[0].id
+    );
+  }, [bankDetails]);
+
+  const selectedBank = useMemo(
+    () => bankDetails.find((bank) => bank.id === selectedBankId) || bankDetails[0] || null,
+    [bankDetails, selectedBankId]
+  );
 
   const copyField = async (label, value) => {
     const Swal = (await import("sweetalert2")).default;
@@ -108,74 +135,102 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
   };
 
   return (
-    <div className="bg-white border border-green-200 p-8 rounded-xl shadow-lg max-w-2xl mx-auto space-y-6">
-      <h2 className="text-2xl font-bold text-green-600 border-b pb-3 mb-4">
+    <div className="mx-auto max-w-4xl space-y-4 rounded-none border-0 bg-transparent p-0 shadow-none sm:space-y-6 sm:rounded-xl sm:border sm:border-green-200 sm:bg-white sm:p-8 sm:shadow-lg">
+      <h2 className="mb-2 border-b pb-2 text-xl font-bold text-green-600 sm:mb-4 sm:pb-3 sm:text-2xl">
         Manual Bank Transfer Request
       </h2>
 
-      {/* Bank Details */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-800">
+      <div className="space-y-3 sm:space-y-4">
+        <h3 className="text-base font-semibold text-gray-800 sm:text-lg">
           Bank Account Details (Transfer To)
         </h3>
 
         {bankDetails.length ? (
-          bankDetails.map((bank) => (
-            <div
-              key={bank.id}
-              className="w-full rounded-lg border border-gray-200 bg-gray-100 p-4"
-            >
-              <div className="flex items-start space-x-4">
-                <Image
-                  src={getBankLogoSrc(bank)}
-                  alt={bank.bankName}
-                  width={40}
-                  height={40}
-                  unoptimized={Boolean(bank.logoUrl)}
-                  className="rounded-full border border-gray-300"
-                />
-
-                <div className="grid w-full grid-cols-1 gap-2 text-sm md:grid-cols-2">
-                  {[
-                    { label: "Bank Name", value: bank.bankName, mono: false, wide: true },
-                    { label: "A/C Name", value: bank.accountName, mono: false },
-                    { label: "A/C Number", value: bank.accountNumber, mono: true },
-                    { label: "Branch", value: bank.branch || "N/A", mono: false },
-                    { label: "District", value: bank.district || "N/A", mono: false },
-                    { label: "Routing No", value: bank.routingNumber || "N/A", mono: true },
-                    { label: "SWIFT", value: bank.swiftCode || "N/A", mono: true },
-                    { label: "Reference", value: bank.reference || "N/A", mono: false, wide: true },
-                  ].map((field) => (
-                    <div
-                      key={`${bank.id}-${field.label}`}
-                      className={field.wide ? "md:col-span-2" : ""}
-                    >
-                      <div className="flex items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold text-gray-500">{field.label}</p>
-                          <p
-                            className={`truncate text-gray-800 ${
-                              field.mono ? "font-mono text-blue-700" : "font-medium"
-                            }`}
-                          >
-                            {field.value}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => copyField(field.label, field.value === "N/A" ? "" : field.value)}
-                          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-blue-200 text-blue-700 transition hover:bg-blue-50"
-                          aria-label={`Copy ${field.label}`}
-                        >
-                          <Copy size={14} />
-                        </button>
-                      </div>
-                    </div>
+          <>
+            <div className="rounded-xl border border-green-100 bg-gradient-to-r from-green-50 to-lime-50 p-3 sm:rounded-2xl sm:p-4">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.18em] text-green-700 sm:mb-2 sm:text-xs">
+                Select Bank
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedBank?.id || ""}
+                  onChange={(e) => setSelectedBankId(e.target.value)}
+                  className="w-full appearance-none rounded-xl border border-green-200 bg-white py-2.5 pl-11 pr-11 text-sm font-semibold text-gray-900 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100 sm:rounded-2xl sm:py-3 sm:pl-12 sm:pr-12"
+                >
+                  {bankDetails.map((bank) => (
+                    <option key={bank.id} value={bank.id}>
+                      {bank.bankName}
+                    </option>
                   ))}
-                </div>
+                </select>
+                <Building2 className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-green-700" />
+                <Landmark className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-green-700" />
               </div>
             </div>
-          ))
+
+            {selectedBank ? (
+              <div className="w-full rounded-none border-0 bg-transparent p-0 sm:rounded-2xl sm:border sm:border-gray-200 sm:bg-gray-50 sm:p-5">
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <Image
+                    src={getBankLogoSrc(selectedBank)}
+                    alt={selectedBank.bankName}
+                    width={44}
+                    height={44}
+                    unoptimized={Boolean(selectedBank.logoUrl)}
+                    className="rounded-full border border-gray-300"
+                  />
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-500">
+                      Selected Account
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <h4 className="text-base font-bold text-gray-900 sm:text-lg">{selectedBank.bankName}</h4>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-bold text-green-700">
+                        <CheckCircle2 size={12} />
+                        Transfer To
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 grid w-full grid-cols-1 gap-2.5 text-sm sm:mt-4 sm:gap-3 md:grid-cols-2">
+                  {fieldRows.map((field) => {
+                    const rawValue = selectedBank[field.key];
+                    const value = rawValue && String(rawValue).trim() ? rawValue : "N/A";
+
+                    return (
+                      <div
+                        key={`${selectedBank.id}-${field.label}`}
+                        className={field.wide ? "md:col-span-2" : ""}
+                      >
+                        <div className="flex min-h-[64px] items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-3 py-2.5 sm:min-h-[72px] sm:px-4 sm:py-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-gray-500">{field.label}</p>
+                            <p
+                              className={`mt-1 break-words text-gray-800 ${
+                                field.mono ? "font-mono text-[15px] text-lime-600" : "font-medium"
+                              }`}
+                            >
+                              {value}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => copyField(field.label, value === "N/A" ? "" : value)}
+                            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-lime-200 text-lime-600 transition hover:bg-lime-50"
+                            aria-label={`Copy ${field.label}`}
+                          >
+                            <Copy size={15} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+          </>
         ) : (
           <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
             No bank payment details configured by admin yet.
@@ -185,8 +240,7 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
 
       <hr className="border-gray-200" />
 
-      {/* Payment Form */}
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         <div>
           <label className={labelStyle}>Amount (BDT)</label>
           <input
@@ -219,7 +273,7 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
             type="file"
             accept="image/*"
             onChange={(e) => setScreenshot(e.target.files[0])}
-            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+            className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-full file:border-0 file:bg-green-50 file:text-green-700 hover:file:bg-green-100 sm:file:mr-4 sm:file:px-4"
           />
           <p className="text-xs text-gray-400 mt-1">
             Upload the screenshot of your successful bank transfer. (Max size: 5MB)
@@ -229,13 +283,13 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
 
       <button
         onClick={handleManualPayment}
-        className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold shadow-lg transform hover:scale-[1.01]"
+        className="w-full rounded-lg bg-green-600 py-3 font-bold text-white shadow-lg transition hover:scale-[1.01] hover:bg-green-700"
       >
         Submit Payment Request
       </button>
 
       <button
-        className="flex items-center justify-center w-full mt-3 text-sm text-gray-600 hover:text-green-600"
+        className="mt-1 flex w-full items-center justify-center text-sm text-gray-600 hover:text-green-600 sm:mt-3"
         onClick={() => {
           setMethod(null);
           setAmount("");
