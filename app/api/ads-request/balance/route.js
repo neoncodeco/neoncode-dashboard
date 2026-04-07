@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyToken } from "@/lib/verifyToken";
 import getDB from "@/lib/mongodb";
+import { normalizeAdAccountId, resolveMetaAccessTokens } from "@/lib/metaAdsAccess";
 
 export async function GET(req) {
   try {
@@ -16,34 +17,43 @@ export async function GET(req) {
       return NextResponse.json({ error: "ad_account_id required" }, { status: 400 });
     }
 
-    const cleanAdAccountId = String(adAccountId).replace(/^act_/, "").trim();
+    const cleanAdAccountId = normalizeAdAccountId(adAccountId);
     if (!/^\d+$/.test(cleanAdAccountId)) {
       return NextResponse.json({ error: "Invalid ad_account_id format" }, { status: 400 });
     }
 
     const { db } = await getDB();
-    const setting = await db.collection("settings").findOne({ key: "FB_SYS_TOKEN" });
+    const { tokens } = await resolveMetaAccessTokens(db, cleanAdAccountId);
 
-    if (!setting?.value) {
+    if (!tokens.length) {
       return NextResponse.json(
-        { error: "Facebook system token not configured" },
+        { error: "Facebook access token not configured" },
         { status: 400 }
       );
     }
 
-    const graphParams = new URLSearchParams({
-      access_token: setting.value,
-      fields: "spend_cap,amount_spent,account_status,currency",
-    });
+    let fbRes = null;
+    let fbData = null;
 
-    const fbRes = await fetch(
-      `https://graph.facebook.com/v18.0/act_${cleanAdAccountId}?${graphParams.toString()}`,
-      {
-        cache: "no-store",
+    for (const candidate of tokens) {
+      const graphParams = new URLSearchParams({
+        access_token: candidate.token,
+        fields: "spend_cap,amount_spent,account_status,currency",
+      });
+
+      fbRes = await fetch(
+        `https://graph.facebook.com/v18.0/act_${cleanAdAccountId}?${graphParams.toString()}`,
+        {
+          cache: "no-store",
+        }
+      );
+
+      fbData = await fbRes.json();
+
+      if (fbRes.ok && !fbData?.error) {
+        break;
       }
-    );
-
-    const fbData = await fbRes.json();
+    }
 
     if (!fbRes.ok || fbData?.error) {
       const metaError = fbData?.error || {};

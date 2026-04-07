@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import { verifyToken } from "@/lib/verifyToken";
 import getDB from "@/lib/mongodb";
 import { ensureWritableUser } from "@/lib/userAccess";
+import { normalizeAdAccountId, resolveMetaAccessTokens } from "@/lib/metaAdsAccess";
 
 export async function POST(req) {
   try {
     const { db } = await getDB();
 
-    // 🔐 Verify User
     const user = await verifyToken(req);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -19,10 +19,13 @@ export async function POST(req) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
+    const cleanAdAccountId = normalizeAdAccountId(ad_account_id);
+    if (!/^\d+$/.test(cleanAdAccountId)) {
+      return NextResponse.json({ error: "Invalid ad account ID" }, { status: 400 });
+    }
+
     const oldLimit = Number(old_limit);
     const newLimit = Number(new_limit);
-
-    // 🧮 Difference
     const diff = newLimit - oldLimit;
 
     const access = await ensureWritableUser(db, user.uid);
@@ -30,7 +33,6 @@ export async function POST(req) {
       return access.response;
     }
 
-    // 👤 Fetch user
     const userData = await db.collection("users").findOne({
       userId: user.uid,
     });
@@ -40,8 +42,6 @@ export async function POST(req) {
     }
 
     const walletBalance = Number(userData.walletBalance || 0);
-
-    // ❌ Wallet check (only increase)
     if (diff > 0 && walletBalance < diff) {
       return NextResponse.json(
         { error: "Insufficient wallet balance. Please top up first." },
@@ -49,52 +49,40 @@ export async function POST(req) {
       );
     }
 
-    /* ===============================
-       🔑 LOAD FB SYSTEM TOKEN FROM DB
-       =============================== */
-    const setting = await db
-      .collection("settings")
-      .findOne({ key: "FB_SYS_TOKEN" });
-
-    if (!setting?.value) {
+    const { tokens } = await resolveMetaAccessTokens(db, cleanAdAccountId);
+    if (!tokens.length) {
       return NextResponse.json(
-        { error: "Facebook system token not configured" },
+        { error: "Facebook access token not configured" },
         { status: 500 }
       );
     }
 
-    const FB_SYS_TOKEN = setting.value;
-
-    /* ===============================
-       🌐 FACEBOOK API CALL
-       =============================== */
-
-    // Facebook expects TOTAL spend cap (sub-units not needed here)
     const spendCap = Math.round(newLimit);
+    let fbResult = null;
 
-    const fbRes = await fetch(
-      `https://graph.facebook.com/v18.0/act_${ad_account_id}`,
-      {
+    for (const candidate of tokens) {
+      const fbRes = await fetch(`https://graph.facebook.com/v18.0/act_${cleanAdAccountId}`, {
         method: "POST",
         body: new URLSearchParams({
-          access_token: FB_SYS_TOKEN, // ✅ FROM DB
+          access_token: candidate.token,
           spend_cap: spendCap.toString(),
         }),
+      });
+
+      fbResult = await fbRes.json();
+
+      if (fbRes.ok && !fbResult?.error) {
+        break;
       }
-    );
+    }
 
-    const fbResult = await fbRes.json();
-
-    if (fbResult.error) {
+    if (fbResult?.error) {
       return NextResponse.json(
         { error: fbResult.error.message },
         { status: 400 }
       );
     }
 
-    /* ===============================
-       💰 WALLET UPDATE
-       =============================== */
     if (diff > 0) {
       await db.collection("users").updateOne(
         { userId: user.uid },
@@ -102,12 +90,9 @@ export async function POST(req) {
       );
     }
 
-    /* ===============================
-       🧾 LOG TRANSACTION
-       =============================== */
     await db.collection("ads_spending_limit_logs").insertOne({
       user_id: user.uid,
-      ad_account_id,
+      ad_account_id: cleanAdAccountId,
       old_limit: oldLimit,
       new_limit: newLimit,
       change_amount: diff,
@@ -121,7 +106,6 @@ export async function POST(req) {
       message: "Spending limit updated",
       new_limit: newLimit,
     });
-
   } catch (err) {
     console.error("API Error:", err);
     return NextResponse.json(
