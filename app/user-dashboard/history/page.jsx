@@ -31,11 +31,14 @@ const HistoryPage = () => {
     switch (status?.toLowerCase()) {
       case "approved":
       case "active":
+      case "success":
+      case "completed":
         return "bg-green-50 text-green-600 border-green-200";
       case "pending":
       case "open":
         return "bg-amber-50 text-amber-600 border-amber-200";
       case "rejected":
+      case "failed":
         return "bg-red-50 text-red-600 border-red-200";
       default:
         return "bg-gray-50 text-gray-600 border-gray-200";
@@ -84,7 +87,7 @@ const HistoryPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                        {item.type?.replace("_", " ")}
+                        {item.type?.replaceAll("_", " ")}
                       </span>
                     </td>
                     <td className="px-6 py-4">

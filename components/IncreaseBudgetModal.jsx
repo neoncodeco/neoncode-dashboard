@@ -54,7 +54,7 @@ export default function IncreaseBudgetModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 text-black backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center  px-4 text-black backdrop-blur-sm">
       <div className="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(15,29,56,0.98),rgba(9,18,38,0.98))] p-6 text-white shadow-[0_30px_80px_-30px_rgba(15,23,42,0.95)]">
         <button onClick={onClose} className="absolute right-4 top-4 rounded-full border border-white/10 bg-white/5 p-2 text-slate-300 transition hover:bg-white/10 hover:text-white">
           <X size={16} />
@@ -69,13 +69,13 @@ export default function IncreaseBudgetModal({
         </div>
 
         <div className="mb-4 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div className="rounded-2xl border border-white/10 p-4">
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Current Limit</p>
             <p className="mt-2 text-lg font-black">{`$${Number(oldLimit || 0).toFixed(2)}`}</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div className="rounded-2xl border border-white/10  p-4">
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">New Limit</p>
-            <p className="mt-2 text-lg font-black text-blue-200">{`$${proposedLimit.toFixed(2)}`}</p>
+            <p className="mt-2 text-lg font-black ">{`$${proposedLimit.toFixed(2)}`}</p>
           </div>
         </div>
 

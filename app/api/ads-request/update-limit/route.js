@@ -101,6 +101,16 @@ export async function POST(req) {
       timestamp: new Date(),
     });
 
+    await db.collection("otherCollection").insertOne({
+      userUid: user.uid,
+      type: "LIMIT_CHANGE",
+      title: "Meta Ad Spending Limit Updated",
+      description: `Account ID: ${cleanAdAccountId} | Old: ${oldLimit} -> New: ${newLimit}`,
+      status: "success",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
     return NextResponse.json({
       success: true,
       message: "Spending limit updated",

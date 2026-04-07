@@ -30,12 +30,14 @@ const mobileTabs = [
   { name: "Home", icon: Home, href: "/user-dashboard/overview", tooltip: "Overview" },
   { name: "Services", icon: Layers3, href: "/user-dashboard/services", tooltip: "Our Services" },
   { name: "Meta Ads", icon: WalletCards, href: "/user-dashboard/meta-ads-account", tooltip: "Meta Ads Account" },
+  { name: "History", icon: History, href: "/user-dashboard/history", tooltip: "Activity History" },
   { name: "More", icon: Ellipsis, href: "#more", tooltip: "More Menu" },
 ];
 
 const profileSubItems = [
   { name: "Live Chat", href: "/user-dashboard/profile?panel=chat", icon: Headset },
   { name: "Support Tickets", href: "/user-dashboard/support", icon: LifeBuoy },
+  { name: "History", href: "/user-dashboard/history", icon: History },
   { name: "Affiliate", href: "/user-dashboard/affiliate", icon: Share2 },
   { name: "Settings", href: "/user-dashboard/profile", icon: CircleHelp },
 ];
@@ -129,6 +131,7 @@ const UserSidebar = ({ theme, toggleTheme }) => {
         const isProfileSectionActive =
           pathname === "/user-dashboard/profile" ||
           pathname === "/user-dashboard/support" ||
+          pathname === "/user-dashboard/history" ||
           pathname === "/user-dashboard/affiliate";
 
         return (
@@ -195,7 +198,7 @@ const UserSidebar = ({ theme, toggleTheme }) => {
               Neon Code
             </p>
             <p className="text-[11px] uppercase tracking-[0.26em] dashboard-text-faint">
-              Client Dashboard
+              User Dashboard
             </p>
           </div>
         </Link>

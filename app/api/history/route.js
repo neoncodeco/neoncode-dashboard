@@ -10,12 +10,70 @@ export async function GET(req) {
     }
 
     const { db } = await getDB();
+    const userUid = decoded.uid || decoded.userId;
 
-    const history = await db
-      .collection("otherCollection") 
-      .find({ userUid: decoded.uid || decoded.userId }) 
-      .sort({ createdAt: -1 })
-      .toArray();
+    const [activityHistory, adsLogs, payments] = await Promise.all([
+      db
+        .collection("otherCollection")
+        .find({
+          $or: [{ userUid }, { userId: userUid }],
+        })
+        .toArray(),
+      db
+        .collection("ads_spending_limit_logs")
+        .find({
+          $or: [{ user_id: userUid }, { userUid }],
+        })
+        .toArray(),
+      db
+        .collection("payments")
+        .find({ userUid })
+        .toArray(),
+    ]);
+
+    const normalizedActivity = activityHistory.map((item) => ({
+      ...item,
+      _id: `activity-${String(item._id)}`,
+      createdAt: item.createdAt || item.updatedAt || new Date(),
+      updatedAt: item.updatedAt || item.createdAt || new Date(),
+      type: item.type || "ACTIVITY",
+      title: item.title || "Activity",
+      description: item.description || "",
+      status: item.status || "completed",
+    }));
+
+    const normalizedAdsLogs = adsLogs.map((item) => ({
+      ...item,
+      _id: `ads-${String(item._id)}`,
+      createdAt: item.timestamp || item.createdAt || new Date(),
+      updatedAt: item.timestamp || item.updatedAt || new Date(),
+      type: "META_BUDGET_UPDATE",
+      title: "Meta Ad Account Budget Updated",
+      description: `Account ID: ${item.ad_account_id} | Old: ${Number(item.old_limit || 0)} -> New: ${Number(item.new_limit || 0)}`,
+      status: item.approved === false ? "failed" : "success",
+    }));
+
+    const normalizedPayments = payments.map((item) => {
+      const amount = Number(item.amountBdt ?? item.amount ?? 0);
+      const method = item.method === "bank_transfer" ? "Manual Payment" : "Online Payment";
+
+      return {
+        ...item,
+        _id: `payment-${String(item._id)}`,
+        createdAt: item.createdAt || item.updatedAt || new Date(),
+        updatedAt: item.updatedAt || item.createdAt || new Date(),
+        type: "PAYMENT",
+        title: method,
+        description: `Amount: ${amount} ${item.currency || "BDT"}`,
+        status: item.status || "pending",
+      };
+    });
+
+    const history = [...normalizedActivity, ...normalizedAdsLogs, ...normalizedPayments].sort(
+      (a, b) =>
+        new Date(b.createdAt || b.updatedAt || 0).getTime() -
+        new Date(a.createdAt || a.updatedAt || 0).getTime()
+    );
 
     return NextResponse.json({ ok: true, data: history });
   } catch (err) {
