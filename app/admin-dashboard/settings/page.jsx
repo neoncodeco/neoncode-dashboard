@@ -9,10 +9,12 @@ import {
   Server, Clock, RefreshCw, Info, Database, Terminal, Plus, Trash2,
   Building2, User, Link2, ChevronDown, ChevronRight, LayoutGrid, Users
 } from "lucide-react";
+import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 
 export default function TokenSettings() {
   const { token } = useFirebaseAuth();
+  const { getCache, setCache } = useAdminDashboardCache();
   // এখানে slots: [] অ্যাড করা হয়েছে যাতে ডাটাবেস থেকে লোড হতে পারে
   const [bmConfigs, setBmConfigs] = useState([{ bmName: "", businessId: "", token: "", slots: [] }]);
   const [clientRequests, setClientRequests] = useState([]); 
@@ -24,6 +26,14 @@ export default function TokenSettings() {
   /* ---------------- LOAD SYSTEM DATA ---------------- */
   const loadSystemData = useCallback(async () => {
     if (!token) return;
+    const cachedSettings = getCache("admin-settings:data");
+    if (cachedSettings) {
+      setBmConfigs(cachedSettings.bmConfigs || [{ bmName: "", businessId: "", token: "", slots: [] }]);
+      setClientRequests(cachedSettings.clientRequests || []);
+      setUsdToBdtRate(String(cachedSettings.usdToBdtRate || 150));
+      setInitialLoading(false);
+      return;
+    }
     try {
       const [settingsRes, requestsRes] = await Promise.all([
         fetch("/api/admin/settings", { headers: { Authorization: `Bearer ${token}` } }),
@@ -32,17 +42,23 @@ export default function TokenSettings() {
 
       const settingsData = await settingsRes.json();
       const requestsData = await requestsRes.json();
+      const nextPayload = {
+        bmConfigs: settingsData.bmConfigs || [{ bmName: "", businessId: "", token: "", slots: [] }],
+        clientRequests: requestsData.ok ? requestsData.data || [] : [],
+        usdToBdtRate: Number(settingsData.usdToBdtRate || 150),
+      };
 
       // ডাটাবেস থেকে bmConfigs এবং তাদের slots লোড করা
-      if (settingsData.bmConfigs) setBmConfigs(settingsData.bmConfigs);
-      if (requestsData.ok) setClientRequests(requestsData.data || []);
-      setUsdToBdtRate(String(settingsData.usdToBdtRate || 150));
+      setBmConfigs(nextPayload.bmConfigs);
+      setClientRequests(nextPayload.clientRequests);
+      setUsdToBdtRate(String(nextPayload.usdToBdtRate));
+      setCache("admin-settings:data", nextPayload);
     } catch (err) {
       console.error("Load Error:", err);
     } finally {
       setInitialLoading(false);
     }
-  }, [token]);
+  }, [getCache, setCache, token]);
 
   useEffect(() => { loadSystemData(); }, [loadSystemData]);
 
@@ -103,7 +119,14 @@ export default function TokenSettings() {
           usdToBdtRate: Number(usdToBdtRate),
         }),
       });
-      if (res.ok) Swal.fire({ icon: "success", title: "Updated", text: "Settings and Slots saved successfully.", timer: 1500 });
+      if (res.ok) {
+        setCache("admin-settings:data", {
+          bmConfigs,
+          clientRequests,
+          usdToBdtRate: Number(usdToBdtRate),
+        });
+        Swal.fire({ icon: "success", title: "Updated", text: "Settings and Slots saved successfully.", timer: 1500 });
+      }
     } catch (err) { Swal.fire({ icon: "error", title: "Error", text: "Update failed." }); }
     finally { setLoading(false); }
   };

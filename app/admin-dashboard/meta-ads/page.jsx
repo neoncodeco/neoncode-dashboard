@@ -17,6 +17,7 @@ import {
   Save,
   Trash2
 } from "lucide-react";
+import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import Swal from "sweetalert2";
 
@@ -58,6 +59,7 @@ const getStatusClasses = (status) => {
 
 export default function AdminAdAccountApprove() {
   const { token } = useFirebaseAuth();
+  const { getCache, setCache } = useAdminDashboardCache();
   const [data, setData] = useState([]);
   const [bmConfigs, setBmConfigs] = useState([]); 
   const [loading, setLoading] = useState(false);
@@ -76,7 +78,17 @@ export default function AdminAdAccountApprove() {
   });
 
   // ১. ডাটা লোড ফাংশন (সেটিংস এবং রিকোয়েস্ট লিস্ট সহ)
-  const load = useCallback(async () => {
+  const load = useCallback(async (options = {}) => {
+    if (!options.force) {
+      const cachedPayload = getCache("admin-meta-ads:data");
+      if (cachedPayload) {
+        setData(cachedPayload.data || []);
+        setBmConfigs(cachedPayload.bmConfigs || []);
+        setInitialLoading(false);
+        return;
+      }
+    }
+
     try {
       const [listRes, settingsRes] = await Promise.all([
         fetch("/api/admin/ads-request/list", { headers: { Authorization: `Bearer ${token}` } }),
@@ -84,15 +96,20 @@ export default function AdminAdAccountApprove() {
       ]);
       const listJson = await listRes.json();
       const settingsJson = await settingsRes.json();
+      const nextPayload = {
+        data: listRes.ok ? listJson.data || [] : [],
+        bmConfigs: settingsJson.bmConfigs || [],
+      };
 
-      if (listRes.ok) setData(listJson.data || []);
-      if (settingsJson.bmConfigs) setBmConfigs(settingsJson.bmConfigs);
+      if (listRes.ok) setData(nextPayload.data);
+      if (settingsJson.bmConfigs) setBmConfigs(nextPayload.bmConfigs);
+      setCache("admin-meta-ads:data", nextPayload);
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
       setInitialLoading(false);
     }
-  }, [token]);
+  }, [getCache, setCache, token]);
 
   useEffect(() => {
     if (token) load();
@@ -139,7 +156,7 @@ export default function AdminAdAccountApprove() {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ id, status: newStatus, MetaAccountID: MetaAccountID?.toString().trim() || "" }),
       });
-      if (res.ok) { load(); Swal.fire('Success', '', 'success'); }
+      if (res.ok) { load({ force: true }); Swal.fire('Success', '', 'success'); }
     } finally { setLoading(false); }
   };
 
@@ -163,7 +180,7 @@ export default function AdminAdAccountApprove() {
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (res.ok) { load(); Swal.fire("Saved", "", "success"); }
+    if (res.ok) { load({ force: true }); Swal.fire("Saved", "", "success"); }
   };
 
   const cancelRow = async (row) => {
@@ -172,7 +189,7 @@ export default function AdminAdAccountApprove() {
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ id: row._id }),
     });
-    if (res.ok) { load(); }
+    if (res.ok) { load({ force: true }); }
   };
 
   const addManualAccount = async () => {
@@ -182,7 +199,7 @@ export default function AdminAdAccountApprove() {
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ ...newAccount, monthlyBudget: Number(newAccount.monthlyBudget || 0) }),
     });
-    if (res.ok) { load(); }
+    if (res.ok) { load({ force: true }); }
   };
 
   const filtered = useMemo(() => {
@@ -215,7 +232,7 @@ export default function AdminAdAccountApprove() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#7f96c7]" size={18} />
               <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search records..." className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-sky-400 sm:w-72 dark:border-[#2c4167] dark:bg-[#132546] dark:text-[#f5f8ff]" />
             </div>
-            <button onClick={load} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-95 dark:border-[#2c4167] dark:bg-[#132546] dark:text-[#dbe8ff] dark:hover:bg-[#1a2f57]"><RefreshCcw size={16} /> Refresh</button>
+            <button onClick={() => load({ force: true })} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-95 dark:border-[#2c4167] dark:bg-[#132546] dark:text-[#dbe8ff] dark:hover:bg-[#1a2f57]"><RefreshCcw size={16} /> Refresh</button>
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Swal from "sweetalert2";
 import { Copy, ImagePlus, Landmark, Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import {
   createDefaultBankPaymentDetails,
@@ -24,6 +25,7 @@ const DETAIL_FIELDS = [
 
 export default function PaymentDetailsPage() {
   const { token } = useFirebaseAuth();
+  const { getCache, setCache } = useAdminDashboardCache();
   const [bankPaymentDetails, setBankPaymentDetails] = useState(createDefaultBankPaymentDetails());
   const [initialLoading, setInitialLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -31,6 +33,12 @@ export default function PaymentDetailsPage() {
 
   const loadPaymentDetails = useCallback(async () => {
     if (!token) return;
+    const cachedDetails = getCache("admin-payment-details:list");
+    if (cachedDetails) {
+      setBankPaymentDetails(cachedDetails);
+      setInitialLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch("/api/admin/settings", {
@@ -42,9 +50,11 @@ export default function PaymentDetailsPage() {
         throw new Error(data?.error || "Failed to load payment details.");
       }
 
-      setBankPaymentDetails(
-        data.bankPaymentDetails?.length ? data.bankPaymentDetails : createDefaultBankPaymentDetails()
-      );
+      const nextDetails =
+        data.bankPaymentDetails?.length ? data.bankPaymentDetails : createDefaultBankPaymentDetails();
+
+      setBankPaymentDetails(nextDetails);
+      setCache("admin-payment-details:list", nextDetails);
     } catch (error) {
       console.error("Payment details load error:", error);
       Swal.fire({
@@ -55,7 +65,7 @@ export default function PaymentDetailsPage() {
     } finally {
       setInitialLoading(false);
     }
-  }, [token]);
+  }, [getCache, setCache, token]);
 
   useEffect(() => {
     loadPaymentDetails();
@@ -163,6 +173,8 @@ export default function PaymentDetailsPage() {
       if (!response.ok) {
         throw new Error(data?.error || "Failed to save payment details.");
       }
+
+      setCache("admin-payment-details:list", bankPaymentDetails);
 
       Swal.fire({
         icon: "success",

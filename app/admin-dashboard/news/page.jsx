@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import { BellRing, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 
 function formatDate(value) {
@@ -21,6 +22,7 @@ const emptyForm = { title: "", message: "" };
 
 export default function AdminNewsPage() {
   const { token } = useFirebaseAuth();
+  const { getCache, setCache } = useAdminDashboardCache();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -34,6 +36,12 @@ export default function AdminNewsPage() {
 
   const loadNotifications = useCallback(async () => {
     if (!token) return;
+    const cachedNotifications = getCache("admin-news:list");
+    if (cachedNotifications) {
+      setNotifications(cachedNotifications);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/admin/notifications", {
@@ -45,13 +53,14 @@ export default function AdminNewsPage() {
         throw new Error(data?.error || "Failed to load notifications");
       }
       setNotifications(data.notifications || []);
+      setCache("admin-news:list", data.notifications || []);
     } catch (error) {
       console.error("LOAD ADMIN NEWS ERROR:", error);
       Swal.fire({ icon: "error", title: "Load failed", text: error.message || "Could not load news." });
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [getCache, setCache, token]);
 
   useEffect(() => {
     loadNotifications();
@@ -89,9 +98,17 @@ export default function AdminNewsPage() {
       }
 
       if (isEditing) {
-        setNotifications((prev) => prev.map((item) => (item.id === editingId ? data.notification : item)));
+        setNotifications((prev) => {
+          const nextNotifications = prev.map((item) => (item.id === editingId ? data.notification : item));
+          setCache("admin-news:list", nextNotifications);
+          return nextNotifications;
+        });
       } else {
-        setNotifications((prev) => [data.notification, ...prev]);
+        setNotifications((prev) => {
+          const nextNotifications = [data.notification, ...prev];
+          setCache("admin-news:list", nextNotifications);
+          return nextNotifications;
+        });
       }
 
       resetForm();
@@ -139,7 +156,11 @@ export default function AdminNewsPage() {
         throw new Error(data?.error || "Delete failed");
       }
 
-      setNotifications((prev) => prev.filter((entry) => entry.id !== item.id));
+      setNotifications((prev) => {
+        const nextNotifications = prev.filter((entry) => entry.id !== item.id);
+        setCache("admin-news:list", nextNotifications);
+        return nextNotifications;
+      });
       if (editingId === item.id) {
         resetForm();
       }

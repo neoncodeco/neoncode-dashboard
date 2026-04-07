@@ -7,10 +7,12 @@ import {
   Mail, User, Database, Activity, Search
 } from "lucide-react";
 import Image from "next/image";
+import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 
 export default function BudgetLogsPage() {
   const { token } = useFirebaseAuth();
+  const { getCache, setCache } = useAdminDashboardCache();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -21,6 +23,15 @@ export default function BudgetLogsPage() {
   const limit = 20;
 
   const fetchLogs = useCallback(async (page) => {
+    const cacheKey = `admin-meta-logs:${page}:${limit}`;
+    const cachedLogs = getCache(cacheKey);
+    if (cachedLogs) {
+      setLogs(cachedLogs.logs || []);
+      setTotalLogs(cachedLogs.totalLogs || 0);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch(`/api/admin/ads-request/spending-logs?page=${page}&limit=${limit}`, {
@@ -30,10 +41,11 @@ export default function BudgetLogsPage() {
       if (json.success) {
         setLogs(json.data);
         setTotalLogs(json.total);
+        setCache(cacheKey, { logs: json.data || [], totalLogs: json.total || 0 });
       }
     } catch (error) { console.error(error); }
     finally { setLoading(false); }
-  }, [token]);
+  }, [getCache, limit, setCache, token]);
 
   useEffect(() => {
     if (token) fetchLogs(currentPage);

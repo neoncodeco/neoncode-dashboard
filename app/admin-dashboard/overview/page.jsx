@@ -21,17 +21,27 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import Link from "next/link";
 
 export default function AdminDashboard() {
   const { token } = useFirebaseAuth();
+  const { getCache, setCache } = useAdminDashboardCache();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState("all"); // Default range
 
   useEffect(() => {
     if (!token) return;
+    const cacheKey = `admin-overview:${range}`;
+    const cachedData = getCache(cacheKey);
+
+    if (cachedData) {
+      setData(cachedData);
+      setLoading(false);
+      return;
+    }
 
     const fetchStats = async () => {
       setLoading(true);
@@ -44,7 +54,10 @@ export default function AdminDashboard() {
           },
         });
         const result = await res.json();
-        if (result.ok) setData(result.data);
+        if (result.ok) {
+          setData(result.data);
+          setCache(cacheKey, result.data);
+        }
       } catch (err) {
         console.error("Fetch error:", err);
       } finally {
@@ -53,7 +66,7 @@ export default function AdminDashboard() {
     };
 
     fetchStats();
-  }, [token, range]);
+  }, [getCache, range, setCache, token]);
 
   // CSV Download Logic
   const handleDownload = () => {

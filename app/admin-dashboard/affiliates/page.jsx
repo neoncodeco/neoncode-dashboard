@@ -14,6 +14,7 @@ import {
   TrendingUp,
   Loader2
 } from "lucide-react";
+import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import Swal from "sweetalert2";
 
@@ -33,6 +34,7 @@ const getStatusClasses = (status) => {
 
 export default function AffiliatePayoutsPage() {
   const { token } = useFirebaseAuth();
+  const { getCache, setCache } = useAdminDashboardCache();
 
   const [requests, setRequests] = useState([]);
   const [filter, setFilter] = useState("All");
@@ -41,7 +43,16 @@ export default function AffiliatePayoutsPage() {
   const [initialLoading, setInitialLoading] = useState(true);
 
   // --- LOAD REQUESTS ---
-  const loadRequests = useCallback(async () => {
+  const loadRequests = useCallback(async (options = {}) => {
+    if (!options.force) {
+      const cachedRequests = getCache("admin-affiliates:list");
+      if (cachedRequests) {
+        setRequests(cachedRequests);
+        setInitialLoading(false);
+        return;
+      }
+    }
+
     try {
       const res = await fetch("/api/admin/affiliate/list", {
         method: "GET",
@@ -50,13 +61,14 @@ export default function AffiliatePayoutsPage() {
       const json = await res.json();
       if (json.ok && json.data) {
         setRequests(json.data);
+        setCache("admin-affiliates:list", json.data);
       }
     } catch (error) {
       console.error("Error fetching requests:", error);
     } finally {
       setInitialLoading(false);
     }
-  }, [token]);
+  }, [getCache, setCache, token]);
 
   useEffect(() => {
     if (token) loadRequests();
@@ -108,7 +120,7 @@ export default function AffiliatePayoutsPage() {
 
       if (res.ok) {
         Swal.fire('Success', `Request has been ${actionText}d.`, 'success');
-        loadRequests();
+        loadRequests({ force: true });
       } else {
         const json = await res.json();
         Swal.fire('Error', json.message || "Failed to process request", 'error');

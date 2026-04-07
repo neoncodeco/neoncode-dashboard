@@ -13,20 +13,30 @@ import {
   CheckCircle,
   XCircle
 } from "lucide-react";
+import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import Swal from "sweetalert2";
 
 export default function TransactionsPage() {
 
   const { token, role, loading: authLoading } = useFirebaseAuth();
+  const { getCache, setCache } = useAdminDashboardCache();
 
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   // ------------ Fetch Payments --------------
-  const loadPayments = useCallback(async () => {
+  const loadPayments = useCallback(async (options = {}) => {
     if (!token) return; // wait until auth ready
+    if (!options.force) {
+      const cachedPayments = getCache("admin-transactions:list");
+      if (cachedPayments) {
+        setPayments(cachedPayments);
+        setLoading(false);
+        return;
+      }
+    }
 
     setLoading(true);
     try {
@@ -40,6 +50,7 @@ export default function TransactionsPage() {
 
       if (data.ok) {
         setPayments(data.payments);
+        setCache("admin-transactions:list", data.payments || []);
       } else {
         console.log("API Error:", data.error);
       }
@@ -47,7 +58,7 @@ export default function TransactionsPage() {
       console.log("Fetch error:", e);
     }
     setLoading(false);
-  }, [token]);
+  }, [getCache, setCache, token]);
 
   useEffect(() => {
     if (!token) return;
@@ -94,7 +105,7 @@ export default function TransactionsPage() {
         background: "#ffffff",
         color: "#0f172a",
       });
-      loadPayments(); // reload table
+      loadPayments({ force: true }); // reload table
     } else {
       await Swal.fire({
         title: "Action failed",

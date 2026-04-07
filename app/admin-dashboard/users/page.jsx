@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search, Shield, Trash2, Download, UserCheck, UserX, Clock, Users } from "lucide-react";
+import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import ManageUserModal from "@/components/ManageUserModal";
 import Swal from "sweetalert2";
@@ -31,6 +32,7 @@ const roleColor = (role) => {
 
 export default function AllUsersPage() {
   const { token, user } = useFirebaseAuth();
+  const { getCache, setCache } = useAdminDashboardCache();
 
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
@@ -39,8 +41,16 @@ export default function AllUsersPage() {
   const [deletingUserId, setDeletingUserId] = useState("");
 
   /* ================= LOAD USERS ================= */
-  const loadUsers = useCallback(async () => {
+  const loadUsers = useCallback(async (options = {}) => {
     if (!token) return;
+    if (!options.force) {
+      const cachedUsers = getCache("admin-users:list");
+      if (cachedUsers) {
+        setUsers(cachedUsers);
+        setLoading(false);
+        return;
+      }
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/admin/users/list", {
@@ -48,13 +58,15 @@ export default function AllUsersPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "Failed to load users");
-      setUsers(Array.isArray(json.users) ? json.users.filter((u) => u.userId) : []);
+      const nextUsers = Array.isArray(json.users) ? json.users.filter((u) => u.userId) : [];
+      setUsers(nextUsers);
+      setCache("admin-users:list", nextUsers);
     } catch (err) {
       console.error("LOAD USERS ERROR:", err);
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [getCache, setCache, token]);
 
   useEffect(() => {
     loadUsers();
@@ -132,7 +144,7 @@ export default function AllUsersPage() {
         setSelectedUser(null);
       }
 
-      await loadUsers();
+      await loadUsers({ force: true });
       await Swal.fire({
         title: "User deleted",
         text: `${targetUser.email || targetUser.userId} was removed successfully.`,
