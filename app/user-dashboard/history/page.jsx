@@ -45,6 +45,32 @@ const HistoryPage = () => {
     }
   };
 
+  const formatHistoryDateTime = (value) => {
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return { date: "--", time: "--" };
+    }
+
+    return {
+      date: date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+      time: date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      }),
+    };
+  };
+
+  const formatAmount = (value) => {
+    const amount = Number(value || 0);
+    return Number.isInteger(amount) ? amount.toString() : amount.toFixed(2);
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -76,36 +102,61 @@ const HistoryPage = () => {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {history.length > 0 ? (
-                history.map((item) => (
-                  <tr key={item._id} className="hover:bg-blue-50/30 transition-all duration-200">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-600 font-medium">
-                        {new Date(item.createdAt || item.updatedAt).toLocaleDateString('en-US', {
-                          month: 'short', day: 'numeric', year: 'numeric'
-                        })}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                        {item.type?.replaceAll("_", " ")}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-semibold text-gray-800">{item.title}</div>
-                      {item.description && (
-                        <div className="text-xs text-gray-400 mt-0.5 line-clamp-1 max-w-xs">
-                          {item.description}
+                history.map((item) => {
+                  const formattedDateTime = formatHistoryDateTime(item.createdAt || item.updatedAt);
+                  const budgetMeta = item.meta || null;
+
+                  return (
+                    <tr key={item._id} className="hover:bg-blue-50/30 transition-all duration-200">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span className="text-sm text-gray-700 font-semibold">{formattedDateTime.date}</span>
+                          <span className="text-xs text-gray-400 font-medium mt-1">{formattedDateTime.time}</span>
                         </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${getStatusStyle(item.status)}`}>
-                        <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-current"></span>
-                        {item.status?.toUpperCase()}
-                      </span>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                          {item.type?.replaceAll("_", " ")}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-semibold text-gray-800">{item.title}</div>
+
+                        {budgetMeta?.accountId ? (
+                          <div className="mt-2 space-y-2">
+                            {item.description ? (
+                              <div className="text-xs text-gray-400 max-w-md">{item.description}</div>
+                            ) : null}
+                            <div className="text-xs text-gray-500">
+                              Account ID: <span className="font-semibold text-gray-700">{budgetMeta.accountId}</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-600">
+                                Old: ${formatAmount(budgetMeta.oldLimit)}
+                              </span>
+                              <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                                New: ${formatAmount(budgetMeta.newLimit)}
+                              </span>
+                              <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                                Change: ${formatAmount(budgetMeta.changeAmount)}
+                              </span>
+                            </div>
+                          </div>
+                        ) : item.description ? (
+                          <div className="text-xs text-gray-400 mt-0.5 line-clamp-2 max-w-xs">
+                            {item.description}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${getStatusStyle(item.status)}`}>
+                          <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-current"></span>
+                          {item.status?.toUpperCase()}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td colSpan="4" className="py-20 text-center">

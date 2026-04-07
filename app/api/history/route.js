@@ -50,6 +50,19 @@ export async function GET(req) {
       type: "META_BUDGET_UPDATE",
       title: "Meta Ad Account Budget Updated",
       description: `Account ID: ${item.ad_account_id} | Old: ${Number(item.old_limit || 0)} -> New: ${Number(item.new_limit || 0)}`,
+      meta: {
+        accountId: item.ad_account_id || "",
+        oldLimit: Number(item.old_limit || 0),
+        newLimit: Number(item.new_limit || 0),
+        changeAmount:
+          item.change_amount !== undefined
+            ? Number(item.change_amount || 0)
+            : Number(item.new_limit || 0) - Number(item.old_limit || 0),
+        walletBefore:
+          item.wallet_before !== undefined ? Number(item.wallet_before || 0) : null,
+        walletAfter:
+          item.wallet_after !== undefined ? Number(item.wallet_after || 0) : null,
+      },
       status: item.approved === false ? "failed" : "success",
     }));
 
