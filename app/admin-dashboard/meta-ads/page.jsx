@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import { normalizeAssignedAccounts } from "@/lib/adAccountRequests";
 import Swal from "sweetalert2";
 
 /* -------- STATUS UI CONFIG (Original Design Intact) -------- */
@@ -67,7 +68,7 @@ export default function AdminAdAccountApprove() {
   const [search, setSearch] = useState("");
   const [editMap, setEditMap] = useState({});
   const [showManualAdd, setShowManualAdd] = useState(true);
-  const [newAccount, setNewAccount] = useState({
+  const [newAccounts, setNewAccounts] = useState([{
     accountName: "",
     bmId: "",
     monthlyBudget: 0,
@@ -75,7 +76,7 @@ export default function AdminAdAccountApprove() {
     userEmail: "",
     MetaAccountID: "",
     status: "active",
-  });
+  }]);
 
   // ১. ডাটা লোড ফাংশন (সেটিংস এবং রিকোয়েস্ট লিস্ট সহ)
   const load = useCallback(async (options = {}) => {
@@ -164,6 +165,32 @@ export default function AdminAdAccountApprove() {
     setEditMap((prev) => ({ ...prev, [id]: { ...(prev[id] || {}), [key]: value } }));
   };
 
+  const createEmptyManualAccount = () => ({
+    accountName: "",
+    bmId: "",
+    monthlyBudget: 0,
+    userUid: "",
+    userEmail: "",
+    MetaAccountID: "",
+    status: "active",
+  });
+
+  const addManualRow = () => {
+    setNewAccounts((prev) => [...prev, createEmptyManualAccount()]);
+  };
+
+  const removeManualRow = (index) => {
+    setNewAccounts((prev) => (prev.length === 1 ? prev : prev.filter((_, i) => i !== index)));
+  };
+
+  const updateManualRow = (index, field, value) => {
+    setNewAccounts((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  };
+
   const saveRow = async (row) => {
     const payload = {
       id: row._id,
@@ -193,13 +220,26 @@ export default function AdminAdAccountApprove() {
   };
 
   const addManualAccount = async () => {
-    if (!newAccount.accountName || !newAccount.bmId) return Swal.fire("Missing Info");
+    const assignedAccounts = normalizeAssignedAccounts(newAccounts);
+    if (assignedAccounts.length === 0) return Swal.fire("Missing Info");
     const res = await fetch("/api/admin/ads-request/approve", {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ ...newAccount, monthlyBudget: Number(newAccount.monthlyBudget || 0) }),
+      body: JSON.stringify({
+        ...assignedAccounts[0],
+        assignedAccounts,
+        monthlyBudget: Number(assignedAccounts[0]?.monthlyBudget || 0),
+        accountName: assignedAccounts[0]?.accountName || "Manual Account",
+        bmId: assignedAccounts[0]?.bmId || "",
+        userUid: assignedAccounts[0]?.userUid || "",
+        userEmail: assignedAccounts[0]?.userEmail || "",
+        MetaAccountID: assignedAccounts[0]?.MetaAccountID || "",
+      }),
     });
-    if (res.ok) { load({ force: true }); }
+    if (res.ok) {
+      setNewAccounts([createEmptyManualAccount()]);
+      load({ force: true });
+    }
   };
 
   const filtered = useMemo(() => {
@@ -245,14 +285,24 @@ export default function AdminAdAccountApprove() {
             <button onClick={() => setShowManualAdd(!showManualAdd)} className="admin-accent-button rounded-lg px-4 py-2 text-sm font-bold">{showManualAdd ? "Hide Form" : "Show Form"}</button>
           </div>
           {showManualAdd && (
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-7">
-              <input placeholder="Account Name" value={newAccount.accountName} onChange={(e) => setNewAccount((p) => ({ ...p, accountName: e.target.value }))} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
-              <input placeholder="BM ID" value={newAccount.bmId} onChange={(e) => setNewAccount((p) => ({ ...p, bmId: e.target.value }))} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
-              <input placeholder="Budget" type="number" value={newAccount.monthlyBudget} onChange={(e) => setNewAccount((p) => ({ ...p, monthlyBudget: e.target.value }))} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
-              <input placeholder="User UID" value={newAccount.userUid} onChange={(e) => setNewAccount((p) => ({ ...p, userUid: e.target.value }))} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
-              <input placeholder="User Email" value={newAccount.userEmail} onChange={(e) => setNewAccount((p) => ({ ...p, userEmail: e.target.value }))} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
-              <input placeholder="Meta ID" value={newAccount.MetaAccountID} onChange={(e) => setNewAccount((p) => ({ ...p, MetaAccountID: e.target.value }))} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
-              <button onClick={addManualAccount} className="admin-accent-button rounded-lg px-4 py-3 text-sm font-bold">+ Add Manual</button>
+            <div className="space-y-3">
+              {newAccounts.map((account, index) => (
+                <div key={index} className="grid grid-cols-1 gap-2 rounded-2xl border border-gray-100 bg-gray-50 p-3 md:grid-cols-2 xl:grid-cols-7">
+                  <input placeholder="Account Name" value={account.accountName} onChange={(e) => updateManualRow(index, "accountName", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
+                  <input placeholder="BM ID" value={account.bmId} onChange={(e) => updateManualRow(index, "bmId", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
+                  <input placeholder="Budget" type="number" value={account.monthlyBudget} onChange={(e) => updateManualRow(index, "monthlyBudget", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
+                  <input placeholder="User UID" value={account.userUid} onChange={(e) => updateManualRow(index, "userUid", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
+                  <input placeholder="User Email" value={account.userEmail} onChange={(e) => updateManualRow(index, "userEmail", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
+                  <input placeholder="Meta ID" value={account.MetaAccountID} onChange={(e) => updateManualRow(index, "MetaAccountID", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => removeManualRow(index)} disabled={newAccounts.length === 1} className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-600 disabled:opacity-40">Remove</button>
+                  </div>
+                </div>
+              ))}
+              <div className="flex flex-wrap gap-3">
+                <button type="button" onClick={addManualRow} className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700">+ Add Another Account</button>
+                <button onClick={addManualAccount} className="admin-accent-button rounded-lg px-4 py-3 text-sm font-bold">Save Bundle</button>
+              </div>
             </div>
           )}
         </div>

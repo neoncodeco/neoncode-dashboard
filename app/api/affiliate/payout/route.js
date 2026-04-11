@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import { ensureWritableUser } from "@/lib/userAccess";
+import { parseWholeNumberAmount } from "@/lib/wholeAmount";
 
 
 function validateAccount(method, account) {
@@ -36,9 +37,10 @@ export async function POST(req) {
 
     /* ---------- BODY ---------- */
     const { amount, method, account, saveMethod } = await req.json();
+    const parsedAmount = parseWholeNumberAmount(amount);
 
-    if (!amount || amount <= 0) {
-      return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+    if (parsedAmount === null) {
+      return NextResponse.json({ error: "Invalid whole-number amount" }, { status: 400 });
     }
 
     const allowedMethods = ["bkash", "nagad", "bank", "crypto"];
@@ -69,7 +71,7 @@ export async function POST(req) {
     const withdrawable =
       (user.referralStats?.totalReferIncome || 0)
 
-    if (amount > withdrawable) {
+    if (parsedAmount > withdrawable) {
       return NextResponse.json(
         { error: "Insufficient referral balance" },
         { status: 400 }
@@ -102,7 +104,7 @@ export async function POST(req) {
       userUid: decoded.uid,
       userName: user.name,
       userEmail: user.email,
-      amount,
+      amount: parsedAmount,
       method,
       account,
       status: "pending",
@@ -114,9 +116,9 @@ export async function POST(req) {
       userUid: decoded.uid,
       type: "WITHDRAW_REQUEST",
       title: "Referral Withdraw Request",
-      description: `Amount: ${amount} | Method: ${method}`,
+      description: `Amount: ${parsedAmount} | Method: ${method}`,
       status: "pending",
-      amount,
+      amount: parsedAmount,
       createdAt: new Date(),
     });
 

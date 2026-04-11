@@ -3,6 +3,7 @@ import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import { convertBdtToUsd, DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@/lib/currency";
 import { ensureWritableUser } from "@/lib/userAccess";
+import { parseWholeNumberAmount } from "@/lib/wholeAmount";
 
 const MIN_BANK_PAYMENT_AMOUNT_BDT = 1000;
 
@@ -19,11 +20,11 @@ export async function POST(req) {
     }
 
     const { amount, trxId, screenshotUrl } = await req.json();
-    const amountBdt = Number(amount);
+    const amountBdt = parseWholeNumberAmount(amount);
 
-    if (!amountBdt || amountBdt <= 0 || !trxId || !screenshotUrl) {
+    if (amountBdt === null || !trxId || !screenshotUrl) {
       return NextResponse.json(
-        { ok: false, error: "Valid BDT amount, transaction ID, and screenshot are required" },
+        { ok: false, error: "Valid whole-number BDT amount, transaction ID, and screenshot are required" },
         { status: 400 }
       );
     }

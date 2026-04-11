@@ -1,18 +1,26 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import Link from "next/link";
 import {
-  Check,
-  Copy,
-  Sparkles,
+  ArrowUpRight,
+  CreditCard,
+  LineChart as LineChartIcon,
+  Wallet,
+  Users,
+  ShieldCheck,
+  ReceiptText,
+  BadgeDollarSign,
+  TrendingUp,
+  CalendarDays,
 } from "lucide-react";
 import {
-  BarChart,
-  Bar,
+  Area,
+  AreaChart,
   CartesianGrid,
   Cell,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -20,149 +28,82 @@ import {
 } from "recharts";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import CurrencyAmount from "@/components/CurrencyAmount";
-import MetaSpendingOverview from "@/components/MetaSpendingOverview";
+import {
+  MetaSpendingOverviewPanel,
+  MetaSpendingSummaryCardsPanel,
+  useMetaSpendingOverviewData,
+} from "@/components/MetaSpendingOverview";
 import { formatUsd, resolveUsdToBdtRate } from "@/lib/currency";
 import MobileWalletCard from "@/components/MobileWalletCard";
 
-const chartPalette = ["#99D85A", "#8ED868", "#73C8FF", "#45CF9B", "#A4E05F", "#67A3FF", "#7A8DF3"];
+const FUND_COLORS = ["#B7DF69", "#8ED868", "#73C8FF", "#67A3FF", "#A4E05F"];
+const TOPUP_CHART_COLOR = "#9BC44F";
+const TOPUP_CHART_TINT = "rgba(155, 196, 79, 0.14)";
+const TOPUP_CHART_TINT_SOFT = "rgba(155, 196, 79, 0.03)";
 
-function StatCard({
-  title,
-  value,
-  usdToBdtRate,
-  actions,
-  meta,
-  variant = "default",
-  logoSrc,
-  profileImage,
-}) {
-  const accentClass =
-    variant === "accent"
-      ? "from-[rgba(183,223,105,0.24)] to-[rgba(183,223,105,0.08)]"
-      : variant === "muted"
-      ? "from-[rgba(255,255,255,0.05)] to-[rgba(255,255,255,0.02)]"
-      : "from-[rgba(122,146,201,0.12)] to-[rgba(255,255,255,0.02)]";
+const formatShortDate = (value) =>
+  new Date(value).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+  });
 
-  return (
-    <div className={`dashboard-subpanel relative overflow-hidden rounded-[28px] bg-gradient-to-br ${accentClass} p-4 sm:p-5`}>
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.22em] dashboard-text-faint">
-            {title}
-          </p>
-          {meta ? <p className="mt-1 text-[11px] font-semibold dashboard-text-muted">{meta}</p> : null}
-        </div>
-        <div className="flex items-center gap-1.5 opacity-80">
-          <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)]">
-            {logoSrc ? <Image src={logoSrc} alt="Neon Code" width={18} height={18} className="h-[18px] w-[18px] object-contain" /> : null}
-          </span>
-          <span className="-ml-4 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)]">
-            {profileImage ? (
-              <Image src={profileImage} alt="Profile" width={32} height={32} className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-[10px] font-black dashboard-text-muted">NC</span>
-            )}
-          </span>
-        </div>
-      </div>
-      <CurrencyAmount
-        value={value}
-        usdToBdtRate={usdToBdtRate}
-        primaryClassName="mt-2 text-[2rem] font-black leading-none dashboard-text-strong"
-        secondaryClassName="mt-1 text-[11px] font-semibold dashboard-text-muted"
-      />
+const formatLongDate = (value) =>
+  new Date(value).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 
-      {actions ? <div className="mt-5">{actions}</div> : null}
-    </div>
-  );
-}
-
-function StatusRow({ label, value, tone = "success" }) {
+function MetricCard({ title, value, subtext, icon: Icon, tone = "default" }) {
   const toneClass =
-    tone === "warn"
-      ? "bg-[var(--dashboard-warn-soft)] text-[#efb45d]"
-      : tone === "danger"
-      ? "bg-[var(--dashboard-danger-soft)] text-[#ff8b8b]"
-      : "bg-[var(--dashboard-success-soft)] text-[var(--dashboard-accent)]";
+    tone === "accent"
+      ? "border-emerald-400/20 bg-[linear-gradient(180deg,rgba(183,223,105,0.18),rgba(255,255,255,0.04))]"
+      : tone === "soft"
+      ? "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))]"
+      : "border-white/10 bg-[linear-gradient(180deg,rgba(115,200,255,0.12),rgba(255,255,255,0.03))]";
 
   return (
-    <div className="dashboard-subpanel flex items-center justify-between p-3">
-      <div className="flex items-center gap-3">
-        <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${toneClass}`}>
-          <Sparkles size={16} />
-        </span>
+    <div className={`dashboard-subpanel rounded-[28px] border p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] ${toneClass}`}>
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold dashboard-text-strong">{label}</p>
-          <p className="text-xs dashboard-text-muted">{value}</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] dashboard-text-faint">{title}</p>
+          <div className="mt-3 text-[1.9rem] font-black leading-none dashboard-text-strong">{value}</div>
+          <p className="mt-2 text-xs font-medium dashboard-text-muted">{subtext}</p>
+        </div>
+        <div className="dashboard-accent-surface flex h-12 w-12 items-center justify-center rounded-2xl text-white">
+          <Icon size={20} />
         </div>
       </div>
-      <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${toneClass}`}>
-        {tone === "warn" ? "Setup Required" : "Active"}
-      </span>
     </div>
   );
 }
 
-// function MobileWalletCard({
-//   userData,
-//   usdToBdtRate,
-//   totalPayout,
-// }) {
-//   return (
-//     <div className="mx-auto w-full max-w-[320px] rounded-[30px] border border-[var(--dashboard-frame-border)] bg-[linear-gradient(180deg,var(--dashboard-frame-bg),var(--dashboard-panel-bg))] p-4 shadow-[var(--dashboard-phone-shadow)]">
-//       <div className="dashboard-subpanel rounded-[24px] border border-[var(--dashboard-frame-border)] bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] p-5">
-//         <p className="text-[11px] font-black uppercase tracking-[0.18em] dashboard-text-faint">
-//           Current Balance
-//         </p>
-//         <CurrencyAmount
-//           value={userData.walletBalance}
-//           usdToBdtRate={usdToBdtRate}
-//           primaryClassName="mt-2 text-[1.95rem] font-black leading-none dashboard-text-strong"
-//           secondaryClassName="mt-1 text-[11px] font-semibold dashboard-text-muted"
-//         />
+function InfoRow({ label, value }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-[var(--dashboard-frame-border)] py-3 last:border-b-0">
+      <span className="text-[11px] font-black uppercase tracking-[0.18em] dashboard-text-faint">{label}</span>
+      <span className="truncate text-sm font-semibold dashboard-text-strong">{value}</span>
+    </div>
+  );
+}
 
-//         <div className="mt-5 grid grid-cols-2 gap-4">
-//           <div>
-//             <p className="text-[10px] font-black uppercase tracking-[0.16em] dashboard-text-faint">
-//               Topup
-//             </p>
-//             <p className="mt-1 text-[1rem] font-black leading-none dashboard-text-strong">
-//               {formatUsd(Number(userData.topupBalance || 0))}
-//             </p>
-//           </div>
-//           <div>
-//             <p className="text-[10px] font-black uppercase tracking-[0.16em] dashboard-text-faint">
-//               Payout
-//             </p>
-//             <p className="mt-1 text-[1rem] font-black leading-none dashboard-text-strong">
-//               {formatUsd(totalPayout)}
-//             </p>
-//           </div>
-//         </div>
-
-//         <div className="mt-5 grid grid-cols-2 gap-2.5">
-//           <Link
-//             href="/user-dashboard/payment-methods"
-//             className="dashboard-accent-surface rounded-2xl px-3 py-3 text-center text-sm font-bold"
-//           >
-//             Send Money
-//           </Link>
-//           <Link
-//             href="/user-dashboard/payment-methods"
-//             className="dashboard-muted-button rounded-2xl px-3 py-3 text-center text-sm font-bold"
-//           >
-//             Add Money
-//           </Link>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
+function EmptyChartState({ title, message }) {
+  return (
+    <div className="flex h-[320px] flex-col items-center justify-center rounded-[28px] border border-dashed border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)] px-6 text-center">
+      <div className="dashboard-accent-surface mb-4 flex h-14 w-14 items-center justify-center rounded-2xl">
+        <LineChartIcon size={22} />
+      </div>
+      <h3 className="text-lg font-black dashboard-text-strong">{title}</h3>
+      <p className="mt-2 max-w-sm text-sm dashboard-text-muted">{message}</p>
+    </div>
+  );
+}
 
 export default function OverviewPage() {
   const { userData, token } = useFirebaseAuth();
-  const [copiedReferral, setCopiedReferral] = React.useState(false);
+  const spendingOverview = useMetaSpendingOverviewData();
   const [topupHistory, setTopupHistory] = React.useState([]);
+  const [topupCount, setTopupCount] = React.useState(0);
   const [lastTopupDate, setLastTopupDate] = React.useState("");
 
   React.useEffect(() => {
@@ -179,38 +120,31 @@ export default function OverviewPage() {
         const json = await res.json();
         if (!res.ok || !json?.ok || !active) return;
 
-        const aggregated = (json.data || [])
-          .filter((item) => item.status === "approved")
-          .reduce((acc, item) => {
-            const label = new Date(item.date).toLocaleDateString("en-GB", {
-              weekday: "short",
-            });
-            acc[label] = (acc[label] || 0) + Number(item.amount || 0);
-            return acc;
-          }, {});
-
         const approvedItems = (json.data || [])
           .filter((item) => item.status === "approved" && item.date)
-          .sort((a, b) => new Date(b.date) - new Date(a.date));
+          .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        if (approvedItems[0]?.date) {
-          setLastTopupDate(
-            new Date(approvedItems[0].date).toLocaleDateString("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })
-          );
+        setTopupCount(approvedItems.length);
+
+        if (approvedItems.length > 0) {
+          setLastTopupDate(formatLongDate(approvedItems[approvedItems.length - 1].date));
         }
 
-        const historyData = Object.entries(aggregated)
-          .slice(-7)
-          .map(([name, value], index) => ({
-            name,
-            value,
-            fill: chartPalette[index % chartPalette.length],
-          }));
+        const dailyMap = approvedItems.reduce((acc, item) => {
+          const date = new Date(item.date);
+          const key = date.toISOString().slice(0, 10);
+          if (!acc[key]) {
+            acc[key] = {
+              date: key,
+              label: formatShortDate(date),
+              total: 0,
+            };
+          }
+          acc[key].total += Number(item.amount || 0);
+          return acc;
+        }, {});
 
+        const historyData = Object.values(dailyMap).slice(-7);
         setTopupHistory(historyData);
       } catch (error) {
         console.error("Failed to load topup history:", error);
@@ -234,33 +168,62 @@ export default function OverviewPage() {
 
   const stats = userData.referralStats || {};
   const usdToBdtRate = resolveUsdToBdtRate(userData?.currencyConfig?.usdToBdtRate);
-  const appBaseUrl =
-    typeof window !== "undefined" ? window.location.origin : "https://app.neoncode.co";
-  const referralLink = `${appBaseUrl}/ref/${userData?.referralCode || ""}`;
+
   const totalPayout = Number(stats.totalPayout || 0);
   const totalReferrers = Number(stats.totalReferrers || 0);
   const totalReferIncome = Number(stats.totalReferIncome || 0);
   const totalTopup = Number(userData.topupBalance || 0);
   const totalWallet = Number(userData.walletBalance || 0);
-  const profileId = userData?.referralCode || userData?.userId?.slice(-6) || "585D93";
-  const chartData = [
-    { name: "Wallet", value: totalWallet, fill: "#B7DF69" },
-    { name: "Topup", value: totalTopup, fill: "#8ED868" },
-    { name: "Affiliate", value: totalReferIncome, fill: "#73C8FF" },
-    { name: "Payout", value: totalPayout, fill: "#67A3FF" },
+  const totalFunds = totalWallet + totalTopup + totalReferIncome + totalPayout;
+  const firstTopupPoint = topupHistory[0]?.total || 0;
+  const lastTopupPoint = topupHistory[topupHistory.length - 1]?.total || 0;
+  const trendPercent =
+    firstTopupPoint > 0
+      ? ((lastTopupPoint - firstTopupPoint) / firstTopupPoint) * 100
+      : lastTopupPoint > 0
+      ? 100
+      : 0;
+  const isTrendPositive = trendPercent >= 0;
+  const topupPeriodLabel =
+    topupHistory.length > 1
+      ? `${topupHistory[0].label} - ${topupHistory[topupHistory.length - 1].label}`
+      : topupHistory[0]?.label || "Last approved payment day";
+
+  const pieData = [
+    { name: "Wallet", value: totalWallet },
+    { name: "Topup", value: totalTopup },
+    { name: "Referral", value: totalReferIncome },
+    { name: "Payout", value: totalPayout },
+  ].filter((item) => item.value > 0);
+
+  const accountHealth = [
+    {
+      label: "Account Status",
+      value: userData.status || "Active",
+    },
+    {
+      label: "Role",
+      value: userData.role || "user",
+    },
+    {
+      label: "Referral Code",
+      value: userData.referralCode || "Not set",
+    },
+    {
+      label: "Member Since",
+      value: userData.createdAt ? formatLongDate(userData.createdAt) : "Unknown",
+    },
   ];
-  const copyReferralLink = async () => {
-    try {
-      await navigator.clipboard.writeText(referralLink);
-      setCopiedReferral(true);
-      window.setTimeout(() => setCopiedReferral(false), 2200);
-    } catch (error) {
-      console.error("Failed to copy referral link:", error);
-    }
-  };
+
+  const quickLinks = [
+    { label: "Payment Methods", href: "/user-dashboard/payment-methods", icon: CreditCard },
+    { label: "Activity History", href: "/user-dashboard/history", icon: ReceiptText },
+    { label: "Meta Ads Accounts", href: "/user-dashboard/meta-ads-account", icon: BadgeDollarSign },
+    { label: "Support", href: "/user-dashboard/support", icon: ShieldCheck },
+  ];
 
   return (
-    <div className="space-y-4 p-3 sm:p-4">
+    <div className="space-y-6 p-3 sm:p-4 lg:space-y-8 lg:p-6">
       <div className="xl:hidden">
         <MobileWalletCard
           userData={userData}
@@ -269,179 +232,252 @@ export default function OverviewPage() {
         />
       </div>
 
-      <section className="hidden lg:block">
-        <div className="grid gap-4 lg:grid-cols-3">
-          <StatCard
-            title="Wallet Balance"
-            value={userData.walletBalance}
-            usdToBdtRate={usdToBdtRate}
-            meta={`Client ID ${profileId}`}
-            variant="accent"
-            logoSrc="/Neon Studio icon.png"
-            profileImage={userData?.photo || ""}
-          />
-          <StatCard
-            title="Topup Balance"
-            value={userData.topupBalance}
-            usdToBdtRate={usdToBdtRate}
-            meta={lastTopupDate ? `Last topup ${lastTopupDate}` : "Ready for ad spend and wallet load"}
-            variant="muted"
-            logoSrc="/Neon Studio icon.png"
-            profileImage={userData?.photo || ""}
-          />
-          <StatCard
-            title="Total Payout"
-            value={totalPayout}
-            usdToBdtRate={usdToBdtRate}
-            meta="Payout and transfer actions"
-            logoSrc="/Neon Studio icon.png"
-            profileImage={userData?.photo || ""}
-            actions={
-              <div className="grid gap-2 sm:grid-cols-3">
-                <Link
-                  href="/user-dashboard/payment-methods"
-                  className="dashboard-accent-surface rounded-2xl px-4 py-3 text-center text-sm font-bold"
-                >
-                  Send Money
-                </Link>
-                <Link
-                  href="/user-dashboard/payment-methods"
-                  className="dashboard-muted-button rounded-2xl px-4 py-3 text-center text-sm font-bold"
-                >
-                  Add Money
-                </Link>
-                <Link
-                  href="/user-dashboard/history"
-                  className="dashboard-muted-button rounded-2xl px-4 py-3 text-center text-sm font-bold"
-                >
-                  Withdraw
-                </Link>
-              </div>
-            }
-          />
-        </div>
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <MetricCard
+          title="Wallet Balance"
+          value={<CurrencyAmount value={userData.walletBalance} usdToBdtRate={usdToBdtRate} showSecondary={false} primaryClassName="text-[1.9rem] font-black leading-none dashboard-text-strong" />}
+          subtext="Current cash available in your account"
+          icon={Wallet}
+          tone="accent"
+        />
+        <MetricCard
+          title="Topup Balance"
+          value={<CurrencyAmount value={userData.topupBalance} usdToBdtRate={usdToBdtRate} showSecondary={false} primaryClassName="text-[1.9rem] font-black leading-none dashboard-text-strong" />}
+          subtext={lastTopupDate ? `Last approved on ${lastTopupDate}` : "No approved topup yet"}
+          icon={BadgeDollarSign}
+          tone="soft"
+        />
+        <MetricCard
+          title="Referral Income"
+          value={formatUsd(totalReferIncome)}
+          subtext={`${totalReferrers} active referrals`}
+          icon={Users}
+          tone="soft"
+        />
+        <MetricCard
+          title="Payout Total"
+          value={formatUsd(totalPayout)}
+          subtext="Completed payout value"
+          icon={CreditCard}
+        />
+        <MetricCard
+          title="Total Funds"
+          value={formatUsd(totalFunds)}
+          subtext="Wallet + topup + referral + payout"
+          icon={TrendingUp}
+          tone="accent"
+        />
       </section>
 
-      <section>
-        <div className="mb-4 flex flex-col gap-3 md:mb-5 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-[1.65rem] font-semibold tracking-tight dashboard-text-strong">
-              Activity Analytics
-            </h2>
-            <p className="mt-1 text-sm dashboard-text-muted">
-              Wallet, topup and affiliate performance overview.
-            </p>
-          </div>
+      <MetaSpendingSummaryCardsPanel dataState={spendingOverview} />
 
-          <div className="hidden flex-wrap items-center gap-2 sm:flex">
-            <button type="button" className="dashboard-accent-surface rounded-2xl px-4 py-2 text-sm font-bold">
-              Weekly
-            </button>
-            <button type="button" className="dashboard-muted-button rounded-2xl px-4 py-2 text-sm font-bold">
-              Monthly
-            </button>
-            <button
-              type="button"
-              onClick={copyReferralLink}
-              className="dashboard-accent-surface inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-bold"
-            >
-              {copiedReferral ? <Check size={16} /> : <Copy size={16} />}
-              {copiedReferral ? "Copied" : "Copy Link"}
-            </button>
-          </div>
-        </div>
-
-        <div className="dashboard-analytics-grid h-[250px] rounded-[22px] bg-[var(--dashboard-panel-soft)] p-3 sm:h-[320px] sm:p-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 8, right: 6, left: -16, bottom: 4 }}>
-              <CartesianGrid vertical={false} strokeDasharray="4 7" />
-              <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "var(--dashboard-text-muted)", fontSize: 11 }} />
-              <YAxis tickLine={false} axisLine={false} tick={{ fill: "var(--dashboard-text-muted)", fontSize: 11 }} />
-              <Tooltip
-                cursor={{ fill: "rgba(255,255,255,0.03)" }}
-                formatter={(value) => [formatUsd(Number(value || 0)), "Amount"]}
-              />
-              <Bar dataKey="value" radius={[10, 10, 4, 4]} barSize={34}>
-                {chartData.map((entry, index) => (
-                  <Cell key={`${entry.name}-${index}`} fill={entry.fill || chartPalette[index % chartPalette.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <MetaSpendingOverview className="mt-4" />
-      </section>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="dashboard-subpanel p-4 sm:p-5">
-          <div className="mb-4 flex items-center justify-between">
+      <section className="grid gap-4 xl:grid-cols-[1.5fr_0.9fr]">
+        <div className="dashboard-subpanel rounded-[32px] border border-white/10 p-5 sm:p-6">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h3 className="text-[1.3rem] font-semibold tracking-tight dashboard-text-strong">
-                Earn with Invites
-              </h3>
-              <p className="text-sm dashboard-text-muted">
-                Your payout-ready earning channels.
-              </p>
+              <h2 className="text-xl font-black tracking-tight dashboard-text-strong">Approved Topup Timeline</h2>
+              <p className="mt-1 text-sm dashboard-text-muted">Seven latest approved payment days, visualized as a smooth area trend.</p>
             </div>
-            <button type="button" className="dashboard-accent-surface rounded-2xl px-4 py-2 text-sm font-bold">
-              Invite
-            </button>
+            <div className="flex items-center gap-2 rounded-2xl border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)] px-3 py-2">
+              <CalendarDays size={15} className="dashboard-text-muted" />
+              <span className="text-xs font-bold dashboard-text-muted">Last 7 days</span>
+            </div>
           </div>
 
-          <div className="space-y-3">
-            <StatusRow label="bKash Payout" value="Available for payout requests" />
-            <StatusRow label="Nagad Payout" value="Complete setup to receive transfers" tone="warn" />
-          </div>
-        </section>
+          {topupHistory.length > 0 ? (
+            <div
+              className="rounded-[28px] border border-[var(--dashboard-frame-border)] p-4 sm:p-5"
+              style={{ background: `linear-gradient(180deg, ${TOPUP_CHART_TINT}, ${TOPUP_CHART_TINT_SOFT})` }}
+            >
+              <div className="h-[280px] sm:h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={topupHistory}
+                    margin={{
+                      left: 12,
+                      right: 12,
+                      top: 16,
+                      bottom: 0,
+                    }}
+                  >
+                    <defs>
+                      <linearGradient id="topupAreaFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={TOPUP_CHART_COLOR} stopOpacity={0.38} />
+                        <stop offset="95%" stopColor={TOPUP_CHART_COLOR} stopOpacity={0.04} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid vertical={false} stroke="rgba(148,163,184,0.16)" strokeDasharray="4 8" />
+                    <XAxis
+                      dataKey="label"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      tick={{ fill: "#94A3B8", fontSize: 11, fontWeight: 700 }}
+                    />
+                    <Tooltip
+                      cursor={false}
+                      formatter={(value) => [formatUsd(Number(value || 0)), "Approved topup"]}
+                      labelFormatter={(label) => `Date: ${label}`}
+                      contentStyle={{
+                        borderRadius: "18px",
+                        border: "1px solid rgba(148,163,184,0.22)",
+                        boxShadow: "0 18px 50px rgba(15,23,42,0.12)",
+                        backgroundColor: "#ffffff",
+                        color: "#0f172a",
+                      }}
+                    />
+                    <Area
+                      dataKey="total"
+                      type="natural"
+                      fill="url(#topupAreaFill)"
+                      stroke={TOPUP_CHART_COLOR}
+                      strokeWidth={3}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
 
-        <section className="dashboard-subpanel flex flex-col justify-between p-4 sm:p-5">
-          <div className="mb-6 flex items-center gap-3">
-            <span className="dashboard-accent-surface inline-flex h-12 w-12 items-center justify-center rounded-2xl">
-              <Image
-                src="/neon-code-logo.jpg"
-                alt="Neon Code logo"
-                width={26}
-                height={26}
-                className="h-[26px] w-[26px] object-contain"
-              />
-            </span>
+              <div className="mt-4 flex w-full items-start gap-2 border-t border-[var(--dashboard-frame-border)] pt-4 text-sm">
+                <div className="grid gap-2">
+                  <div
+                    className={`flex items-center gap-2 leading-none font-medium ${isTrendPositive ? "" : "text-amber-300"}`}
+                    style={isTrendPositive ? { color: TOPUP_CHART_COLOR } : undefined}
+                  >
+                    {isTrendPositive ? "Trending up" : "Trending down"} by {Math.abs(trendPercent).toFixed(1)}%
+                    <TrendingUp className={`h-4 w-4 ${isTrendPositive ? "" : "rotate-180"}`} />
+                  </div>
+                  <div className="flex items-center gap-2 leading-none dashboard-text-muted">
+                    {topupPeriodLabel}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <EmptyChartState
+              title="No approved topups yet"
+              message="Once a payment is approved, the timeline will populate here with the latest funding pattern."
+            />
+          )}
+        </div>
+
+        <div className="dashboard-subpanel rounded-[32px] border border-white/10 p-5 sm:p-6">
+          <div className="mb-5">
+            <h2 className="text-xl font-black tracking-tight dashboard-text-strong">Fund Distribution</h2>
+            <p className="mt-1 text-sm dashboard-text-muted">How your money is currently split across key sources.</p>
+          </div>
+
+          {pieData.length > 0 ? (
+            <>
+              <div className="mx-auto h-[240px] max-w-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={68}
+                      outerRadius={96}
+                      paddingAngle={3}
+                      stroke="none"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`${entry.name}-${index}`} fill={FUND_COLORS[index % FUND_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value, name) => [formatUsd(Number(value || 0)), name]}
+                      contentStyle={{
+                        borderRadius: "18px",
+                        border: "1px solid rgba(148,163,184,0.22)",
+                        boxShadow: "0 18px 50px rgba(15,23,42,0.12)",
+                        backgroundColor: "#ffffff",
+                        color: "#0f172a",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {pieData.map((item, index) => (
+                  <div key={item.name} className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)] px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <span className="h-3 w-3 rounded-full" style={{ backgroundColor: FUND_COLORS[index % FUND_COLORS.length] }} />
+                      <span className="text-sm font-semibold dashboard-text-strong">{item.name}</span>
+                    </div>
+                    <span className="text-sm font-black dashboard-text-strong">{formatUsd(item.value)}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <EmptyChartState
+              title="Nothing to visualize yet"
+              message="Add wallet funds or approved topups to unlock this distribution chart."
+            />
+          )}
+        </div>
+      </section>
+
+      <MetaSpendingOverviewPanel className="p-0" dataState={spendingOverview} showSummaryCards={false} />
+
+      <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+        <div className="dashboard-subpanel rounded-[32px] border border-white/10 p-5 sm:p-6">
+          <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-[1.3rem] font-semibold tracking-tight dashboard-text-strong">
-                Account Status
-              </h3>
-              <p className="text-sm dashboard-text-muted">
-                Securely monitored by Neon Code Guard.
-              </p>
+              <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">
+                <Users size={12} />
+                Quick Links
+              </div>
+              <h2 className="text-xl font-black tracking-tight dashboard-text-strong">Most-used actions</h2>
             </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="dashboard-subpanel p-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.18em] dashboard-text-faint">
-                Last Updated
-              </p>
-              <p className="mt-2 text-xl font-black dashboard-text-strong">
-                {new Date(userData.updatedAt).toLocaleDateString("en-GB", {
-                  day: "numeric",
-                  month: "short",
-                })}
-              </p>
-            </div>
-            <div className="dashboard-subpanel p-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.18em] dashboard-text-faint">
-                Member Since
-              </p>
-              <p className="mt-2 text-xl font-black dashboard-text-strong">
-                {new Date(userData.createdAt).toLocaleDateString("en-GB", {
-                  month: "short",
-                  year: "numeric",
-                })}
-              </p>
-            </div>
+            {quickLinks.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="dashboard-subpanel flex items-center justify-between rounded-[24px] border border-[var(--dashboard-frame-border)] px-4 py-4 transition hover:-translate-y-0.5 hover:bg-[rgba(255,255,255,0.04)]"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="dashboard-accent-surface flex h-11 w-11 items-center justify-center rounded-2xl text-white">
+                    <item.icon size={18} />
+                  </span>
+                  <span className="text-sm font-bold dashboard-text-strong">{item.label}</span>
+                </div>
+                <ArrowUpRight size={16} className="dashboard-text-faint" />
+              </Link>
+            ))}
           </div>
-        </section>
-      </div>
+        </div>
+
+        <div className="dashboard-subpanel rounded-[32px] border border-white/10 p-5 sm:p-6">
+          <div className="mb-5">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">
+              <ShieldCheck size={12} />
+              Account Snapshot
+            </div>
+            <h2 className="text-xl font-black tracking-tight dashboard-text-strong">Profile health</h2>
+            <p className="mt-1 text-sm dashboard-text-muted">A concise status board for your account identity.</p>
+          </div>
+
+          <div className="space-y-1">
+            {accountHealth.map((item) => (
+              <InfoRow key={item.label} label={item.label} value={item.value} />
+            ))}
+          </div>
+
+          <div className="mt-5 rounded-[24px] border border-[var(--dashboard-frame-border)] bg-[linear-gradient(180deg,rgba(34,197,94,0.12),rgba(255,255,255,0.02))] p-4">
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-300">Status note</p>
+            <p className="mt-2 text-sm leading-6 text-slate-200">
+              {totalWallet > 0
+                ? "Your wallet has active balance available for current operations."
+                : "Your wallet is currently empty. A topup will unlock more actions and visibility."}
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

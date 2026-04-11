@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import { ObjectId } from "mongodb";
+import { normalizeAssignedAccounts } from "@/lib/adAccountRequests";
 
 const assertAdmin = async (req) => {
   const decoded = await verifyToken(req);
@@ -21,6 +22,7 @@ const buildUpdateData = (payload) => {
   const fields = [
     "status",
     "MetaAccountID",
+    "assignedAccounts",
     "accountName",
     "bmId",
     "timezone",
@@ -34,7 +36,19 @@ const buildUpdateData = (payload) => {
 
   fields.forEach((k) => {
     if (payload[k] !== undefined) {
-      updateData[k] = k === "monthlyBudget" ? Number(payload[k] || 0) : payload[k];
+      if (k === "monthlyBudget") {
+        updateData[k] = Number(payload[k] || 0);
+      } else if (k === "assignedAccounts") {
+        updateData[k] = normalizeAssignedAccounts(payload[k], payload);
+        if (!updateData.MetaAccountID && updateData[k][0]?.MetaAccountID) {
+          updateData.MetaAccountID = updateData[k][0].MetaAccountID;
+        }
+        if (!updateData.accountName && updateData[k][0]?.accountName) {
+          updateData.accountName = updateData[k][0].accountName;
+        }
+      } else {
+        updateData[k] = payload[k];
+      }
     }
   });
 
@@ -96,18 +110,21 @@ export async function POST(req) {
     const { db } = auth;
 
     const body = await req.json();
+    const assignedAccounts = normalizeAssignedAccounts(body.assignedAccounts, body);
+    const primaryAccount = assignedAccounts[0] || {};
     const doc = {
-      accountName: body.accountName || "Manual Account",
-      bmId: body.bmId || "",
-      timezone: body.timezone || "BST",
-      facebookPage: body.facebookPage || "",
-      email: body.email || "",
-      monthlyBudget: Number(body.monthlyBudget || 0),
-      startDate: body.startDate || "",
-      userEmail: body.userEmail || "",
-      userUid: body.userUid || "",
-      MetaAccountID: body.MetaAccountID || "",
-      status: body.status || "active",
+      accountName: body.accountName || primaryAccount.accountName || "Manual Account",
+      bmId: body.bmId || primaryAccount.bmId || "",
+      timezone: body.timezone || primaryAccount.timezone || "BST",
+      facebookPage: body.facebookPage || primaryAccount.facebookPage || "",
+      email: body.email || primaryAccount.email || "",
+      monthlyBudget: Number(body.monthlyBudget || primaryAccount.monthlyBudget || 0),
+      startDate: body.startDate || primaryAccount.startDate || "",
+      userEmail: body.userEmail || primaryAccount.userEmail || "",
+      userUid: body.userUid || primaryAccount.userUid || "",
+      MetaAccountID: body.MetaAccountID || primaryAccount.MetaAccountID || "",
+      assignedAccounts,
+      status: body.status || primaryAccount.status || "active",
       createdAt: new Date(),
       updatedAt: new Date(),
       source: "admin-manual",

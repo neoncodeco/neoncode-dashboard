@@ -4,6 +4,7 @@ import { verifyToken } from "@/lib/verifyToken";
 import crypto from "crypto";
 import { convertBdtToUsd, DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@/lib/currency";
 import { ensureWritableUser } from "@/lib/userAccess";
+import { parseWholeNumberAmount } from "@/lib/wholeAmount";
 
 const withInvoiceId = (url, trackingId) => {
   const separator = url.includes("?") ? "&" : "?";
@@ -70,11 +71,11 @@ export async function POST(req) {
     }
 
     const { amount, reason } = await req.json();
-    const numericAmountBdt = Number(amount);
+    const numericAmountBdt = parseWholeNumberAmount(amount);
 
-    if (!numericAmountBdt || numericAmountBdt <= 0 || !reason) {
+    if (numericAmountBdt === null || !reason) {
       return NextResponse.json(
-        { ok: false, error: "Valid BDT amount and reason are required" },
+        { ok: false, error: "Valid whole-number BDT amount and reason are required" },
         { status: 400 }
       );
     }

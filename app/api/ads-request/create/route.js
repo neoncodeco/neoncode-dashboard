@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import { ensureWritableUser } from "@/lib/userAccess";
+import { normalizeAssignedAccounts } from "@/lib/adAccountRequests";
 
 
 export async function POST(req) {
@@ -22,12 +23,14 @@ export async function POST(req) {
     if (!access.ok) {
       return access.response;
     }
+    const assignedAccounts = normalizeAssignedAccounts(body.assignedAccounts, body);
     await db.collection("adAccountRequests").insertOne({
       ...body,
       userEmail: decoded.email,
       userUid: decoded.uid,
       MetaAccountID: "",
       status: "pending",
+      assignedAccounts,
       createdAt: new Date(),
     });
 

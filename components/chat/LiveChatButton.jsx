@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Headset, Loader2, ShieldCheck, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import ChatWindow from "./ChatWindow";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 
@@ -55,37 +56,59 @@ export default function LiveChatButton() {
   if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed bottom-[5.8rem] right-3 z-50 hidden lg:block lg:bottom-3 lg:right-5">
-      {open && user && (
-        <div className="absolute bottom-[calc(100%+0.75rem)] right-0 w-[calc(100vw-1.5rem)] max-w-[410px] origin-bottom-right animate-in fade-in zoom-in-95 slide-in-from-bottom-6 duration-300 sm:w-[calc(100vw-2rem)]">
-          <ChatWindow user={user} onClose={() => setOpen(false)} />
-        </div>
-      )}
+    <div className="fixed bottom-[5.8rem] right-3 z-50 hidden lg:block lg:bottom-4 lg:right-5">
+      <AnimatePresence>
+        {open && user ? (
+          <motion.div
+            key="chat-window"
+            initial={{ opacity: 0, y: 18, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 18, scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 320, damping: 28 }}
+            className="absolute bottom-[calc(100%+0.85rem)] right-0 w-[calc(100vw-1.5rem)] max-w-[430px] origin-bottom-right sm:w-[calc(100vw-2rem)]"
+          >
+            <ChatWindow user={user} onClose={() => setOpen(false)} />
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
-      {notice && (
-        <div className="absolute bottom-[calc(100%+0.75rem)] right-0 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-amber-300/40 bg-[#12250b]/95 px-4 py-3 text-sm text-amber-50 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <div className="flex items-start gap-3">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
-            <p>{notice}</p>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {notice ? (
+          <motion.div
+            key="chat-notice"
+            initial={{ opacity: 0, y: 10, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 280, damping: 24 }}
+            className="absolute bottom-[calc(100%+0.75rem)] right-0 w-[min(22rem,calc(100vw-2rem))] rounded-[24px] border border-amber-300/30 bg-[linear-gradient(180deg,rgba(23,37,16,0.98),rgba(10,18,8,0.98))] px-4 py-3 text-sm text-amber-50 shadow-[0_24px_60px_rgba(0,0,0,0.32)] backdrop-blur-xl"
+          >
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-300">
+                <ShieldCheck className="h-4 w-4" />
+              </span>
+              <p className="leading-6">{notice}</p>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
-      <button
+      <motion.button
+        whileHover={{ scale: 1.05, y: -4 }}
+        whileTap={{ scale: 0.96 }}
         onClick={handleOpenChat}
         disabled={loading}
         aria-label="Live Chat"
         aria-expanded={open}
         className={`
-          group relative flex h-[3.75rem] w-[3.75rem] items-center justify-center overflow-hidden rounded-full border text-white shadow-[0_18px_45px_rgba(7,12,22,0.34)]
-          transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.03] active:translate-y-0
+          group relative flex h-[4.25rem] w-[4.25rem] items-center justify-center overflow-hidden rounded-full border text-white shadow-[0_22px_55px_rgba(7,12,22,0.34)]
+          transition-all duration-300 ease-out active:translate-y-0
           backdrop-blur-xl disabled:cursor-not-allowed disabled:opacity-80
-          ${open ? "border-[#3d6c23] bg-[#17320d]" : "border-[#4d8f29] bg-[linear-gradient(135deg,#17340d_0%,#214311_52%,#3d7721_100%)]"}
+          ${open ? "border-emerald-900 bg-[linear-gradient(135deg,#0f2b14_0%,#17320d_52%,#224516_100%)]" : "border-[#4d8f29] bg-[linear-gradient(135deg,#17340d_0%,#214311_52%,#3d7721_100%)]"}
         `}
       >
         {!loading && (
           <>
-            <span className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),transparent_52%)] opacity-80" />
+            <span className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.22),transparent_52%)] opacity-80" />
             <span className="absolute -right-3 -top-3 h-14 w-14 rounded-full bg-white/10 blur-2xl transition-transform duration-500 group-hover:scale-125" />
             <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/10" />
           </>
@@ -94,7 +117,7 @@ export default function LiveChatButton() {
         <span className="relative flex h-full w-full items-center justify-center">
           {!open && !loading && (
             <>
-              <span className="absolute h-11 w-11 animate-ping rounded-full bg-emerald-300/15" />
+              <span className="absolute h-12 w-12 animate-ping rounded-full bg-emerald-300/15" />
               <span className="absolute right-3 top-3 h-3 w-3 rounded-full border-2 border-[#214311] bg-emerald-400" />
             </>
           )}
@@ -106,7 +129,7 @@ export default function LiveChatButton() {
             <Headset className="h-6 w-6 drop-shadow-[0_3px_8px_rgba(0,0,0,0.3)]" />
           )}
         </span>
-      </button>
+      </motion.button>
     </div>
     ,
     document.body

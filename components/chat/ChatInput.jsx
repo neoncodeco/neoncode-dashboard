@@ -5,12 +5,13 @@ import ImageUploader from "../ImageUploader";
 import { ImagePlus, Loader2, Paperclip, SendHorizontal, X } from "lucide-react";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 
-export default function ChatInput({ chatId, preferredLanguage = "auto" }) {
+export default function ChatInput({ chatId, preferredLanguage = "auto", variant = "dark" }) {
   const { token } = useFirebaseAuth();
   const [text, setText] = useState("");
   const [image, setImage] = useState(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const isLight = variant === "light";
 
   const send = async () => {
     if ((!text.trim() && !image) || sending || !token) return;
@@ -77,24 +78,37 @@ export default function ChatInput({ chatId, preferredLanguage = "auto" }) {
       )}
 
       <div
-        className="rounded-[28px] border p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
-        style={{ borderColor: "var(--chat-panel-border)", background: "var(--chat-input-shell)" }}
+        className={`rounded-[28px] border p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] ${
+          isLight ? "border-slate-200 bg-white" : ""
+        }`}
+        style={{
+          borderColor: isLight ? "rgba(15,23,42,0.08)" : "var(--chat-panel-border)",
+          background: isLight ? "#ffffff" : "var(--chat-input-shell)",
+        }}
       >
         <div
-          className="relative flex items-end gap-2 overflow-hidden rounded-[24px] border p-2.5"
-          style={{ borderColor: "var(--chat-input-border)", background: "var(--chat-input-inner)" }}
+          className={`relative flex items-end gap-2 overflow-hidden rounded-[24px] border p-2.5 ${
+            isLight ? "border-slate-200 bg-white" : ""
+          }`}
+          style={{
+            borderColor: isLight ? "rgba(15,23,42,0.08)" : "var(--chat-input-border)",
+            background: isLight ? "#ffffff" : "var(--chat-input-inner)",
+          }}
         >
           <div
             className="pointer-events-none absolute left-6 top-0 h-14 w-20 blur-2xl"
-            style={{ background: "var(--chat-glow-soft)" }}
+            style={{ background: isLight ? "rgba(201,255,0,0.18)" : "var(--chat-glow-soft)" }}
           />
-          <div className="flex items-center transition" style={{ color: "var(--chat-text-muted)" }}>
+          <div className="flex items-center transition" style={{ color: isLight ? "#64748b" : "var(--chat-text-muted)" }}>
             <ImageUploader
               onUploadSuccess={setImage}
               customIcon={
                 <span
                   className="flex h-11 w-11 items-center justify-center rounded-2xl border"
-                  style={{ borderColor: "var(--chat-pill-border)", background: "var(--chat-icon-soft)" }}
+                  style={{
+                    borderColor: isLight ? "rgba(15,23,42,0.08)" : "var(--chat-pill-border)",
+                    background: isLight ? "#f8fafc" : "var(--chat-icon-soft)",
+                  }}
                 >
                   {image ? <ImagePlus size={18} /> : <Paperclip size={18} />}
                 </span>
@@ -110,9 +124,9 @@ export default function ChatInput({ chatId, preferredLanguage = "auto" }) {
               rows={1}
               placeholder="Type your message..."
               className="max-h-32 min-h-[44px] w-full resize-none bg-transparent px-1 py-2 text-sm focus:outline-none"
-              style={{ color: "var(--chat-text-strong)" }}
+              style={{ color: isLight ? "#0f172a" : "var(--chat-text-strong)" }}
             />
-            <p className="px-1 pb-1 text-[11px]" style={{ color: "var(--chat-text-faint)" }}>
+            <p className="px-1 pb-1 text-[11px]" style={{ color: isLight ? "#94a3b8" : "var(--chat-text-faint)" }}>
               Press Enter to send
             </p>
           </div>
@@ -123,14 +137,14 @@ export default function ChatInput({ chatId, preferredLanguage = "auto" }) {
             className={`flex h-12 w-12 items-center justify-center rounded-full transition-all ${text.trim() || image ? "hover:scale-[1.03] active:scale-95" : "cursor-not-allowed"}`}
             style={
               text.trim() || image
-                ? {
-                    background: "var(--chat-user-bubble)",
-                    color: "var(--chat-user-text)",
-                    boxShadow: "var(--chat-send-shadow)",
+              ? {
+                    background: isLight ? "#c9ff00" : "var(--chat-user-bubble)",
+                    color: isLight ? "#111827" : "var(--chat-user-text)",
+                    boxShadow: isLight ? "0 16px 30px rgba(201,255,0,0.24)" : "var(--chat-send-shadow)",
                   }
                 : {
-                    background: "var(--chat-icon-soft)",
-                    color: "var(--chat-text-faint)",
+                    background: isLight ? "#f1f5f9" : "var(--chat-icon-soft)",
+                    color: isLight ? "#94a3b8" : "var(--chat-text-faint)",
                   }
             }
           >
@@ -140,7 +154,7 @@ export default function ChatInput({ chatId, preferredLanguage = "auto" }) {
       </div>
 
       {error && (
-        <p className="mt-2 px-1 text-xs text-amber-200">
+        <p className={`mt-2 px-1 text-xs ${isLight ? "text-amber-600" : "text-amber-200"}`}>
           {error}
         </p>
       )}

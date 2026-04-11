@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Building2, Sparkles, TrendingUp, Wallet } from "lucide-react";
+import { Building2, TrendingUp, Wallet } from "lucide-react";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import { formatUsd, toSafeNumber } from "@/lib/currency";
 
@@ -25,7 +25,6 @@ const isFetchableMetaAccount = (account) => {
 
 const formatChartUsd = (value) => {
   const amount = toSafeNumber(value);
-
   if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
   if (amount >= 1000) return `$${(amount / 1000).toFixed(0)}K`;
   if (amount >= 100) return `$${Math.round(amount)}`;
@@ -39,24 +38,17 @@ const formatAccountLabel = (value) => {
 
 const dedupeAccountsById = (items) => {
   const map = new Map();
-
   items.forEach((item) => {
     if (!item?.id) return;
-
     const existing = map.get(item.id);
     if (!existing) {
       map.set(item.id, item);
       return;
     }
-
     const existingValue = toSafeNumber(existing.spendCap) + toSafeNumber(existing.spend) + toSafeNumber(existing.remaining);
     const nextValue = toSafeNumber(item.spendCap) + toSafeNumber(item.spend) + toSafeNumber(item.remaining);
-
-    if (nextValue >= existingValue) {
-      map.set(item.id, item);
-    }
+    if (nextValue >= existingValue) map.set(item.id, item);
   });
-
   return Array.from(map.values());
 };
 
@@ -66,22 +58,41 @@ const METRIC_TABS = [
   { key: "spendCap", label: "Cap" },
 ];
 
+const METRIC_STYLES = {
+  spend: {
+    stroke: "#2563eb",
+    gradientStart: "rgba(37, 99, 235, 0.35)",
+    gradientEnd: "rgba(37, 99, 235, 0.03)",
+    grid: "rgba(148, 163, 184, 0.14)",
+  },
+  remaining: {
+    stroke: "#0f766e",
+    gradientStart: "rgba(15, 118, 110, 0.3)",
+    gradientEnd: "rgba(15, 118, 110, 0.03)",
+    grid: "rgba(148, 163, 184, 0.14)",
+  },
+  spendCap: {
+    stroke: "#7c3aed",
+    gradientStart: "rgba(124, 58, 237, 0.32)",
+    gradientEnd: "rgba(124, 58, 237, 0.03)",
+    grid: "rgba(148, 163, 184, 0.14)",
+  },
+};
+
 function CustomTooltip({ active, payload, label, metric }) {
   if (!active || !payload?.length) return null;
-
   const data = payload[0]?.payload;
   if (!data) return null;
-
   const metricLabel = METRIC_TABS.find((item) => item.key === metric)?.label || "Spent";
 
   return (
-    <div className="min-w-[220px] rounded-[20px] border border-sky-200/60 bg-white/95 p-4 text-slate-800 shadow-[0_22px_55px_rgba(56,189,248,0.14)] backdrop-blur">
-      <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-500">{label}</p>
+    <div className="min-w-[220px] rounded-[20px] border border-slate-200 bg-white p-4 text-slate-800 shadow-[0_22px_55px_rgba(15,23,42,0.12)]">
+      <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-600">{label}</p>
       <p className="mt-2 text-xl font-black text-slate-900">{formatUsd(data[metric])}</p>
       <p className="mt-1 text-xs font-semibold text-slate-500">{metricLabel} for this account</p>
       <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-        <div className="rounded-2xl bg-sky-50 px-3 py-2">
-          <p className="font-bold uppercase tracking-[0.14em] text-sky-600">Spent</p>
+        <div className="rounded-2xl bg-blue-50 px-3 py-2">
+          <p className="font-bold uppercase tracking-[0.14em] text-blue-600">Spent</p>
           <p className="mt-1 font-black text-slate-900">{formatUsd(data.spend)}</p>
         </div>
         <div className="rounded-2xl bg-teal-50 px-3 py-2">
@@ -93,9 +104,37 @@ function CustomTooltip({ active, payload, label, metric }) {
   );
 }
 
-export default function MetaSpendingOverview({ className = "" }) {
-  const spendGradientId = React.useId().replace(/:/g, "");
-  const glowGradientId = React.useId().replace(/:/g, "");
+function SpendingSummaryCard({ title, value, helper, meta, icon: Icon, tone }) {
+  return (
+    <article
+      className={`dashboard-subpanel meta-summary-card meta-summary-card--${tone} group relative overflow-hidden rounded-[28px] border p-5 transition hover:-translate-y-0.5`}
+    >
+      <div className="meta-summary-card__glow absolute inset-0 opacity-0 transition group-hover:opacity-100" />
+      <div className="relative z-10">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="meta-summary-card__badge inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em]">
+              {title}
+            </div>
+            <p className="meta-summary-card__value mt-4 text-[2rem] font-black leading-none">{value}</p>
+            <p className="meta-summary-card__helper mt-2 text-sm font-semibold leading-6">{helper}</p>
+          </div>
+          <div className="meta-summary-card__icon flex h-12 w-12 items-center justify-center rounded-2xl">
+            <Icon size={18} />
+          </div>
+        </div>
+
+        {meta ? (
+          <div className="mt-5">
+            <p className="meta-summary-card__meta rounded-2xl px-3 py-2 text-xs font-black uppercase tracking-[0.16em]">{meta}</p>
+          </div>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+export function useMetaSpendingOverviewData() {
   const { token } = useFirebaseAuth();
   const [performanceData, setPerformanceData] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
@@ -112,45 +151,21 @@ export default function MetaSpendingOverview({ className = "" }) {
   );
 
   const summary = React.useMemo(() => {
-    if (!chartData.length) {
-      return {
-        totalSpend: 0,
-        totalRemaining: 0,
-        totalCap: 0,
-        peakAccount: null,
-      };
-    }
-
+    if (!chartData.length) return { totalSpend: 0, totalRemaining: 0, totalCap: 0, peakAccount: null };
     const totalSpend = chartData.reduce((sum, item) => sum + toSafeNumber(item.spend), 0);
     const totalRemaining = chartData.reduce((sum, item) => sum + toSafeNumber(item.remaining), 0);
     const totalCap = chartData.reduce((sum, item) => sum + toSafeNumber(item.spendCap), 0);
     const peakAccount = [...chartData].sort((a, b) => toSafeNumber(b[activeMetric]) - toSafeNumber(a[activeMetric]))[0] || null;
-
-    return {
-      totalSpend,
-      totalRemaining,
-      totalCap,
-      peakAccount,
-    };
+    return { totalSpend, totalRemaining, totalCap, peakAccount };
   }, [activeMetric, chartData]);
-
-  const maxMetricValue = React.useMemo(
-    () => chartData.reduce((max, item) => Math.max(max, toSafeNumber(item[activeMetric])), 0),
-    [activeMetric, chartData]
-  );
 
   const highlightedAccountId = React.useMemo(() => {
     if (!chartData.length) return null;
-    return (
-      [...chartData].sort(
-        (a, b) => toSafeNumber(b[activeMetric]) - toSafeNumber(a[activeMetric])
-      )[0]?.id || null
-    );
+    return [...chartData].sort((a, b) => toSafeNumber(b[activeMetric]) - toSafeNumber(a[activeMetric]))[0]?.id || null;
   }, [activeMetric, chartData]);
 
   React.useEffect(() => {
     if (!token) return;
-
     let active = true;
 
     const loadData = async () => {
@@ -166,7 +181,6 @@ export default function MetaSpendingOverview({ className = "" }) {
         const nextData = await Promise.all(
           accounts.map(async (account) => {
             const cleanAdId = normalizeAdAccountId(account.MetaAccountID);
-
             try {
               const balanceRes = await fetch(`/api/ads-request/balance?ad_account_id=${cleanAdId}`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -174,7 +188,6 @@ export default function MetaSpendingOverview({ className = "" }) {
               });
               const balanceJson = await balanceRes.json();
               if (!balanceRes.ok) return null;
-
               return {
                 id: cleanAdId,
                 name: account.accountName || String(account.MetaAccountID || "").slice(-5),
@@ -196,177 +209,182 @@ export default function MetaSpendingOverview({ className = "" }) {
     };
 
     void loadData();
-
     return () => {
       active = false;
     };
   }, [token]);
 
+  return {
+    loading,
+    activeMetric,
+    setActiveMetric,
+    chartData,
+    summary,
+    highlightedAccountId,
+  };
+}
+
+export function MetaSpendingSummaryCardsPanel({ className = "", dataState }) {
+  const { loading, chartData, summary, activeMetric } = dataState;
+
+  if (loading) {
+    return (
+      <div className={`grid grid-cols-1 gap-4 md:grid-cols-3 ${className}`.trim()}>
+        {[0, 1, 2].map((item) => (
+          <div key={item} className="dashboard-subpanel h-[176px] animate-pulse rounded-[28px] border border-white/10 bg-[var(--dashboard-panel-soft)]" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!chartData.length) return null;
+
+  return (
+    <div className={`grid grid-cols-1 gap-4 md:grid-cols-3 ${className}`.trim()}>
+      <SpendingSummaryCard
+        title="Total Spent"
+        value={formatUsd(summary.totalSpend)}
+        helper="Live amount spent across synced accounts"
+        icon={TrendingUp}
+        tone="spend"
+      />
+      <SpendingSummaryCard
+        title="Remaining"
+        value={formatUsd(summary.totalRemaining)}
+        helper="Available budget still left to spend"
+        icon={Wallet}
+        tone="remaining"
+      />
+      <SpendingSummaryCard
+        title="Top Account"
+        value={summary.peakAccount?.name || "No data"}
+        helper={summary.peakAccount ? `${formatUsd(summary.peakAccount[activeMetric])} on current metric` : "Waiting for synced balances"}
+        icon={Building2}
+        tone="peak"
+      />
+    </div>
+  );
+}
+
+export function MetaSpendingSummaryCards({ className = "" }) {
+  const dataState = useMetaSpendingOverviewData();
+  return <MetaSpendingSummaryCardsPanel className={className} dataState={dataState} />;
+}
+
+export function MetaSpendingOverviewPanel({ className = "", showSummaryCards = true, dataState }) {
+  const { loading, chartData, activeMetric, setActiveMetric, highlightedAccountId } = dataState;
+  const metricLabel = METRIC_TABS.find((item) => item.key === activeMetric)?.label || "Spent";
+  const chartGradientId = React.useId().replace(/:/g, "");
+  const activeMetricStyle = METRIC_STYLES[activeMetric] || METRIC_STYLES.spend;
+
   return (
     <section
-      className={`dashboard-subpanel relative overflow-hidden rounded-[30px] border border-cyan-200/20 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_rgba(255,255,255,0.96)_34%,_rgba(240,249,255,0.98)_100%)] p-5 shadow-[0_28px_70px_rgba(125,211,252,0.12)] sm:p-6 ${className}`.trim()}
+      className={`relative overflow-hidden rounded-[32px] border border-slate-200/70 bg-[radial-gradient(circle_at_top_left,_rgba(219,234,254,0.72),_rgba(255,255,255,0.95)_34%,_rgba(248,250,252,0.98)_100%)] p-4 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:p-5 ${className}`.trim()}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.72),rgba(240,249,255,0.28))]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.68),rgba(241,245,249,0.18))]" />
 
       <div className="relative z-10">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white/85 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-sky-600 shadow-sm">
-              <Sparkles size={12} />
-              Spending Overview
-            </div>
-            <h3 className="mt-4 text-2xl font-black tracking-tight text-slate-900 sm:text-[2rem]">
-              Spending overview  
-            </h3>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">
-              Track how much each account has spent, how much budget is still remaining, and where the biggest movement is happening right now.
-            </p>
-          </div>
-
-          {!loading && chartData.length > 0 ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:min-w-[430px]">
-              <div className="rounded-[24px] border border-sky-200/70 bg-white/82 p-4 shadow-[0_16px_35px_rgba(56,189,248,0.08)] backdrop-blur">
-                <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Total Spent</p>
-                  <TrendingUp size={16} className="text-sky-500" />
-                </div>
-                <p className="mt-3 text-2xl font-black text-slate-900">{formatUsd(summary.totalSpend)}</p>
-                <p className="mt-1 text-xs font-semibold text-slate-500">Live amount spent across synced accounts</p>
-              </div>
-
-              <div className="rounded-[24px] border border-teal-200/70 bg-white/82 p-4 shadow-[0_16px_35px_rgba(20,184,166,0.08)] backdrop-blur">
-                <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Remaining</p>
-                  <Wallet size={16} className="text-teal-500" />
-                </div>
-                <p className="mt-3 text-2xl font-black text-slate-900">{formatUsd(summary.totalRemaining)}</p>
-                <p className="mt-1 text-xs font-semibold text-slate-500">Available budget still left to spend</p>
-              </div>
-
-              <div className="rounded-[24px] border border-slate-200/80 bg-white/80 p-4 shadow-[0_16px_35px_rgba(15,23,42,0.06)] backdrop-blur">
-                <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Top Account</p>
-                  <Building2 size={16} className="text-slate-500" />
-                </div>
-                <p className="mt-3 truncate text-lg font-black text-slate-900">
-                  {summary.peakAccount?.name || "No data"}
-                </p>
-                <p className="mt-1 text-xs font-semibold text-slate-500">
-                  {summary.peakAccount ? `${formatUsd(summary.peakAccount[activeMetric])} on current metric` : "Waiting for synced balances"}
-                </p>
-              </div>
-            </div>
-          ) : null}
-        </div>
+        {showSummaryCards ? <MetaSpendingSummaryCardsPanel dataState={dataState} className="mb-6" /> : null}
 
         {loading ? (
-          <div className="mt-6 flex h-[320px] items-center justify-center rounded-[28px] border border-cyan-100 bg-white/70 text-sm font-semibold text-slate-500">
+          <div className="flex h-[320px] items-center justify-center rounded-[28px] border border-slate-200 bg-white/75 text-sm font-semibold text-slate-500">
             Loading spending data...
           </div>
         ) : chartData.length > 0 ? (
           <>
-            <div className="mt-6 flex flex-wrap gap-2">
-              {METRIC_TABS.map((item) => {
-                const isActive = item.key === activeMetric;
-
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => setActiveMetric(item.key)}
-                    className={`rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition-all ${
-                      isActive
-                        ? "border-sky-500 bg-sky-500 text-white shadow-[0_12px_28px_rgba(56,189,248,0.22)]"
-                        : "border-sky-200 bg-white/82 text-sky-600 hover:border-sky-300 hover:bg-sky-50"
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                );
-              })}
+            <div className="mb-4 flex flex-col gap-4 border-b border-slate-200/80 pb-4 sm:flex-row sm:items-end sm:justify-between">
+              <div className="max-w-xl">
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-sky-600">Spending Overview</p>
+                <h3 className="mt-2 text-[1.35rem] font-black tracking-tight text-slate-900 sm:text-[1.5rem]">
+                  Cap by ad account for the current billing cycle
+                </h3>
+                <p className="mt-1.5 text-sm leading-6 text-slate-500">
+                  Switch the metric to review spend, remaining budget, or cap across active accounts.
+                </p>
+              </div>
+              <div className="min-w-[180px]">
+                <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  Metric
+                </label>
+                <select
+                  value={activeMetric}
+                  onChange={(event) => setActiveMetric(event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                  aria-label="Select spending metric"
+                >
+                  {METRIC_TABS.map((item) => (
+                    <option key={item.key} value={item.key}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="mt-5 rounded-[30px] border border-cyan-100 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(240,249,255,0.9))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] sm:p-5">
-              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.2em] text-sky-500">
-                    Live Curve
-                  </p>
-                  <p className="mt-2 text-lg font-black text-slate-900">
-                    {METRIC_TABS.find((item) => item.key === activeMetric)?.label} by ad account
-                  </p>
+            <div className="rounded-[28px] border border-slate-200 bg-white/75 p-4 shadow-[0_16px_45px_rgba(15,23,42,0.06)] sm:p-5">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: activeMetricStyle.stroke }}
+                  />
+                  <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+                    {metricLabel} focus
+                  </span>
                 </div>
-                <div className="rounded-full bg-sky-50 px-4 py-2 text-xs font-bold text-slate-600">
-                  Budget cap: <span className="font-black text-slate-900">{formatUsd(summary.totalCap)}</span>
-                </div>
+                <p className="text-xs font-medium text-slate-400">
+                  Highlighting the strongest account in the selected metric
+                </p>
               </div>
 
-              <div className="dashboard-analytics-grid h-[320px] rounded-[24px] bg-[linear-gradient(180deg,rgba(236,254,255,0.92),rgba(248,250,252,0.9))] px-2 py-3 sm:h-[360px] sm:px-3">
+              <div className="h-[290px] sm:h-[340px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 18, right: 18, left: -14, bottom: 0 }}>
+                  <AreaChart data={chartData} margin={{ top: 18, right: 4, left: 0, bottom: 0 }}>
                     <defs>
-                      <linearGradient id={spendGradientId} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.24} />
-                        <stop offset="65%" stopColor="#7dd3fc" stopOpacity={0.11} />
-                        <stop offset="100%" stopColor="#ffffff" stopOpacity={0.02} />
-                      </linearGradient>
-                      <linearGradient id={glowGradientId} x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor="#38bdf8" />
-                        <stop offset="100%" stopColor="#0ea5e9" />
+                      <linearGradient id={chartGradientId} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={activeMetricStyle.gradientStart} stopOpacity={1} />
+                        <stop offset="100%" stopColor={activeMetricStyle.gradientEnd} stopOpacity={1} />
                       </linearGradient>
                     </defs>
-
-                    <CartesianGrid vertical={false} strokeDasharray="0" stroke="rgba(148,163,184,0.18)" />
+                    <CartesianGrid vertical={false} stroke={activeMetricStyle.grid} strokeDasharray="4 8" />
                     <XAxis
                       dataKey="shortName"
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: "#7c8aa5", fontSize: 11, fontWeight: 700 }}
-                      dy={10}
+                      tickMargin={12}
+                      minTickGap={24}
+                      tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
                     />
-                    <YAxis
-                      width={58}
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: "#8b9ab3", fontSize: 11, fontWeight: 600 }}
-                      tickFormatter={formatChartUsd}
-                      domain={[0, Math.max(maxMetricValue * 1.18, 1)]}
+                    <YAxis hide domain={["auto", "auto"]} />
+                    <Tooltip
+                      content={<CustomTooltip metric={activeMetric} />}
+                      cursor={{ stroke: "#cbd5e1", strokeWidth: 1, strokeDasharray: "4 4" }}
                     />
-                    <Tooltip content={<CustomTooltip metric={activeMetric} />} cursor={{ stroke: "rgba(56,189,248,0.18)", strokeWidth: 1 }} />
                     <Area
                       type="natural"
                       dataKey={activeMetric}
-                      stroke={`url(#${glowGradientId})`}
+                      stroke={activeMetricStyle.stroke}
                       strokeWidth={3.5}
-                      fill={`url(#${spendGradientId})`}
+                      fill={`url(#${chartGradientId})`}
                       fillOpacity={1}
-                      animationDuration={950}
-                      activeDot={{
-                        r: 6,
-                        fill: "#0ea5e9",
-                        stroke: "#ffffff",
-                        strokeWidth: 3,
-                      }}
-                      dot={{
-                        r: 0,
-                        strokeWidth: 0,
-                      }}
+                      animationDuration={900}
+                      activeDot={{ r: 6, fill: activeMetricStyle.stroke, stroke: "#ffffff", strokeWidth: 2.5 }}
+                      dot={{ r: 0 }}
                     >
                       <LabelList
                         dataKey={activeMetric}
                         content={({ x, y, value, index }) => {
                           const point = chartData[index];
                           if (!point || point.id !== highlightedAccountId) return null;
-
                           return (
                             <g>
-                              <circle cx={x} cy={y} r={5} fill="#0ea5e9" stroke="#ffffff" strokeWidth={3} />
+                              <circle cx={x} cy={y} r={5} fill={activeMetricStyle.stroke} stroke="#ffffff" strokeWidth={3} />
                               <text
                                 x={x}
-                                y={y - 18}
+                                y={y - 14}
                                 textAnchor="middle"
-                                fill="#475569"
-                                fontSize="12"
+                                fill={activeMetricStyle.stroke}
+                                fontSize="11"
                                 fontWeight="800"
                               >
                                 {formatChartUsd(value)}
@@ -379,37 +397,31 @@ export default function MetaSpendingOverview({ className = "" }) {
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
-
-              <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-                {chartData.slice(0, 3).map((item, index) => (
-                  <div
-                    key={`${item.id}-${index}`}
-                    className="rounded-[24px] border border-slate-200/70 bg-white/85 px-4 py-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)]"
-                  >
-                    <p className="truncate text-sm font-black text-slate-900">{item.name}</p>
-                    <div className="mt-3 flex items-center justify-between text-xs">
-                      <span className="font-bold uppercase tracking-[0.16em] text-sky-600">Spent</span>
-                      <span className="font-black text-slate-900">{formatUsd(item.spend)}</span>
-                    </div>
-                    <div className="mt-2 flex items-center justify-between text-xs">
-                      <span className="font-bold uppercase tracking-[0.16em] text-teal-600">Remaining</span>
-                      <span className="font-black text-slate-900">{formatUsd(item.remaining)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 px-1 text-xs text-slate-500">
+              <span className="font-semibold">
+                Data points: {chartData.length} active accounts
+              </span>
+              <span className="font-semibold">
+                Top account: {chartData.find((item) => item.id === highlightedAccountId)?.name || "No data"}
+              </span>
             </div>
           </>
         ) : (
-          <div className="mt-6 flex h-[260px] flex-col items-center justify-center rounded-[28px] border border-dashed border-cyan-200 bg-white/70 text-center">
+          <div className="flex h-[280px] flex-col items-center justify-center rounded-[28px] border border-dashed border-slate-300 bg-white/75 text-center">
             <Building2 size={30} className="text-slate-400" />
             <p className="mt-4 text-lg font-black text-slate-900">No synced performance data yet</p>
             <p className="mt-2 max-w-xs text-sm text-slate-500">
-              Once an account is active with a valid Meta account ID, both spent and remaining budget will appear here.
+              Once an account is active with a valid Meta account ID, its budget metrics will appear here.
             </p>
           </div>
         )}
       </div>
     </section>
   );
+}
+
+export default function MetaSpendingOverview(props) {
+  const dataState = useMetaSpendingOverviewData();
+  return <MetaSpendingOverviewPanel {...props} dataState={dataState} />;
 }

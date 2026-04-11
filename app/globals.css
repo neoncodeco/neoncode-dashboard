@@ -299,6 +299,165 @@ textarea {
   background: var(--dashboard-panel-soft);
 }
 
+.meta-summary-card {
+  --meta-summary-bg: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(9, 14, 27, 0.96));
+  --meta-summary-border: rgba(148, 163, 184, 0.2);
+  --meta-summary-badge-bg: rgba(255, 255, 255, 0.08);
+  --meta-summary-badge-border: rgba(255, 255, 255, 0.12);
+  --meta-summary-badge-text: rgba(255, 255, 255, 0.92);
+  --meta-summary-value: #f8fbff;
+  --meta-summary-helper: rgba(241, 245, 249, 0.84);
+  --meta-summary-icon-bg: rgba(255, 255, 255, 0.08);
+  --meta-summary-icon-border: rgba(255, 255, 255, 0.12);
+  --meta-summary-icon-color: #f8fbff;
+  --meta-summary-meta-bg: rgba(255, 255, 255, 0.08);
+  --meta-summary-meta-border: rgba(255, 255, 255, 0.12);
+  --meta-summary-meta-text: rgba(248, 250, 252, 0.96);
+  background: var(--meta-summary-bg) !important;
+  border-color: var(--meta-summary-border) !important;
+  box-shadow: 0 20px 55px rgba(15, 23, 42, 0.16) !important;
+}
+
+.meta-summary-card__glow {
+  background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.12), transparent 42%);
+}
+
+.meta-summary-card__badge {
+  border: 1px solid var(--meta-summary-badge-border) !important;
+  background: var(--meta-summary-badge-bg) !important;
+  color: var(--meta-summary-badge-text) !important;
+}
+
+.meta-summary-card__value {
+  color: var(--meta-summary-value) !important;
+}
+
+.meta-summary-card__helper {
+  color: var(--meta-summary-helper) !important;
+}
+
+.meta-summary-card__icon {
+  border: 1px solid var(--meta-summary-icon-border) !important;
+  background: var(--meta-summary-icon-bg) !important;
+  color: var(--meta-summary-icon-color) !important;
+}
+
+.meta-summary-card__meta {
+  border: 1px solid var(--meta-summary-meta-border) !important;
+  background: var(--meta-summary-meta-bg) !important;
+  color: var(--meta-summary-meta-text) !important;
+}
+
+.meta-summary-card--spend {
+  --meta-summary-bg:
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.22), transparent 38%),
+    linear-gradient(180deg, rgba(11, 24, 46, 0.98), rgba(7, 15, 29, 0.96));
+  --meta-summary-border: rgba(125, 211, 252, 0.3);
+  --meta-summary-badge-bg: rgba(56, 189, 248, 0.18);
+  --meta-summary-badge-border: rgba(125, 211, 252, 0.24);
+  --meta-summary-badge-text: #d7f1ff;
+  --meta-summary-icon-bg: rgba(56, 189, 248, 0.18);
+  --meta-summary-icon-border: rgba(125, 211, 252, 0.2);
+  --meta-summary-icon-color: #d7f1ff;
+  --meta-summary-meta-bg: rgba(56, 189, 248, 0.1);
+  --meta-summary-meta-border: rgba(125, 211, 252, 0.16);
+  --meta-summary-meta-text: rgba(225, 247, 255, 0.96);
+}
+
+.meta-summary-card--remaining {
+  --meta-summary-bg:
+    radial-gradient(circle at top right, rgba(183, 223, 105, 0.2), transparent 38%),
+    linear-gradient(180deg, rgba(16, 28, 21, 0.98), rgba(9, 18, 14, 0.96));
+  --meta-summary-border: rgba(183, 223, 105, 0.28);
+  --meta-summary-badge-bg: rgba(183, 223, 105, 0.16);
+  --meta-summary-badge-border: rgba(183, 223, 105, 0.22);
+  --meta-summary-badge-text: #e8f7bf;
+  --meta-summary-icon-bg: rgba(183, 223, 105, 0.16);
+  --meta-summary-icon-border: rgba(183, 223, 105, 0.18);
+  --meta-summary-icon-color: #e8f7bf;
+  --meta-summary-meta-bg: rgba(183, 223, 105, 0.1);
+  --meta-summary-meta-border: rgba(183, 223, 105, 0.16);
+  --meta-summary-meta-text: rgba(235, 248, 202, 0.96);
+}
+
+.meta-summary-card--peak {
+  --meta-summary-bg:
+    radial-gradient(circle at top right, rgba(245, 158, 11, 0.18), transparent 38%),
+    linear-gradient(180deg, rgba(38, 24, 12, 0.98), rgba(24, 15, 8, 0.96));
+  --meta-summary-border: rgba(251, 191, 36, 0.24);
+  --meta-summary-badge-bg: rgba(251, 191, 36, 0.16);
+  --meta-summary-badge-border: rgba(251, 191, 36, 0.18);
+  --meta-summary-badge-text: #fff0c5;
+  --meta-summary-icon-bg: rgba(251, 191, 36, 0.16);
+  --meta-summary-icon-border: rgba(251, 191, 36, 0.16);
+  --meta-summary-icon-color: #fff0c5;
+  --meta-summary-meta-bg: rgba(251, 191, 36, 0.1);
+  --meta-summary-meta-border: rgba(251, 191, 36, 0.14);
+  --meta-summary-meta-text: rgba(255, 242, 205, 0.96);
+}
+
+.dashboard-shell[data-theme="light"] .meta-summary-card {
+  box-shadow: 0 18px 40px rgba(148, 163, 184, 0.16) !important;
+}
+
+.dashboard-shell[data-theme="light"] .meta-summary-card__glow {
+  background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.55), transparent 46%);
+}
+
+.dashboard-shell[data-theme="light"] .meta-summary-card--spend {
+  --meta-summary-bg:
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.18), transparent 38%),
+    linear-gradient(180deg, #f6fbff, #edf7ff);
+  --meta-summary-border: rgba(125, 211, 252, 0.42);
+  --meta-summary-badge-bg: rgba(56, 189, 248, 0.12);
+  --meta-summary-badge-border: rgba(56, 189, 248, 0.18);
+  --meta-summary-badge-text: #0369a1;
+  --meta-summary-value: #0f172a;
+  --meta-summary-helper: #33506d;
+  --meta-summary-icon-bg: rgba(56, 189, 248, 0.12);
+  --meta-summary-icon-border: rgba(56, 189, 248, 0.18);
+  --meta-summary-icon-color: #0284c7;
+  --meta-summary-meta-bg: rgba(56, 189, 248, 0.08);
+  --meta-summary-meta-border: rgba(56, 189, 248, 0.14);
+  --meta-summary-meta-text: #0369a1;
+}
+
+.dashboard-shell[data-theme="light"] .meta-summary-card--remaining {
+  --meta-summary-bg:
+    radial-gradient(circle at top right, rgba(183, 223, 105, 0.18), transparent 38%),
+    linear-gradient(180deg, #fbfef1, #f4fae7);
+  --meta-summary-border: rgba(183, 223, 105, 0.4);
+  --meta-summary-badge-bg: rgba(183, 223, 105, 0.14);
+  --meta-summary-badge-border: rgba(183, 223, 105, 0.2);
+  --meta-summary-badge-text: #6c8f1d;
+  --meta-summary-value: #1f2937;
+  --meta-summary-helper: #52624a;
+  --meta-summary-icon-bg: rgba(183, 223, 105, 0.14);
+  --meta-summary-icon-border: rgba(183, 223, 105, 0.18);
+  --meta-summary-icon-color: #7ea12c;
+  --meta-summary-meta-bg: rgba(183, 223, 105, 0.08);
+  --meta-summary-meta-border: rgba(183, 223, 105, 0.14);
+  --meta-summary-meta-text: #6c8f1d;
+}
+
+.dashboard-shell[data-theme="light"] .meta-summary-card--peak {
+  --meta-summary-bg:
+    radial-gradient(circle at top right, rgba(245, 158, 11, 0.16), transparent 38%),
+    linear-gradient(180deg, #fffaf2, #fff4dd);
+  --meta-summary-border: rgba(245, 158, 11, 0.34);
+  --meta-summary-badge-bg: rgba(245, 158, 11, 0.12);
+  --meta-summary-badge-border: rgba(245, 158, 11, 0.16);
+  --meta-summary-badge-text: #b45309;
+  --meta-summary-value: #1f2937;
+  --meta-summary-helper: #725533;
+  --meta-summary-icon-bg: rgba(245, 158, 11, 0.12);
+  --meta-summary-icon-border: rgba(245, 158, 11, 0.16);
+  --meta-summary-icon-color: #d97706;
+  --meta-summary-meta-bg: rgba(245, 158, 11, 0.08);
+  --meta-summary-meta-border: rgba(245, 158, 11, 0.12);
+  --meta-summary-meta-text: #b45309;
+}
+
 .dashboard-chip {
   border: 1px solid var(--dashboard-frame-border);
   border-radius: 999px;

@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 // Icons used for better visual clarity
 import { X, Loader2, CheckCircle, Wallet, Banknote, CreditCard, DollarSign } from "lucide-react";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import { blockDecimalInput, isWholeNumberInputValue, parseWholeNumberAmount } from "@/lib/wholeAmount";
 
 /* ================= CONFIG ================= */
 const METHODS = ["bkash", "nagad", "bank", "crypto"];
@@ -107,20 +108,18 @@ export default function WithdrawModal({ balance, onClose }) {
     );
   }
 
+  const parsedAmount = parseWholeNumberAmount(amount);
+
   /* ================= 6. SUBMIT HANDLER ================= */
   const submitWithdraw = async () => {
-    const parsedAmount = Number(amount);
-    
     // --- Validation ---
-    
+    if (parsedAmount === null) {
+      return Swal.fire("Error", "Withdraw amount must be a whole number.", "error");
+    }
+
     // 💡 VALIDATION: Check Minimum Amount
     if (parsedAmount < MINIMUM_WITHDRAW_AMOUNT) {
         return Swal.fire("Error", `The minimum withdrawal amount is $${MINIMUM_WITHDRAW_AMOUNT}.`, "error");
-    }
-    
-    // Check if the amount is valid (positive number)
-    if (!parsedAmount || parsedAmount <= 0) {
-      return Swal.fire("Error", "Invalid withdraw amount. Amount must be positive.", "error");
     }
     
     // Check balance limit
@@ -222,24 +221,29 @@ export default function WithdrawModal({ balance, onClose }) {
           <div className="relative">
             <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-extrabold">$</span>
             <input
-              type="number"
-              min={MINIMUM_WITHDRAW_AMOUNT} 
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               placeholder={`Enter minimum $${MINIMUM_WITHDRAW_AMOUNT}`} 
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onKeyDown={blockDecimalInput}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (isWholeNumberInputValue(value)) setAmount(value);
+              }}
               className="w-full rounded-xl border border-gray-300 bg-white py-3 pl-8 pr-4 text-lg font-semibold text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition duration-150"
             />
           </div>
           
           {/* Minimum Amount Warning */}
-          {Number(amount) > 0 && Number(amount) < MINIMUM_WITHDRAW_AMOUNT && (
+          {parsedAmount > 0 && parsedAmount < MINIMUM_WITHDRAW_AMOUNT && (
              <p className="text-orange-500 text-xs mt-1 font-medium">
                 Minimum withdrawal amount must be ${MINIMUM_WITHDRAW_AMOUNT}.
              </p>
           )}
 
           {/* Insufficient Balance Warning */}
-          {Number(amount) > balance && (
+          {parsedAmount > balance && (
              <p className="text-red-500 text-xs mt-1 font-medium">
                 ⚠️ Withdrawal amount cannot exceed available balance ($ {balance}).
              </p>
@@ -334,9 +338,9 @@ export default function WithdrawModal({ balance, onClose }) {
         {/* Submit Button */}
         <button
           onClick={submitWithdraw}
-          disabled={isSubmitting || Number(amount) < MINIMUM_WITHDRAW_AMOUNT || Number(amount) > balance}
+          disabled={isSubmitting || parsedAmount < MINIMUM_WITHDRAW_AMOUNT || parsedAmount > balance}
           className={`w-full py-3 rounded-xl font-bold text-lg transition duration-300 transform shadow-lg ${
-            isSubmitting || Number(amount) < MINIMUM_WITHDRAW_AMOUNT || Number(amount) > balance
+            isSubmitting || parsedAmount < MINIMUM_WITHDRAW_AMOUNT || parsedAmount > balance
               ? "bg-gray-400 cursor-not-allowed text-gray-200 shadow-none"
               : "bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-[1.01] shadow-indigo-300/50"
           }`}

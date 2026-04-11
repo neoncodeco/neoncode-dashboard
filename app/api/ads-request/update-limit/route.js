@@ -3,6 +3,7 @@ import { verifyToken } from "@/lib/verifyToken";
 import getDB from "@/lib/mongodb";
 import { ensureWritableUser } from "@/lib/userAccess";
 import { normalizeAdAccountId, resolveMetaAccessTokens } from "@/lib/metaAdsAccess";
+import { parseIntegerAmount } from "@/lib/wholeAmount";
 
 export async function POST(req) {
   try {
@@ -24,8 +25,13 @@ export async function POST(req) {
       return NextResponse.json({ error: "Invalid ad account ID" }, { status: 400 });
     }
 
-    const oldLimit = Number(old_limit);
-    const newLimit = Number(new_limit);
+    const oldLimit = parseIntegerAmount(old_limit, { allowZero: true });
+    const newLimit = parseIntegerAmount(new_limit, { allowZero: true });
+
+    if (oldLimit === null || newLimit === null) {
+      return NextResponse.json({ error: "Limits must be whole numbers" }, { status: 400 });
+    }
+
     const diff = newLimit - oldLimit;
 
     const access = await ensureWritableUser(db, user.uid);

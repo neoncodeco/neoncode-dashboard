@@ -105,7 +105,7 @@ export default function TransactionsPage() {
         background: "#ffffff",
         color: "#0f172a",
       });
-      loadPayments({ force: true }); // reload table
+      loadPayments({ force: true }); 
     } else {
       await Swal.fire({
         title: "Action failed",

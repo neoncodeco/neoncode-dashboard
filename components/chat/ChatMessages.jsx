@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Bot, Sparkles, User2 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 
-export default function ChatMessages({ chatId, currentRole = "user" }) {
+export default function ChatMessages({ chatId, currentRole = "user", variant = "dark" }) {
   const [messages, setMessages] = useState([]);
   const { token } = useFirebaseAuth();
   const scrollRef = useRef(null);
+  const isLight = variant === "light";
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -59,138 +61,149 @@ export default function ChatMessages({ chatId, currentRole = "user" }) {
       className="flex-1 overflow-y-auto px-3 py-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:px-4"
       style={{ height: "100%" }}
     >
-      <div className="mx-auto flex max-w-md justify-center pb-4">
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mx-auto flex max-w-md justify-center pb-4"
+      >
         <span
           className="rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] shadow-sm"
           style={{
-            borderColor: "var(--chat-pill-border)",
-            background: "var(--chat-pill-bg)",
-            color: "var(--chat-text-faint)",
+            borderColor: isLight ? "rgba(15,23,42,0.08)" : "var(--chat-pill-border)",
+            background: isLight ? "#f3f4f6" : "var(--chat-pill-bg)",
+            color: isLight ? "#64748b" : "var(--chat-text-faint)",
           }}
         >
           Today
         </span>
-      </div>
+      </motion.div>
 
       {messages.length === 0 && (
-        <div className="flex h-full items-center justify-center">
-          <div
-            className="max-w-xs rounded-[28px] border p-6 text-center shadow-[0_20px_45px_rgba(0,0,0,0.22)]"
-            style={{ borderColor: "var(--chat-panel-border)", background: "var(--chat-panel-bg)" }}
+        <div className="flex h-full items-center justify-center px-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 24 }}
+            className={`max-w-xs rounded-[30px] p-6 text-center shadow-[0_24px_50px_rgba(0,0,0,0.22)] ${
+              isLight ? "border border-slate-200 bg-white" : "border border-white/10 bg-white/[0.04]"
+            }`}
           >
             <div
-              className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl"
-              style={{ background: "color-mix(in srgb, var(--chat-online) 14%, transparent)", color: "var(--chat-online)" }}
+              className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${
+                isLight ? "bg-slate-900 text-white" : "bg-emerald-400/10 text-emerald-300"
+              }`}
             >
               <Sparkles size={18} />
             </div>
-            <p className="text-sm font-semibold text-[var(--chat-text-strong)]">Start a smooth support chat</p>
-            <p className="mt-2 text-xs leading-6" style={{ color: "var(--chat-text-muted)" }}>
+            <p className={`text-sm font-semibold ${isLight ? "text-slate-900" : "text-white"}`}>
+              Start a smooth support chat
+            </p>
+            <p className={`mt-2 text-xs leading-6 ${isLight ? "text-slate-600" : "text-white/65"}`}>
               Ask about billing, order updates, service issue, or anything you need help with.
             </p>
-          </div>
+          </motion.div>
         </div>
       )}
 
-      {messages.map((m) => {
-        const isMe = m.senderRole === currentRole;
-        const timeLabel = m.createdAt
-          ? new Date(m.createdAt).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "Sending...";
+      <AnimatePresence initial={false}>
+        {messages.map((m) => {
+          const isMe = m.senderRole === currentRole;
+          const timeLabel = m.createdAt
+            ? new Date(m.createdAt).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "Sending...";
 
-        return (
-          <div
-            key={m.id}
-            className={`mb-4 flex w-full items-end gap-2 ${isMe ? "justify-end" : "justify-start"}`}
-          >
-            {!isMe ? (
-              <div
-                className="mb-6 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border shadow-[0_10px_25px_rgba(0,0,0,0.18)]"
-                style={{
-                  borderColor: "var(--chat-avatar-ring)",
-                  background: "var(--chat-pill-bg)",
-                  color: "var(--chat-online)",
-                }}
-              >
+          return (
+            <motion.div
+              key={m.id}
+              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 260, damping: 24 }}
+              className={`mb-4 flex w-full items-end gap-2 ${isMe ? "justify-end" : "justify-start"}`}
+            >
+              {!isMe ? (
+              <div className="mb-6 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-emerald-300 shadow-[0_10px_25px_rgba(0,0,0,0.18)]">
                 <Bot size={16} />
               </div>
             ) : null}
 
-            <div className={`max-w-[82%] sm:max-w-[76%] ${isMe ? "items-end" : "items-start"}`}>
-              <div
-                className={`relative overflow-hidden rounded-[24px] px-4 py-3 shadow-[0_16px_40px_rgba(0,0,0,0.18)] transition-all ${isMe ? "rounded-br-[8px]" : "rounded-bl-[8px] border"}`}
-                style={
-                  isMe
-                    ? {
-                        background: "var(--chat-user-bubble)",
-                        color: "var(--chat-user-text)",
-                        boxShadow: "0 18px 42px color-mix(in srgb, var(--chat-glow) 85%, transparent)",
-                      }
-                    : {
-                        borderColor: "var(--chat-agent-border)",
-                        background: "var(--chat-agent-bubble)",
-                        color: "var(--chat-agent-text)",
-                      }
-                }
-              >
-                {!isMe ? (
-                  <span className="absolute inset-y-0 left-0 w-1" style={{ background: "var(--chat-online)" }} />
-                ) : null}
-
-                {m.type === "text" && (
-                  <p className="break-words pr-1 text-[14px] leading-7">
-                    {m.text}
-                  </p>
-                )}
-
-                {m.type === "image" && (
-                  <div className="mt-1">
-                    <img
-                      src={m.imageUrl}
-                      alt="attachment"
-                      className="max-w-full rounded-2xl border border-black/5 object-cover shadow-sm"
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div
-                className={`mt-1 flex items-center gap-2 px-1 text-[11px] ${isMe ? "justify-end" : "justify-start"}`}
-                style={{ color: "var(--chat-text-faint)" }}
-              >
-                <span
-                  className="inline-flex h-4 w-4 items-center justify-center rounded-full"
-                  style={{
-                    background: isMe
-                      ? "color-mix(in srgb, var(--chat-online) 14%, transparent)"
-                      : "var(--chat-pill-bg)",
-                    color: isMe ? "var(--chat-online)" : "var(--chat-text-muted)",
-                  }}
+              <div className={`max-w-[82%] sm:max-w-[76%] ${isMe ? "items-end" : "items-start"}`}>
+                <div
+                  className={`relative overflow-hidden rounded-[24px] px-4 py-3 shadow-[0_16px_40px_rgba(0,0,0,0.18)] transition-all ${isMe ? "rounded-br-[8px]" : "rounded-bl-[8px] border border-white/10"}`}
+                  style={
+                    isMe
+                      ? {
+                          background: isLight
+                            ? "#c9ff00"
+                            : "linear-gradient(135deg,rgba(16,185,129,0.95),rgba(34,197,94,0.88))",
+                          color: isLight ? "#111827" : "white",
+                          boxShadow: isLight ? "0 14px 30px rgba(201,255,0,0.25)" : "0 18px 42px rgba(16,185,129,0.22)",
+                        }
+                      : {
+                          borderColor: isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.08)",
+                          background: isLight ? "#f8fafc" : "rgba(255,255,255,0.05)",
+                          color: isLight ? "#0f172a" : "rgba(255,255,255,0.92)",
+                        }
+                  }
                 >
-                  {isMe ? <User2 size={10} /> : <Bot size={10} />}
-                </span>
-                <span>{timeLabel}</span>
-              </div>
-            </div>
+                  {!isMe ? (
+                    <span className="absolute inset-y-0 left-0 w-1 bg-emerald-300" />
+                  ) : null}
 
-            {isMe ? (
-              <div
-                className="mb-6 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border shadow-[0_10px_25px_rgba(0,0,0,0.18)]"
-                style={{
-                  borderColor: "color-mix(in srgb, var(--chat-online) 22%, transparent)",
-                  background: "color-mix(in srgb, var(--chat-online) 12%, transparent)",
-                  color: "var(--chat-online)",
-                }}
-              >
-                <User2 size={16} />
+                  {m.type === "text" && (
+                    <p className="break-words pr-1 text-[14px] leading-7">
+                      {m.text}
+                    </p>
+                  )}
+
+                  {m.type === "image" && (
+                    <div className="mt-1">
+                      <img
+                        src={m.imageUrl}
+                        alt="attachment"
+                        className="max-w-full rounded-2xl border border-white/10 object-cover shadow-sm"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div
+                  className={`mt-1 flex items-center gap-2 px-1 text-[11px] ${isMe ? "justify-end" : "justify-start"}`}
+                  style={{ color: isLight ? "rgba(15,23,42,0.45)" : "rgba(255,255,255,0.45)" }}
+                >
+                  <span
+                    className="inline-flex h-4 w-4 items-center justify-center rounded-full"
+                    style={{
+                      background: isMe
+                        ? (isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.14)")
+                        : (isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"),
+                      color: isMe ? (isLight ? "#111827" : "white") : (isLight ? "#64748b" : "rgba(255,255,255,0.7)"),
+                    }}
+                  >
+                    {isMe ? <User2 size={10} /> : <Bot size={10} />}
+                  </span>
+                  <span>{timeLabel}</span>
+                </div>
               </div>
-            ) : null}
-          </div>
-        );
-      })}
+
+              {isMe ? (
+                <div
+                  className={`mb-6 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.18)] ${
+                    isLight
+                      ? "border border-slate-200 bg-white text-slate-900"
+                      : "border border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
+                  }`}
+                >
+                  <User2 size={16} />
+                </div>
+              ) : null}
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
     </div>
   );
 }

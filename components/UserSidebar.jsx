@@ -35,7 +35,7 @@ const mobileTabs = [
 ];
 
 const profileSubItems = [
-  { name: "Live Chat", href: "/user-dashboard/profile?panel=chat", icon: Headset },
+
   { name: "Support Tickets", href: "/user-dashboard/support", icon: LifeBuoy },
   { name: "History", href: "/user-dashboard/history", icon: History },
   { name: "Affiliate", href: "/user-dashboard/affiliate", icon: Share2 },
@@ -43,6 +43,7 @@ const profileSubItems = [
 ];
 
 function UserIdentity({ user, href = "/user-dashboard/overview" }) {
+
   const initials = useMemo(() => {
     const base = user?.displayName || user?.email || "NC";
     return base
@@ -89,7 +90,7 @@ const UserSidebar = ({ theme, toggleTheme }) => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { user, logout } = useFirebaseAuth();
   const portalRoot = typeof document !== "undefined" ? document.body : null;
-
+  const [profileSubOpen, setProfileSubOpen] = useState(false);
   useEffect(() => {
     if (!servicesMenuOpen && !profileMenuOpen) return undefined;
 
@@ -136,25 +137,31 @@ const UserSidebar = ({ theme, toggleTheme }) => {
 
         return (
           <div key={item.name} className="space-y-2">
-            <Link
-              href={item.href}
-              className={`group flex items-center gap-3 rounded-2xl px-4 py-3 transition-all ${
-                isActive || (isProfileItem && isProfileSectionActive)
-                  ? "sidebar-active border text-white shadow-[0_10px_26px_rgba(183,223,105,0.12)]"
-                  : "sidebar-link border border-transparent"
-              }`}
-            >
-              <span
-                className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all ${
-                  isActive || (isProfileItem && isProfileSectionActive) ? "dashboard-accent-surface" : "dashboard-subpanel"
-                }`}
-              >
-                <item.icon size={16} />
-              </span>
-              <span className="text-sm font-semibold">{item.name}</span>
-            </Link>
+           <Link
+  href={item.href}
+  onClick={(e) => {
+    if (isProfileItem) {
+      e.preventDefault();
+      setProfileSubOpen((prev) => !prev);
+    }
+  }}
+  className={`group flex items-center gap-3 rounded-2xl px-4 py-3 transition-all ${
+    isActive || (isProfileItem && isProfileSectionActive)
+      ? "sidebar-active border text-white shadow-[0_10px_26px_rgba(183,223,105,0.12)]"
+      : "sidebar-link border border-transparent"
+  }`}
+>
+  <span
+    className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all ${
+      isActive || (isProfileItem && isProfileSectionActive) ? "dashboard-accent-surface" : "dashboard-subpanel"
+    }`}
+  >
+    <item.icon size={16} />
+  </span>
+  <span className="text-sm font-semibold">{item.name}</span>
+</Link>
 
-            {isProfileItem ? (
+            {isProfileItem && profileSubOpen ? (
               <div className="ml-4 space-y-1.5 border-l border-[var(--dashboard-frame-border)] pl-3">
                 {profileSubItems.map((subItem) => {
                   const isSubActive =
@@ -251,7 +258,7 @@ const UserSidebar = ({ theme, toggleTheme }) => {
                     <div className="grid gap-2">
                       {[
                         { name: "Our Services", href: "/user-dashboard/services", icon: Layers3 },
-                        { name: "Freepik Premium", href: "/user-dashboard/freepik-premium", icon: PackageOpen },
+                        // { name: "Freepik Premium", href: "/user-dashboard/freepik-premium", icon: PackageOpen },
                         { name: "Premium Service", href: "/user-dashboard/services", icon: Share2 },
                       ].map((item) => (
                         <Link
