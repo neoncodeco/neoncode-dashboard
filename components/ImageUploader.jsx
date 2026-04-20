@@ -1,42 +1,31 @@
 
 // components/ImageUploader.js (Create this file)
 import { useState } from "react";
-import { XMarkIcon, PaperClipIcon, CheckIcon } from '@heroicons/react/24/solid';
+import { XMarkIcon, PaperClipIcon, CheckIcon, ArrowPathIcon } from '@heroicons/react/24/solid';
 
-export default function ImageUploader({ onUploadSuccess, customIcon = null }) {
+export default function ImageUploader({ onUploadSuccess, customIcon = null, compact = false }) {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const [uploadedUrl, setUploadedUrl] = useState(null);
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      setUploadedUrl(null); // Reset URL on new file selection
-      setError(null);
-    }
-  };
+  const uploadSelectedFile = async (targetFile) => {
+    if (!targetFile) return;
 
-  const handleUpload = async () => {
-    if (!file) return;
-
-    // Client-side file size validation (2MB limit)
     const MAX_SIZE = 2 * 1024 * 1024;
-    if (file.size > MAX_SIZE) {
-        setError("File size exceeds 2MB limit.");
-        return;
+    if (targetFile.size > MAX_SIZE) {
+      setError("File size exceeds 2MB limit.");
+      return;
     }
 
     setUploading(true);
     setError(null);
 
     const formData = new FormData();
-    formData.append("image", file);
+    formData.append("image", targetFile);
 
     try {
-      // Assuming your upload API is at /api/upload/screenshot
-      const res = await fetch("/api/upload/screenshot", { 
+      const res = await fetch("/api/upload/screenshot", {
         method: "POST",
         body: formData,
       });
@@ -46,16 +35,14 @@ export default function ImageUploader({ onUploadSuccess, customIcon = null }) {
       if (!res.ok || json.error) {
         throw new Error(json.error || "Upload failed");
       }
-      
+
       const screenshot = {
         url: json.url,
         ...(json.deleteUrl ? { deleteUrl: json.deleteUrl } : {}),
       };
-      setUploadedUrl(json.url);
-      
-      // Pass the uploaded screenshot object to the parent component
-      onUploadSuccess(screenshot);
 
+      setUploadedUrl(json.url);
+      onUploadSuccess(screenshot);
     } catch (err) {
       console.error("Upload failed:", err);
       setError(err.message || "Upload failed");
@@ -63,12 +50,53 @@ export default function ImageUploader({ onUploadSuccess, customIcon = null }) {
       setUploading(false);
     }
   };
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setUploadedUrl(null); // Reset URL on new file selection
+      setError(null);
+      if (compact) {
+        void uploadSelectedFile(selectedFile);
+      }
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
+    await uploadSelectedFile(file);
+  };
   
   const handleRemove = () => {
       setFile(null);
       setUploadedUrl(null);
       setError(null);
       onUploadSuccess(null); // Notify parent component to clear screenshot
+  }
+
+  if (compact) {
+    return (
+      <div className="relative inline-flex items-center">
+        <label htmlFor="image-upload" className="cursor-pointer text-gray-500 hover:text-blue-600 transition duration-150">
+          {customIcon || <PaperClipIcon className="h-5 w-5" />}
+          <input
+            id="image-upload"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+            disabled={uploading}
+          />
+        </label>
+        {uploading ? (
+          <span className="pointer-events-none absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-slate-600 shadow">
+            <ArrowPathIcon className="h-3 w-3 animate-spin" />
+          </span>
+        ) : null}
+        {error ? <span className="sr-only">{error}</span> : null}
+      </div>
+    );
   }
 
   return (

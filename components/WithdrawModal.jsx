@@ -183,170 +183,153 @@ export default function WithdrawModal({ balance, onClose }) {
 
   /* ================= 7. UI RENDER ================= */
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center px-4">
-      <div className="bg-white  text-black w-full max-w-lg rounded-3xl p-6 relative shadow-2xl transform transition-all duration-300 scale-100 opacity-100">
-        
-        {/* Close Button */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4 backdrop-blur-[2px]">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-[28px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-frame-bg)] p-6 shadow-[0_26px_80px_rgba(15,23,42,0.24)] sm:p-7">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full text-gray-500 bg-gray-100 hover:bg-gray-200 transition z-10"
+          className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)] text-[var(--dashboard-text-muted)] transition hover:text-[var(--dashboard-text-strong)]"
         >
-          <X size={20} />
+          <X size={18} />
         </button>
 
-        {/* Gradient Header */}
-        <div className="flex items-center gap-3 mb-8 pb-3 border-b border-gray-100">
-            <DollarSign size={28} className="text-indigo-600"/>
-            <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-500">
-              Process Payout
-            </h2>
+        <div className="mb-6 flex items-center gap-3 border-b border-[var(--dashboard-frame-border)] pb-4 pr-10">
+          <span className="dashboard-accent-surface inline-flex h-10 w-10 items-center justify-center rounded-xl">
+            <DollarSign size={18} />
+          </span>
+          <div>
+            <h2 className="dashboard-text-strong text-[1.5rem] font-black tracking-tight">Process Payout</h2>
+            <p className="dashboard-text-muted text-xs">Submit your withdraw request securely</p>
+          </div>
         </div>
 
-        {/* Floating Balance Card */}
-        <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-xl mb-6 flex justify-between items-center shadow-inner">
-            <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-indigo-700">Available Balance:</span>
-            </div>
-            <p className="text-2xl font-black text-indigo-900">
-                ${balance}
-            </p>
+        <div className="mb-5 rounded-2xl border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-success-soft)] px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <span className="dashboard-text-muted text-sm font-bold">Available Balance</span>
+            <p className="dashboard-text-strong text-[1.7rem] font-black leading-none">${balance}</p>
+          </div>
         </div>
 
-
-        {/* Amount Input */}
         <div className="mb-5">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Amount to Withdraw
-          </label>
+          <label className="dashboard-text-muted mb-2 block text-sm font-semibold">Amount to Withdraw</label>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-extrabold">$</span>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-extrabold dashboard-text-faint">$</span>
             <input
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              placeholder={`Enter minimum $${MINIMUM_WITHDRAW_AMOUNT}`} 
+              placeholder={`Enter minimum $${MINIMUM_WITHDRAW_AMOUNT}`}
               value={amount}
               onKeyDown={blockDecimalInput}
               onChange={(e) => {
                 const value = e.target.value;
                 if (isWholeNumberInputValue(value)) setAmount(value);
               }}
-              className="w-full rounded-xl border border-gray-300 bg-white py-3 pl-8 pr-4 text-lg font-semibold text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition duration-150"
+              className="dashboard-text-strong w-full rounded-xl border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] py-3 pl-8 pr-4 text-lg font-semibold placeholder:dashboard-text-faint focus:border-[var(--dashboard-accent)] focus:ring-2 focus:ring-[var(--dashboard-success-soft)]"
             />
           </div>
-          
-          {/* Minimum Amount Warning */}
+
           {parsedAmount > 0 && parsedAmount < MINIMUM_WITHDRAW_AMOUNT && (
-             <p className="text-orange-500 text-xs mt-1 font-medium">
-                Minimum withdrawal amount must be ${MINIMUM_WITHDRAW_AMOUNT}.
-             </p>
+            <p className="mt-1 text-xs font-medium text-amber-500">
+              Minimum withdrawal amount must be ${MINIMUM_WITHDRAW_AMOUNT}.
+            </p>
           )}
 
-          {/* Insufficient Balance Warning */}
           {parsedAmount > balance && (
-             <p className="text-red-500 text-xs mt-1 font-medium">
-                ⚠️ Withdrawal amount cannot exceed available balance ($ {balance}).
-             </p>
+            <p className="mt-1 text-xs font-medium text-red-500">
+              Withdrawal amount cannot exceed available balance (${balance}).
+            </p>
           )}
         </div>
 
-        {/* Method Tabs (Pill Style) */}
-        <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Payout Method
-            </label>
-            <div className="grid grid-cols-4 gap-2 bg-gray-100 p-1 rounded-full">
-              {METHODS.map((m) => {
-                const Icon = getMethodIcon(m);
-                return (
-                  <button
-                    key={m}
-                    onClick={() => setMethod(m)}
-                    className={`flex items-center justify-center py-2.5 rounded-full font-semibold text-sm transition duration-200 ${
-                      method === m
-                        ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200"
-                        : "text-gray-600 hover:bg-white/50"
-                    }`}
-                  >
-                    <Icon size={16} className="mr-1 hidden sm:inline" />
-                    {m.toUpperCase()}
-                  </button>
-                );
-              })}
-            </div>
+        <div className="mb-5">
+          <label className="dashboard-text-muted mb-2 block text-sm font-semibold">Select Payout Method</label>
+          <div className="grid grid-cols-4 gap-2 rounded-2xl border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)] p-1.5">
+            {METHODS.map((m) => {
+              const Icon = getMethodIcon(m);
+              return (
+                <button
+                  key={m}
+                  onClick={() => setMethod(m)}
+                  className={`flex items-center justify-center rounded-xl py-2 text-xs font-black uppercase transition ${
+                    method === m
+                      ? "dashboard-accent-surface"
+                      : "dashboard-text-muted hover:bg-[var(--dashboard-frame-bg)]"
+                  }`}
+                >
+                  <Icon size={14} className="mr-1 hidden sm:inline" />
+                  {m}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Saved Notice */}
         {isSavedMethod && (
-          <p className="text-sm text-green-800 bg-green-100 p-3 rounded-xl mb-4 flex items-center gap-2 font-medium border border-green-200">
-            <CheckCircle size={18} className="text-green-600 flex-shrink-0" />
-            Saved method loaded. These fields are locked for security.
+          <p className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200/60 bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-700">
+            <CheckCircle size={16} className="flex-shrink-0" />
+            Saved method loaded. Fields are locked for security.
           </p>
         )}
 
-        {/* Dynamic Fields Container */}
-        <div className="space-y-4 mb-6 pt-2">
-          {/* bkash / nagad */}
+        <div className="mb-5 space-y-3 pt-1">
           {(method === "bkash" || method === "nagad") && (
             <input
               disabled={isSavedMethod}
               value={form.wallet}
               onChange={(e) => handleFormChange('wallet', e.target.value)}
               placeholder={`${method.toUpperCase()} Wallet Number`}
-              className={`w-full rounded-xl border px-4 py-3 transition ${
-                isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-600 placeholder:text-gray-400" : "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+              className={`w-full rounded-xl border px-4 py-3 text-sm transition ${
+                isSavedMethod
+                  ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-500 placeholder:text-gray-400"
+                  : "dashboard-text-strong border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] placeholder:dashboard-text-faint focus:border-[var(--dashboard-accent)] focus:ring-2 focus:ring-[var(--dashboard-success-soft)]"
               }`}
             />
           )}
 
-          {/* bank */}
           {method === "bank" && (
             <>
-              <input disabled={isSavedMethod} value={form.bankName} onChange={(e) => handleFormChange('bankName', e.target.value)} placeholder="Bank Name (Required)" className={`w-full rounded-xl border px-4 py-3 transition ${isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-600 placeholder:text-gray-400" : "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"}`}/>
-              <input disabled={isSavedMethod} value={form.accountName} onChange={(e) => handleFormChange('accountName', e.target.value)} placeholder="Account Name (Required)" className={`w-full rounded-xl border px-4 py-3 transition ${isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-600 placeholder:text-gray-400" : "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"}`}/>
-              <input disabled={isSavedMethod} value={form.accountNo} onChange={(e) => handleFormChange('accountNo', e.target.value)} placeholder="Account Number (Required)" className={`w-full rounded-xl border px-4 py-3 transition ${isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-600 placeholder:text-gray-400" : "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"}`}/>
-              <input disabled={isSavedMethod} value={form.branch} onChange={(e) => handleFormChange('branch', e.target.value)} placeholder="Branch Name (Optional)" className={`w-full rounded-xl border px-4 py-3 transition ${isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-600 placeholder:text-gray-400" : "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"}`}/>
+              <input disabled={isSavedMethod} value={form.bankName} onChange={(e) => handleFormChange('bankName', e.target.value)} placeholder="Bank Name (Required)" className={`w-full rounded-xl border px-4 py-3 text-sm transition ${isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-500 placeholder:text-gray-400" : "dashboard-text-strong border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] placeholder:dashboard-text-faint focus:border-[var(--dashboard-accent)] focus:ring-2 focus:ring-[var(--dashboard-success-soft)]"}`}/>
+              <input disabled={isSavedMethod} value={form.accountName} onChange={(e) => handleFormChange('accountName', e.target.value)} placeholder="Account Name (Required)" className={`w-full rounded-xl border px-4 py-3 text-sm transition ${isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-500 placeholder:text-gray-400" : "dashboard-text-strong border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] placeholder:dashboard-text-faint focus:border-[var(--dashboard-accent)] focus:ring-2 focus:ring-[var(--dashboard-success-soft)]"}`}/>
+              <input disabled={isSavedMethod} value={form.accountNo} onChange={(e) => handleFormChange('accountNo', e.target.value)} placeholder="Account Number (Required)" className={`w-full rounded-xl border px-4 py-3 text-sm transition ${isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-500 placeholder:text-gray-400" : "dashboard-text-strong border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] placeholder:dashboard-text-faint focus:border-[var(--dashboard-accent)] focus:ring-2 focus:ring-[var(--dashboard-success-soft)]"}`}/>
+              <input disabled={isSavedMethod} value={form.branch} onChange={(e) => handleFormChange('branch', e.target.value)} placeholder="Branch Name (Optional)" className={`w-full rounded-xl border px-4 py-3 text-sm transition ${isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-500 placeholder:text-gray-400" : "dashboard-text-strong border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] placeholder:dashboard-text-faint focus:border-[var(--dashboard-accent)] focus:ring-2 focus:ring-[var(--dashboard-success-soft)]"}`}/>
             </>
           )}
 
-          {/* crypto */}
           {method === "crypto" && (
             <>
-              <select disabled={isSavedMethod} value={form.network} onChange={(e) => handleFormChange('network', e.target.value)} className={`w-full appearance-none rounded-xl border px-4 py-3 transition ${isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-600" : "border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"}`}>
+              <select disabled={isSavedMethod} value={form.network} onChange={(e) => handleFormChange('network', e.target.value)} className={`w-full appearance-none rounded-xl border px-4 py-3 text-sm transition ${isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-500" : "dashboard-text-strong border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] focus:border-[var(--dashboard-accent)] focus:ring-2 focus:ring-[var(--dashboard-success-soft)]"}`}>
                 <option value="USDT-TRC20">USDT (TRC20 Network)</option>
                 <option value="USDT-BEP20">USDT (BEP20 Network)</option>
               </select>
 
-              <input disabled={isSavedMethod} value={form.cryptoAddress} onChange={(e) => handleFormChange('cryptoAddress', e.target.value)} placeholder="USDT Wallet Address" className={`w-full rounded-xl border px-4 py-3 transition ${isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-600 placeholder:text-gray-400" : "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"}`}/>
+              <input disabled={isSavedMethod} value={form.cryptoAddress} onChange={(e) => handleFormChange('cryptoAddress', e.target.value)} placeholder="USDT Wallet Address" className={`w-full rounded-xl border px-4 py-3 text-sm transition ${isSavedMethod ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-500 placeholder:text-gray-400" : "dashboard-text-strong border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] placeholder:dashboard-text-faint focus:border-[var(--dashboard-accent)] focus:ring-2 focus:ring-[var(--dashboard-success-soft)]"}`}/>
             </>
           )}
         </div>
 
-        {/* Save Checkbox (Only shown if method is NOT already saved) */}
         {!isSavedMethod && (
-          <label className="flex items-center gap-3 text-sm mb-6 text-gray-600 cursor-pointer">
+          <label className="dashboard-text-muted mb-5 flex cursor-pointer items-center gap-3 text-sm">
             <input
               type="checkbox"
               checked={saveMethod}
               onChange={() => setSaveMethod(!saveMethod)}
-              className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              className="h-4 w-4 rounded border-gray-300"
             />
             <span className="font-medium">Save this payout method for future withdrawals.</span>
           </label>
         )}
 
-        {/* Submit Button */}
         <button
           onClick={submitWithdraw}
           disabled={isSubmitting || parsedAmount < MINIMUM_WITHDRAW_AMOUNT || parsedAmount > balance}
-          className={`w-full py-3 rounded-xl font-bold text-lg transition duration-300 transform shadow-lg ${
+          className={`w-full rounded-xl py-3 text-base font-black transition ${
             isSubmitting || parsedAmount < MINIMUM_WITHDRAW_AMOUNT || parsedAmount > balance
-              ? "bg-gray-400 cursor-not-allowed text-gray-200 shadow-none"
-              : "bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-[1.01] shadow-indigo-300/50"
+              ? "cursor-not-allowed bg-[var(--dashboard-button-muted)] text-[var(--dashboard-button-muted-text)]"
+              : "dashboard-accent-surface"
           }`}
         >
           {isSubmitting ? (
-            <Loader2 className="animate-spin mx-auto h-6 w-6" />
+            <Loader2 className="mx-auto h-5 w-5 animate-spin" />
           ) : (
             "Submit Withdraw Request"
           )}

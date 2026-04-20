@@ -29,6 +29,20 @@ export default function LiveChatButton() {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
+  useEffect(() => {
+    const handleExternalOpen = () => {
+      if (!user) {
+        setNotice("Live chat start korte login korte hobe.");
+        return;
+      }
+      setNotice("");
+      setOpen(true);
+    };
+
+    window.addEventListener("open-live-chat", handleExternalOpen);
+    return () => window.removeEventListener("open-live-chat", handleExternalOpen);
+  }, [user]);
+
   const handleOpenChat = async () => {
     if (open) {
       setOpen(false);
@@ -56,7 +70,7 @@ export default function LiveChatButton() {
   if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed bottom-[5.8rem] right-3 z-50 hidden lg:block lg:bottom-4 lg:right-5">
+    <div className="fixed bottom-[5.8rem] right-3 z-50 block md:bottom-[4rem] md:right-4 lg:bottom-4 lg:right-5">
       <AnimatePresence>
         {open && user ? (
           <motion.div
@@ -65,7 +79,7 @@ export default function LiveChatButton() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 18, scale: 0.96 }}
             transition={{ type: "spring", stiffness: 320, damping: 28 }}
-            className="absolute bottom-[calc(100%+0.85rem)] right-0 w-[calc(100vw-1.5rem)] max-w-[430px] origin-bottom-right sm:w-[calc(100vw-2rem)]"
+            className="absolute bottom-[calc(100%+0.85rem)] right-0 w-[calc(100vw-1.5rem)] max-w-[338px] origin-bottom-right sm:w-[calc(100vw-2rem)] sm:max-w-[352px] md:max-w-[365px] lg:max-w-[390px]"
           >
             <ChatWindow user={user} onClose={() => setOpen(false)} />
           </motion.div>
@@ -100,10 +114,13 @@ export default function LiveChatButton() {
         aria-label="Live Chat"
         aria-expanded={open}
         className={`
-          group relative flex h-[4.25rem] w-[4.25rem] items-center justify-center overflow-hidden rounded-full border text-white shadow-[0_22px_55px_rgba(7,12,22,0.34)]
+          group relative flex h-[3.75rem] w-[3.75rem] items-center justify-center overflow-hidden rounded-full border text-[var(--dashboard-accent-text)] shadow-[0_18px_44px_rgba(7,12,22,0.3)]
           transition-all duration-300 ease-out active:translate-y-0
           backdrop-blur-xl disabled:cursor-not-allowed disabled:opacity-80
-          ${open ? "border-emerald-900 bg-[linear-gradient(135deg,#0f2b14_0%,#17320d_52%,#224516_100%)]" : "border-[#4d8f29] bg-[linear-gradient(135deg,#17340d_0%,#214311_52%,#3d7721_100%)]"}
+          ${open
+            ? "border-[rgba(194,235,45,0.7)] bg-[linear-gradient(180deg,var(--dashboard-accent-strong),var(--dashboard-accent))] shadow-[0_16px_34px_rgba(194,235,45,0.34)]"
+            : "border-[rgba(194,235,45,0.62)] bg-[linear-gradient(180deg,var(--dashboard-accent-strong),var(--dashboard-accent))] shadow-[0_16px_34px_rgba(194,235,45,0.3)]"
+          }
         `}
       >
         {!loading && (
@@ -117,16 +134,16 @@ export default function LiveChatButton() {
         <span className="relative flex h-full w-full items-center justify-center">
           {!open && !loading && (
             <>
-              <span className="absolute h-12 w-12 animate-ping rounded-full bg-emerald-300/15" />
-              <span className="absolute right-3 top-3 h-3 w-3 rounded-full border-2 border-[#214311] bg-emerald-400" />
+              <span className="absolute h-10 w-10 animate-ping rounded-full bg-[rgba(194,235,45,0.18)]" />
+              <span className="absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full border-2 border-[rgba(28,39,10,0.85)] bg-[#d7f56b]" />
             </>
           )}
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : open ? (
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           ) : (
-            <Headset className="h-6 w-6 drop-shadow-[0_3px_8px_rgba(0,0,0,0.3)]" />
+            <Headset className="h-6 w-6 drop-shadow-[0_3px_8px_rgba(0,0,0,0.22)]" />
           )}
         </span>
       </motion.button>

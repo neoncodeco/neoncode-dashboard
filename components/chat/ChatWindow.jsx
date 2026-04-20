@@ -21,14 +21,20 @@ function BottomTab({ active, label, icon: Icon, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`flex flex-1 flex-col items-center gap-1 rounded-[18px] py-2.5 transition ${
-        active ? "text-black" : "text-black/45"
+      className={`flex flex-1 flex-col items-center gap-0.5 rounded-[14px] py-1.5 transition ${
+        active ? "text-[var(--dashboard-accent-text)]" : "text-black/45"
       }`}
     >
-      <div className={`flex h-9 w-9 items-center justify-center rounded-full ${active ? "bg-black text-white" : "bg-transparent"}`}>
-        <Icon size={18} />
+      <div
+        className={`flex h-8 w-8 items-center justify-center rounded-full ${
+          active
+            ? "border border-[rgba(194,235,45,0.72)] bg-[linear-gradient(180deg,var(--dashboard-accent-strong),var(--dashboard-accent))] text-[var(--dashboard-accent-text)]"
+            : "bg-transparent"
+        }`}
+      >
+        <Icon size={16} />
       </div>
-      <span className="text-[11px] font-medium">{label}</span>
+      <span className="text-[10px] font-medium leading-none">{label}</span>
     </button>
   );
 }
@@ -77,7 +83,7 @@ function TicketCard() {
 }
 
 export default function ChatWindow({ user, onClose }) {
-  const [activeTab, setActiveTab] = useState("messages");
+  const [activeTab, setActiveTab] = useState("home");
 
   const avatars = useMemo(
     () => [user?.photoURL || null, "/neon-code-logo.jpg"],
@@ -90,12 +96,12 @@ export default function ChatWindow({ user, onClose }) {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 18, scale: 0.96 }}
       transition={{ type: "spring", stiffness: 280, damping: 24 }}
-      className="relative flex h-[min(78vh,760px)] w-full flex-col overflow-hidden rounded-[30px] border border-black/10 shadow-[0_38px_90px_rgba(0,0,0,0.45)]"
-      style={{ background: "#c9ff00" }}
+      className="relative flex h-[min(62vh,540px)] w-full flex-col overflow-hidden rounded-[30px] border border-[rgba(194,235,45,0.42)] shadow-[0_28px_75px_rgba(2,6,23,0.42)] sm:h-[min(66vh,580px)] md:h-[min(68vh,610px)] lg:h-[min(72vh,680px)]"
+      style={{ background: "#f7fce5" }}
     >
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(201,255,0,1),rgba(201,255,0,0.98))]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.16),transparent_38%)]" />
-      <div className="absolute inset-x-6 top-20 h-24 rounded-full bg-white/8 blur-xl" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(194,235,45,0.78)_0%,rgba(222,244,138,0.72)_42%,rgba(246,251,227,0.95)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.28),transparent_42%)]" />
+      <div className="absolute inset-x-6 top-16 h-20 rounded-full bg-white/12 blur-xl" />
 
       <div className="relative flex flex-1 flex-col overflow-hidden">
         {activeTab !== "messages" ? (
@@ -188,7 +194,7 @@ export default function ChatWindow({ user, onClose }) {
               </button>
             </div>
           ) : activeTab === "messages" ? (
-            <div className="flex h-full min-h-[320px] flex-col overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_14px_28px_rgba(0,0,0,0.08)]">
+            <div className="flex h-full min-h-[320px] flex-col overflow-hidden rounded-[22px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] shadow-[0_16px_34px_rgba(15,23,42,0.1)]">
               <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4">
                 <div className="h-10 w-10" aria-hidden="true" />
                 <p className="text-[1.4rem] font-semibold tracking-tight text-slate-900">Messages</p>
@@ -206,7 +212,7 @@ export default function ChatWindow({ user, onClose }) {
                 <ChatMessages chatId={`support_${user.uid}`} variant="light" />
               </div>
 
-              <div className="border-t border-slate-100 bg-white p-3 sm:p-4">
+              <div className="border-t border-slate-100 bg-[#f8faf6] p-2">
                 <ChatInput chatId={`support_${user.uid}`} preferredLanguage="auto" variant="light" />
               </div>
             </div>
@@ -236,8 +242,8 @@ export default function ChatWindow({ user, onClose }) {
           )}
         </div>
 
-        <div className="px-3 pb-3 pt-2">
-          <div className="mx-auto flex max-w-[22rem] items-center justify-between rounded-full border border-slate-200/80 bg-white/90 px-2 py-2 shadow-[0_18px_45px_rgba(0,0,0,0.12)] backdrop-blur-xl">
+        <div className="px-2 pb-2 pt-1">
+          <div className="mx-auto flex max-w-[22rem] items-center justify-between rounded-full border border-slate-200/80 bg-white/90 px-1.5 py-1 shadow-[0_14px_34px_rgba(0,0,0,0.1)] backdrop-blur-xl">
             <BottomTab active={activeTab === "home"} label="Home" icon={Home} onClick={() => setActiveTab("home")} />
             <BottomTab active={activeTab === "messages"} label="Messages" icon={MessageSquare} onClick={() => setActiveTab("messages")} />
             <BottomTab active={activeTab === "help"} label="Help" icon={HelpCircle} onClick={() => setActiveTab("help")} />

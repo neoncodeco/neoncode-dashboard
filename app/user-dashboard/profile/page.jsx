@@ -322,7 +322,7 @@ const handleVerifyOtp = async () => {
   };
 
   return (
-    <div className="min-h-screen pb-20 text-black">
+    <div className="user-dashboard-theme-scope min-h-screen pb-20">
       <div
         className="relative h-56 overflow-hidden bg-gradient-to-r from-indigo-700 to-sky-700 md:h-72"
         style={
@@ -341,7 +341,7 @@ const handleVerifyOtp = async () => {
         </label>
       </div>
 
-      <div className="relative z-10 mx-auto -mt-14 max-w-7xl px-4 md:-mt-16 md:px-12">
+      <div className="relative z-10 mx-auto -mt-14 w-full px-4 md:-mt-16 md:px-6 lg:px-8">
         <div className="mb-8 flex flex-col items-start gap-4 md:flex-row md:items-end md:gap-6">
           <div className="group relative">
             <div className="h-28 w-28 shrink-0 overflow-hidden rounded-3xl border-4 border-white bg-white p-1 shadow-2xl md:h-36 md:w-36">
@@ -363,9 +363,9 @@ const handleVerifyOtp = async () => {
               <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, "photo")} />
             </label>
           </div>
-          <div className="min-w-0 rounded-3xl border border-white/65  px-4 py-3 font-medium text-slate-900 shadow-xl shadow-slate-900/10 backdrop-blur md:px-5 dark:border-slate-700/80 dark:bg-slate-950/80 dark:text-slate-50 dark:shadow-[0_18px_40px_rgba(2,6,23,0.45)]">
+          <div className="dashboard-subpanel min-w-0 rounded-3xl border border-[var(--dashboard-frame-border)] px-4 py-3 font-medium md:px-5">
             <div className="flex items-center gap-2">
-              <h1 className="truncate text-2xl font-black md:text-3xl">{formData.name || "User"}</h1>
+              <h1 className="dashboard-text-strong truncate text-2xl font-black md:text-3xl">{formData.name || "User"}</h1>
               {hasVerifiedPhone ? (
                 <span
                   className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white shadow-[0_6px_18px_rgba(14,165,233,0.35)] ring-2 ring-white/70 dark:ring-slate-900/80"
@@ -375,30 +375,30 @@ const handleVerifyOtp = async () => {
                 </span>
               ) : null}
             </div>
-            <p className="mt-1 flex items-center gap-2 truncate text-sm text-slate-600 md:text-base dark:text-slate-200">
+            <p className="dashboard-text-muted mt-1 flex items-center gap-2 truncate text-sm md:text-base">
               <Mail size={14} /> {userData?.email}
             </p>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 md:px-12 lg:grid-cols-12">
-        <div className="space-y-6 lg:col-span-4">
-          <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
-            <h3 className="mb-4 flex items-center gap-2 font-bold text-gray-800">
+      <div className="mx-auto grid w-full grid-cols-1 gap-6 px-4 md:px-6 xl:grid-cols-12 xl:px-8">
+        <div className="space-y-6 xl:col-span-4">
+          <div className="dashboard-subpanel rounded-3xl border border-[var(--dashboard-frame-border)] p-6">
+            <h3 className="dashboard-text-strong mb-4 flex items-center gap-2 font-bold">
               <Shield size={18} className="text-indigo-600" /> Account Info
             </h3>
             <div className="space-y-3">
-              <div className="flex justify-between rounded-2xl bg-gray-50 p-3 text-sm">
-                <span className="text-gray-500">Referral Code</span>
+              <div className="dashboard-subpanel flex justify-between rounded-2xl p-3 text-sm">
+                <span className="dashboard-text-muted">Referral Code</span>
                 <span className="font-black text-indigo-600">{userData?.referralCode}</span>
               </div>
-              <div className="flex justify-between rounded-2xl bg-gray-50 p-3 text-sm">
-                <span className="text-gray-500">Joined On</span>
-                <span className="font-medium">{userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString() : "N/A"}</span>
+              <div className="dashboard-subpanel flex justify-between rounded-2xl p-3 text-sm">
+                <span className="dashboard-text-muted">Joined On</span>
+                <span className="dashboard-text-strong font-medium">{userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString() : "N/A"}</span>
               </div>
-              <div className="flex justify-between rounded-2xl bg-gray-50 p-3 text-sm">
-                <span className="text-gray-500">Account Verification</span>
+              <div className="dashboard-subpanel flex justify-between rounded-2xl p-3 text-sm">
+                <span className="dashboard-text-muted">Account Verification</span>
                 <span className={`font-bold ${isPhoneVerified ? "text-green-600" : "text-amber-600"}`}>
                   {isPhoneVerified ? "Verified" : "Pending"}
                 </span>
@@ -406,70 +406,70 @@ const handleVerifyOtp = async () => {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
-            <h3 className="mb-4 flex items-center gap-2 font-bold text-gray-800">
+          <div className="dashboard-subpanel rounded-3xl border border-[var(--dashboard-frame-border)] p-6">
+            <h3 className="dashboard-text-strong mb-4 flex items-center gap-2 font-bold">
               <Globe size={18} className="text-indigo-600" /> Quick Access
             </h3>
             <div className="space-y-3">
               <Link
                 href="/user-dashboard/history"
-                className="flex items-center justify-between rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4 transition hover:border-indigo-200 hover:bg-indigo-50/60"
+                className="dashboard-subpanel flex items-center justify-between rounded-2xl border border-[var(--dashboard-frame-border)] px-4 py-4 transition hover:border-indigo-200"
               >
                 <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-600">
+                  <span className="dashboard-accent-surface flex h-10 w-10 items-center justify-center rounded-2xl">
                     <History size={18} />
                   </span>
                   <div>
-                    <p className="font-bold text-gray-800">Payment History</p>
-                    <p className="text-xs text-gray-500">View transactions and account activity</p>
+                    <p className="dashboard-text-strong font-bold">Payment History</p>
+                    <p className="dashboard-text-muted text-xs">View transactions and account activity</p>
                   </div>
                 </div>
-                <ArrowRight size={18} className="text-gray-400" />
+                <ArrowRight size={18} className="dashboard-text-faint" />
               </Link>
               <button
                 type="button"
                 onClick={handleLogout}
                 disabled={isLoggingOut}
-                className="flex w-full items-center justify-between rounded-2xl border border-slate-700/70 bg-slate-900/90 px-4 py-4 text-left shadow-[0_12px_30px_rgba(15,23,42,0.25)] backdrop-blur transition hover:-translate-y-0.5 hover:border-slate-600 hover:bg-slate-800/95 disabled:cursor-not-allowed disabled:opacity-60"
+                className="dashboard-subpanel flex w-full items-center justify-between rounded-2xl border border-[var(--dashboard-frame-border)] px-4 py-4 text-left transition hover:border-indigo-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-800 text-slate-100 ring-1 ring-slate-700/80">
+                  <span className="dashboard-accent-surface flex h-10 w-10 items-center justify-center rounded-2xl">
                     {isLoggingOut ? <Loader2 size={18} className="animate-spin" /> : <LogOut size={18} />}
                   </span>
                   <div>
-                    <p className="font-bold text-slate-50">{isLoggingOut ? "Logging out..." : "Logout"}</p>
-                    <p className="text-xs text-slate-300">Sign out from this device safely</p>
+                    <p className="dashboard-text-strong font-bold">{isLoggingOut ? "Logging out..." : "Logout"}</p>
+                    <p className="dashboard-text-muted text-xs">Sign out from this device safely</p>
                   </div>
                 </div>
-                <ArrowRight size={18} className="text-slate-400" />
+                <ArrowRight size={18} className="dashboard-text-faint" />
               </button>
             </div>
           </div>
         </div>
 
-        <div className="lg:col-span-8">
-          <form onSubmit={handleUpdate} className="space-y-10 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm md:p-10">
+        <div className="xl:col-span-8">
+          <form onSubmit={handleUpdate} className="dashboard-subpanel space-y-10 rounded-3xl border border-[var(--dashboard-frame-border)] p-6 md:p-10">
             <section>
-              <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-800">
+              <h3 className="dashboard-text-strong mb-6 flex items-center gap-2 text-lg font-bold">
                 <User size={20} className="text-indigo-600" /> General Settings
               </h3>
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="ml-1 text-xs font-bold uppercase text-gray-500">Full Name</label>
+                  <label className="dashboard-text-faint ml-1 text-xs font-bold uppercase">Full Name</label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-3.5 outline-none transition focus:border-indigo-500"
+                    className="dashboard-text-strong w-full rounded-2xl border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] px-5 py-3.5 outline-none transition focus:border-[var(--dashboard-accent)]"
                   />
                 </div>
                 <div className="space-y-2 opacity-60">
-                  <label className="ml-1 text-xs font-bold uppercase text-gray-500">Email (Private)</label>
+                  <label className="dashboard-text-faint ml-1 text-xs font-bold uppercase">Email (Private)</label>
                   <input
                     type="email"
                     value={userData?.email || ""}
                     readOnly
-                    className="w-full cursor-not-allowed rounded-2xl border border-gray-200 bg-gray-100 px-5 py-3.5 outline-none"
+                    className="w-full cursor-not-allowed rounded-2xl border border-[var(--dashboard-input-border)] bg-[var(--dashboard-panel-soft)] px-5 py-3.5 outline-none"
                   />
                 </div>
               </div>
@@ -496,8 +496,8 @@ const handleVerifyOtp = async () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_0.9fr]">
-                  <div className="dashboard-panel rounded-[24px] border p-4 sm:p-5">
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,0.9fr)]">
+                  <div className="dashboard-panel min-w-0 rounded-[24px] border p-4 sm:p-5">
                     <div className="mb-4 flex items-center gap-3">
                       <span className="dashboard-accent-surface flex h-11 w-11 items-center justify-center rounded-2xl">
                         <MessageSquareText size={18} />
@@ -508,9 +508,9 @@ const handleVerifyOtp = async () => {
                       </div>
                     </div>
 
-                    <label className="ml-1 text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">Phone Number</label>
-                    <div className="dashboard-search mt-2 flex items-center gap-3 rounded-[22px] px-4 py-3">
-                      <span className="dashboard-chip rounded-xl px-3 py-2 text-xs font-black">+880</span>
+                    <label className="dashboard-text-faint ml-1 text-[11px] font-black uppercase tracking-[0.14em]">Phone Number</label>
+                    <div className="dashboard-search mt-2 flex items-center gap-2 rounded-[18px] px-3 py-2.5">
+                      <span className="dashboard-chip rounded-xl px-3 py-1.5 text-xs font-black">+880</span>
                       <input
                         type="text"
                         placeholder="1XXXXXXXXX"
@@ -531,7 +531,7 @@ const handleVerifyOtp = async () => {
                                 setOtpStatus({ type: "", message: "" });
                               }
                             }}
-                        className="w-full bg-transparent text-sm font-semibold outline-none"
+                        className="h-9 w-full border-0 bg-transparent p-0 text-sm font-semibold outline-none ring-0 focus:border-0 focus:outline-none focus:ring-0"
                       />
                     </div>
                     {hasVerifiedPhone && !isEditingVerifiedPhone ? (
@@ -547,7 +547,7 @@ const handleVerifyOtp = async () => {
                             code: "",
                           }));
                         }}
-                        className="mt-3 inline-flex min-h-11 items-center justify-center rounded-2xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+                        className="dashboard-muted-button mt-3 inline-flex min-h-11 items-center justify-center rounded-2xl border px-4 py-2 text-sm font-bold transition"
                       >
                         Edit Number
                       </button>
@@ -555,7 +555,7 @@ const handleVerifyOtp = async () => {
                   </div>
 
                   {!isPhoneVerified ? (
-                    <div className="dashboard-panel rounded-[24px] border p-4 sm:p-5">
+                    <div className="dashboard-panel min-w-0 rounded-[24px] border p-4 sm:p-5">
                       <div className="mb-4 flex items-center gap-3">
                         <span className="dashboard-muted-button flex h-11 w-11 items-center justify-center rounded-2xl">
                           <CheckCircle size={18} />
@@ -566,7 +566,7 @@ const handleVerifyOtp = async () => {
                         </div>
                       </div>
 
-                      <label className="ml-1 text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">OTP Code</label>
+                      <label className="dashboard-text-faint ml-1 text-[11px] font-black uppercase tracking-[0.14em]">OTP Code</label>
                       <input
                         type="text"
                         inputMode="numeric"
@@ -577,7 +577,7 @@ const handleVerifyOtp = async () => {
                           ...prev,
                           code: e.target.value.replace(/\D/g, "").slice(0, 6),
                         }))}
-                        className="mt-2 w-full rounded-[22px] border border-gray-200 bg-gray-50 px-5 py-4 text-center text-lg font-black tracking-[0.35em] outline-none transition focus:border-green-500"
+                        className="dashboard-text-strong mt-2 w-full rounded-[22px] border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] px-5 py-4 text-center text-base font-black tracking-[0.24em] outline-none transition focus:border-[var(--dashboard-accent)] sm:text-lg sm:tracking-[0.35em]"
                       />
                     </div>
                   ) : null}
@@ -696,14 +696,14 @@ const handleVerifyOtp = async () => {
             </section>
 
             <section>
-              <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-800">
+              <h3 className="dashboard-text-strong mb-6 flex items-center gap-2 text-lg font-bold">
                 <CreditCard size={20} className="text-pink-600" /> Payout Methods
               </h3>
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {Object.keys(paymentMethods).length > 0 ? (
                   Object.keys(paymentMethods).map((key) => (
                     <div key={key} className="space-y-2">
-                      <label className="ml-1 text-xs font-bold uppercase text-gray-500">{key} Number</label>
+                      <label className="dashboard-text-faint ml-1 text-xs font-bold uppercase">{key} Number</label>
                       <div className="relative">
                         <span className="absolute left-5 top-1/2 -translate-y-1/2 text-xs font-bold uppercase text-pink-500">{key}</span>
                         <input
@@ -711,7 +711,7 @@ const handleVerifyOtp = async () => {
                           placeholder={`Enter ${key} number`}
                           value={paymentMethods[key]?.number || ""}
                           onChange={(e) => handlePaymentChange(key, e.target.value)}
-                          className="w-full rounded-2xl border border-gray-200 bg-gray-50 py-3.5 pl-20 pr-5 outline-none transition focus:border-pink-500"
+                          className="dashboard-text-strong w-full rounded-2xl border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] py-3.5 pl-20 pr-5 outline-none transition focus:border-[var(--dashboard-accent)]"
                         />
                       </div>
                     </div>
@@ -725,7 +725,7 @@ const handleVerifyOtp = async () => {
             <div className="flex flex-col items-center justify-between gap-4 border-t pt-8 md:flex-row">
               <div className="text-sm">
                 {status.message ? (
-                  <p className={`flex items-center gap-2 font-medium ${status.type === "success" ? "text-green-600" : "text-red-600"}`}>
+                  <p className={`flex items-center gap-2 font-medium ${status.type === "success" ? "text-green-600" : "text-red-500"}`}>
                     {status.type === "success" ? <CheckCircle size={18} /> : null}
                     {status.message}
                   </p>
@@ -734,7 +734,7 @@ const handleVerifyOtp = async () => {
               <button
                 type="submit"
                 disabled={loading || uploadingPhoto || uploadingCover}
-                className="flex w-full items-center justify-center gap-3 rounded-2xl bg-indigo-600 px-12 py-4 font-bold text-white shadow-xl shadow-indigo-100 transition hover:-translate-y-1 hover:bg-indigo-700 active:scale-95 md:w-auto"
+                className="dashboard-accent-surface flex w-full items-center justify-center gap-3 rounded-2xl px-12 py-4 font-bold transition hover:-translate-y-1 active:scale-95 md:w-auto"
               >
                 {loading ? <Loader2 className="animate-spin" /> : <Save size={20} />}
                 Save Changes

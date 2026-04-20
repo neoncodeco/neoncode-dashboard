@@ -85,12 +85,16 @@ export default function ChatMessages({ chatId, currentRole = "user", variant = "
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 24 }}
             className={`max-w-xs rounded-[30px] p-6 text-center shadow-[0_24px_50px_rgba(0,0,0,0.22)] ${
-              isLight ? "border border-slate-200 bg-white" : "border border-white/10 bg-white/[0.04]"
+              isLight
+                ? "border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] shadow-[0_20px_45px_rgba(148,163,184,0.22)]"
+                : "border border-white/10 bg-white/[0.04]"
             }`}
           >
             <div
               className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${
-                isLight ? "bg-slate-900 text-white" : "bg-emerald-400/10 text-emerald-300"
+                isLight
+                  ? "border border-[rgba(194,235,45,0.55)] bg-[linear-gradient(180deg,#C2EB2D,#B2DF21)] text-[var(--dashboard-accent-text)]"
+                  : "bg-emerald-400/10 text-emerald-300"
               }`}
             >
               <Sparkles size={18} />

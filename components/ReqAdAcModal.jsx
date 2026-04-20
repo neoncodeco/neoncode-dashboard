@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from 'react';
-import { Tag, KeyRound, Clock, Facebook, Mail, Info, X, ChevronDown, Calendar } from 'lucide-react';
+import { Tag, KeyRound, Clock, Facebook, Mail, Info, X, ChevronDown } from 'lucide-react';
 import useFirebaseAuth from '@/hooks/useFirebaseAuth';
 import { normalizeAssignedAccounts } from "@/lib/adAccountRequests";
 
@@ -29,18 +29,18 @@ const InputField = ({ label, name, type = "text", icon: Icon, required = true, p
   };
 
   return (
-    <div className="space-y-1">
-      <label className="block text-sm font-medium text-gray-800">
+    <div className="space-y-1.5">
+      <label className="block text-sm font-bold text-slate-700">
         {label}{" "}
-        {!required && <span className="text-xs text-gray-500 font-normal">(Optional)</span>}
+        {!required && <span className="text-xs font-medium text-slate-500">(Optional)</span>}
       </label>
 
       <div className="relative">
         <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
           {prefix ? (
-            <span className="text-gray-500">{prefix}</span>
+            <span className="font-semibold text-slate-500">{prefix}</span>
           ) : (
-            Icon && <Icon className="h-5 w-5 text-gray-400" />
+            Icon && <Icon className="h-5 w-5 text-slate-400" />
           )}
         </div>
 
@@ -54,11 +54,11 @@ const InputField = ({ label, name, type = "text", icon: Icon, required = true, p
           value={formData[name]}
           onChange={handleChange}
           onClick={type === "date" ? openDatePicker : undefined}
-          className="w-full rounded-xl border border-gray-300 bg-gray-50 p-3 pl-10 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+          className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 pl-10 text-sm font-semibold text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_1px_2px_rgba(15,23,42,0.05)] outline-none transition-all placeholder:text-slate-400 focus:bg-white focus:border-emerald-300 focus:ring-4 focus:ring-emerald-100"
         />
       </div>
 
-      {helpText && <p className="text-xs text-gray-500">{helpText}</p>}
+      {helpText && <p className="text-xs font-semibold text-slate-500">{helpText}</p>}
     </div>
   );
 };
@@ -162,29 +162,32 @@ export default function ReqAdAcModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-md flex justify-center items-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transition-all">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/72 p-4 backdrop-blur-[3px]">
+      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[30px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] shadow-[0_36px_90px_rgba(2,6,23,0.5)] transition-all [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
 
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b p-5 flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-900">Request New Ad Account</h2>
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] px-6 py-5">
+          <div>
+            <h2 className="text-2xl font-black tracking-tight text-slate-900">Request New Ad Account</h2>
+            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Meta account request form</p>
+          </div>
           <button
             onClick={onClose}
             disabled={loading}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+            className="rounded-full border border-slate-200 bg-white p-2 text-slate-400 shadow-sm transition hover:border-slate-300 hover:bg-slate-100 hover:text-slate-700"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-6">
+        <div className="space-y-6 p-6 md:p-7">
 
           {statusMessage.message && (
-            <div className={`p-4 rounded-lg text-sm border 
+            <div className={`rounded-2xl border px-4 py-3 text-sm font-semibold shadow-sm
               ${statusMessage.type === "success"
-                ? "bg-green-100 text-green-700 border-green-200"
-                : "bg-red-100 text-red-700 border-red-200"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-rose-200 bg-rose-50 text-rose-700"
               }`}
             >
               {statusMessage.message}
@@ -192,8 +195,8 @@ export default function ReqAdAcModal({ isOpen, onClose }) {
           )}
 
           {/* Info */}
-          <div className="flex items-start p-4 bg-blue-50 border-l-4 border-blue-400 rounded-lg text-blue-800 text-sm">
-            <Info className="h-5 w-5 mr-3 mt-0.5" />
+          <div className="flex items-start rounded-2xl border border-emerald-200 bg-[linear-gradient(135deg,rgba(190,227,119,0.28),rgba(236,253,245,0.9))] p-4 text-sm font-semibold text-emerald-900 shadow-[0_8px_20px_rgba(16,185,129,0.1)]">
+            <Info className="mr-3 mt-0.5 h-5 w-5" />
             Please provide accurate information. BM ID and Monthly Budget are required.
           </div>
 
@@ -201,14 +204,17 @@ export default function ReqAdAcModal({ isOpen, onClose }) {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
               {requestRows.map((row, rowIndex) => (
-                <div key={rowIndex} className="rounded-2xl border border-gray-200 bg-gray-50 p-4 space-y-4">
+                <div key={rowIndex} className="space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.08)]">
                   <div className="flex items-center justify-between gap-3">
-                    <h3 className="text-sm font-bold text-gray-900">Account {rowIndex + 1}</h3>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      <h3 className="text-sm font-black text-slate-900">Account {rowIndex + 1}</h3>
+                    </div>
                     <button
                       type="button"
                       onClick={() => removeRequestRow(rowIndex)}
                       disabled={requestRows.length === 1}
-                      className="rounded-full border border-red-200 px-3 py-1 text-xs font-bold text-red-600 disabled:opacity-40"
+                      className="rounded-full border border-rose-200 bg-white px-3 py-1 text-xs font-bold text-rose-600 transition hover:bg-rose-50 disabled:opacity-40"
                     >
                       Remove
                     </button>
@@ -239,17 +245,18 @@ export default function ReqAdAcModal({ isOpen, onClose }) {
 
                     {/* Timezone */}
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-gray-800">Timezone</label>
+                      <label className="text-sm font-bold text-slate-700">Timezone</label>
 
                       <div className="relative">
-                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
+                        <Clock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
 
                         <select
                           name="timezone"
                           data-row-index={rowIndex}
                           value={row.timezone}
                           onChange={handleChange}
-                          className="w-full bg-gray-50 border text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-blue-100 border-gray-300 rounded-xl p-3 pl-10 pr-10 text-sm focus:ring-2 focus:ring-blue-500"
+                          className="w-full appearance-none rounded-2xl border border-slate-200 bg-slate-50 p-3 pl-10 pr-10 text-sm font-semibold text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_1px_2px_rgba(15,23,42,0.05)] outline-none transition-all focus:bg-white focus:border-emerald-300 focus:ring-4 focus:ring-emerald-100"
                         >
                           {timezones.map((tz) => (
                             <option key={tz.value} value={tz.value}>{tz.label}</option>
@@ -308,11 +315,11 @@ export default function ReqAdAcModal({ isOpen, onClose }) {
               ))}
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 pt-1">
               <button
                 type="button"
                 onClick={addRequestRow}
-                className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 hover:bg-blue-100"
+                className="rounded-2xl border border-emerald-300 bg-[linear-gradient(180deg,#f3fff0_0%,#e6f9dd_100%)] px-4 py-3 text-sm font-black text-emerald-700 shadow-[0_8px_20px_rgba(163,230,53,0.18)] transition hover:brightness-105"
               >
                 + Add Another Account
               </button>
@@ -322,7 +329,7 @@ export default function ReqAdAcModal({ isOpen, onClose }) {
             <button
               type="submit"
               disabled={loading || !user}
-              className="w-full py-3 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition shadow-md disabled:opacity-50"
+              className="w-full rounded-2xl bg-[#C2EB2D] px-4 py-3 text-sm font-black text-slate-900 shadow-[0_16px_28px_rgba(194,235,45,0.34)] transition hover:brightness-105 disabled:opacity-50"
             >
               {loading ? "Processing..." : !user ? "Log in to submit" : "Submit Request"}
             </button>

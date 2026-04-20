@@ -34,8 +34,6 @@ import {
   useMetaSpendingOverviewData,
 } from "@/components/MetaSpendingOverview";
 import { formatUsd, resolveUsdToBdtRate } from "@/lib/currency";
-import MobileWalletCard from "@/components/MobileWalletCard";
-
 const FUND_COLORS = ["#B7DF69", "#8ED868", "#73C8FF", "#67A3FF", "#A4E05F"];
 const TOPUP_CHART_COLOR = "#9BC44F";
 const TOPUP_CHART_TINT = "rgba(155, 196, 79, 0.14)";
@@ -57,21 +55,21 @@ const formatLongDate = (value) =>
 function MetricCard({ title, value, subtext, icon: Icon, tone = "default" }) {
   const toneClass =
     tone === "accent"
-      ? "border-emerald-400/20 bg-[linear-gradient(180deg,rgba(183,223,105,0.18),rgba(255,255,255,0.04))]"
+      ? "!border-emerald-300/45 !bg-[linear-gradient(135deg,rgba(183,223,105,0.34),rgba(183,223,105,0.12)_48%,rgba(255,255,255,0.96))]"
       : tone === "soft"
-      ? "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))]"
-      : "border-white/10 bg-[linear-gradient(180deg,rgba(115,200,255,0.12),rgba(255,255,255,0.03))]";
+      ? "!border-sky-300/45 !bg-[linear-gradient(135deg,rgba(115,200,255,0.28),rgba(115,200,255,0.12)_50%,rgba(255,255,255,0.96))]"
+      : "!border-indigo-300/40 !bg-[linear-gradient(135deg,rgba(103,163,255,0.28),rgba(103,163,255,0.1)_52%,rgba(255,255,255,0.96))]";
 
   return (
     <div className={`dashboard-subpanel rounded-[28px] border p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] ${toneClass}`}>
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.22em] dashboard-text-faint">{title}</p>
-          <div className="mt-3 text-[1.9rem] font-black leading-none dashboard-text-strong">{value}</div>
-          <p className="mt-2 text-xs font-medium dashboard-text-muted">{subtext}</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold dashboard-text-muted">{title}</p>
+          <div className="mt-2 text-[1.65rem] font-black leading-none dashboard-text-strong">{value}</div>
+          <p className="mt-2 text-sm dashboard-text-muted">{subtext}</p>
         </div>
-        <div className="dashboard-accent-surface flex h-12 w-12 items-center justify-center rounded-2xl text-white">
-          <Icon size={20} />
+        <div className="dashboard-accent-surface flex h-11 w-11 flex-none items-center justify-center rounded-2xl text-white">
+          <Icon size={18} />
         </div>
       </div>
     </div>
@@ -224,25 +222,17 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-6 p-3 sm:p-4 lg:space-y-8 lg:p-6">
-      <div className="xl:hidden">
-        <MobileWalletCard
-          userData={userData}
-          usdToBdtRate={usdToBdtRate}
-          totalPayout={totalPayout}
-        />
-      </div>
-
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard
           title="Wallet Balance"
-          value={<CurrencyAmount value={userData.walletBalance} usdToBdtRate={usdToBdtRate} showSecondary={false} primaryClassName="text-[1.9rem] font-black leading-none dashboard-text-strong" />}
+          value={<CurrencyAmount value={userData.walletBalance} usdToBdtRate={usdToBdtRate} showSecondary={false} primaryClassName="text-[1.65rem] font-black leading-none dashboard-text-strong" />}
           subtext="Current cash available in your account"
           icon={Wallet}
           tone="accent"
         />
         <MetricCard
           title="Topup Balance"
-          value={<CurrencyAmount value={userData.topupBalance} usdToBdtRate={usdToBdtRate} showSecondary={false} primaryClassName="text-[1.9rem] font-black leading-none dashboard-text-strong" />}
+          value={<CurrencyAmount value={userData.topupBalance} usdToBdtRate={usdToBdtRate} showSecondary={false} primaryClassName="text-[1.65rem] font-black leading-none dashboard-text-strong" />}
           subtext={lastTopupDate ? `Last approved on ${lastTopupDate}` : "No approved topup yet"}
           icon={BadgeDollarSign}
           tone="soft"
