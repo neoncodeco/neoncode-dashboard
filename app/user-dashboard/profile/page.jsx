@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import Swal from "sweetalert2";
+import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
 
 export default function FullProfilePage() {
   const { userData, token, refreshUser, logout } = useFirebaseAuth();
@@ -412,7 +413,7 @@ const handleVerifyOtp = async () => {
             </h3>
             <div className="space-y-3">
               <Link
-                href="/user-dashboard/history"
+                href={userDashboardRoutes.activity}
                 className="dashboard-subpanel flex items-center justify-between rounded-2xl border border-[var(--dashboard-frame-border)] px-4 py-4 transition hover:border-indigo-200"
               >
                 <div className="flex items-center gap-3">
@@ -420,8 +421,8 @@ const handleVerifyOtp = async () => {
                     <History size={18} />
                   </span>
                   <div>
-                    <p className="dashboard-text-strong font-bold">Payment History</p>
-                    <p className="dashboard-text-muted text-xs">View transactions and account activity</p>
+                    <p className="dashboard-text-strong font-bold">Activity</p>
+                    <p className="dashboard-text-muted text-xs">View transactions, logs, and account activity</p>
                   </div>
                 </div>
                 <ArrowRight size={18} className="dashboard-text-faint" />

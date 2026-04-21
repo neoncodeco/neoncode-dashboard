@@ -101,7 +101,7 @@ export default function ServicesPage() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
-          className="mx-auto max-w-3xl text-center"
+          className="mx-auto w-full text-center"
         >
           <h1 className="mt-5 text-3xl font-black tracking-tight text-[var(--dashboard-text-strong)] md:text-5xl">
             Our Services
@@ -109,28 +109,30 @@ export default function ServicesPage() {
           <p className="dashboard-text-muted mx-auto mt-3 max-w-2xl text-sm leading-7 md:text-base">
             আমাদের ডিজিটাল সার্ভিস দেখুন এবং WhatsApp-এ যোগাযোগ করুন 
           </p>
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
-            {categoryTabs.map((category) => {
-              const isActive = category.id === activeCategory;
+          <div className="mt-5 -mx-1 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex w-max min-w-full items-center gap-2.5 md:w-full md:min-w-0 md:flex-wrap md:justify-center">
+              {categoryTabs.map((category) => {
+                const isActive = category.id === activeCategory;
 
-              return (
-                <button
-                  key={category.id}
-                  type="button"
-                  onClick={() => setActiveCategory(category.id)}
-                  className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-bold transition-all ${
-                    isActive
-                      ? "border-[#C1EA2D] bg-[#C1EA2D] text-[#0d1504] shadow-[0_12px_28px_rgba(193,234,45,0.28)]"
-                      : "border-[color:rgba(70,88,14,0.14)] bg-white/88 text-[#30420d] hover:border-[color:rgba(70,88,14,0.24)] hover:bg-[#f7fbeb]"
-                  }`}
-                >
-                  {category.label}
-                  <span className={`ml-2 text-[11px] ${isActive ? "text-[#223107]" : "text-[#61782b]"}`}>
-                    {formatCount(category.count)}
-                  </span>
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => setActiveCategory(category.id)}
+                    className={`inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-4 py-2 text-sm font-bold transition-all ${
+                      isActive
+                        ? "border-[#C1EA2D] bg-[#C1EA2D] text-[#0d1504] shadow-[0_12px_28px_rgba(193,234,45,0.28)]"
+                        : "border-[color:rgba(70,88,14,0.14)] bg-white/88 text-[#30420d] hover:border-[color:rgba(70,88,14,0.24)] hover:bg-[#f7fbeb]"
+                    }`}
+                  >
+                    {category.label}
+                    <span className={`ml-2 text-[11px] ${isActive ? "text-[#223107]" : "text-[#61782b]"}`}>
+                      {formatCount(category.count)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <p className="dashboard-text-faint mt-4 text-xs font-semibold uppercase tracking-[0.2em]">

@@ -129,7 +129,7 @@ export default function CreateTicketPage({ onSuccess }) {
         <div className="absolute left-[-10%] top-[-10%] h-72 w-72 rounded-full bg-[#8ab4ff]/12 blur-[120px]" />
         <div className="absolute bottom-[-15%] right-[-10%] h-80 w-80 rounded-full bg-[#45cf9b]/10 blur-[140px]" />
 
-        <div className="relative z-10 flex-1 overflow-y-auto px-4 pb-4 pt-0 md:px-0 md:pb-8 md:pt-0">
+        <div className="relative z-10 flex-1 rounded overflow-y-auto px-0 pb-4 pt-0 md:px-0 md:pb-8 md:pt-0">
           {!selectedDepartment ? (
             <div className="w-full space-y-6">
               <section className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
@@ -179,18 +179,18 @@ export default function CreateTicketPage({ onSuccess }) {
             </div>
           ) : (
             <div className="w-full">
-              <div className=" border mt-5 overflow-hidden">
-                <div className="space-y-8 p-5 sm:p-6 md:p-8">
+              <div className="mt-4 overflow-hidden rounded-[20px] border sm:mt-5 sm:rounded-[24px]">
+                <div className="space-y-6 p-4 sm:space-y-8 sm:p-6 md:p-8">
                   <button
                     type="button"
                     onClick={() => setSelectedDepartmentId("")}
-                    className="dashboard-muted-button inline-flex items-center gap-2 rounded-md border px-4 py-2 text-xs font-black uppercase tracking-[0.14em]"
+                    className="dashboard-muted-button inline-flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2 text-xs font-black uppercase tracking-[0.14em] sm:w-auto"
                   >
                     <ChevronLeft size={14} />
                     Back to Departments
                   </button>
 
-                  <div className="dashboard-panel flex flex-col gap-4 rounded-none border p-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="dashboard-panel flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex items-start gap-3">
                       <div className="dashboard-accent-surface rounded-none p-3 text-white">
                         <CheckCircle2 size={20} className="text-white" />
@@ -203,7 +203,7 @@ export default function CreateTicketPage({ onSuccess }) {
                       </div>
                     </div>
 
-                    <span className={`inline-flex w-fit rounded-none px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${selectedDepartment.badgeClass}`}>
+                    <span className={`inline-flex w-fit rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${selectedDepartment.badgeClass}`}>
                       Admin Inbox Ready
                     </span>
                   </div>
@@ -229,7 +229,7 @@ export default function CreateTicketPage({ onSuccess }) {
                           value={subject}
                           onChange={(event) => setSubject(event.target.value)}
                           placeholder={`Briefly describe your ${selectedDepartment.name.toLowerCase()} issue`}
-                          className="w-full rounded-none border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] p-4 pl-12 text-sm font-semibold text-[var(--dashboard-text-strong)] outline-none transition-all placeholder:text-[var(--dashboard-placeholder)] focus:border-[var(--dashboard-accent-strong)]"
+                          className="w-full rounded-xl border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] p-4 pl-12 text-sm font-semibold text-[var(--dashboard-text-strong)] outline-none transition-all placeholder:text-[var(--dashboard-placeholder)] focus:border-[var(--dashboard-accent-strong)]"
                         />
                       </div>
                     </div>
@@ -241,7 +241,7 @@ export default function CreateTicketPage({ onSuccess }) {
                       <select
                         value={priority}
                         onChange={(event) => setPriority(event.target.value)}
-                        className="w-full rounded-none border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] p-4 text-sm font-semibold text-[var(--dashboard-text-strong)] outline-none transition-all focus:border-[var(--dashboard-accent-strong)]"
+                        className="w-full rounded-xl border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] p-4 text-sm font-semibold text-[var(--dashboard-text-strong)] outline-none transition-all focus:border-[var(--dashboard-accent-strong)]"
                       >
                         {supportPriorityOptions.map((option) => (
                           <option key={option} value={option}>
@@ -255,7 +255,7 @@ export default function CreateTicketPage({ onSuccess }) {
                       <label className="dashboard-text-faint px-1 text-xs font-black uppercase tracking-[0.18em]">
                         Department
                       </label>
-                      <div className="dashboard-subpanel flex h-[54px] items-center rounded-none border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] px-4">
+                      <div className="dashboard-subpanel flex h-[54px] items-center rounded-xl border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] px-4">
                         <span className="dashboard-text-strong truncate text-sm font-semibold">{selectedDepartment.name}</span>
                       </div>
                     </div>
@@ -273,7 +273,7 @@ export default function CreateTicketPage({ onSuccess }) {
                         value={message}
                         onChange={(event) => setMessage(event.target.value)}
                         placeholder="Share all details, steps, screenshots, order info, or account info so admin can reply faster."
-                        className="min-h-[180px] w-full resize-none rounded-none border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] p-4 pl-12 text-sm font-semibold text-[var(--dashboard-text-strong)] outline-none transition-all placeholder:text-[var(--dashboard-placeholder)] focus:border-[var(--dashboard-accent-strong)]"
+                        className="min-h-[180px] w-full resize-none rounded-xl border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] p-4 pl-12 text-sm font-semibold text-[var(--dashboard-text-strong)] outline-none transition-all placeholder:text-[var(--dashboard-placeholder)] focus:border-[var(--dashboard-accent-strong)]"
                       />
                     </div>
                   </div>
@@ -284,7 +284,7 @@ export default function CreateTicketPage({ onSuccess }) {
                         {files.map((file, index) => (
                           <div
                             key={`${file.name}-${index}`}
-                            className="relative h-16 w-16 overflow-hidden rounded-none ring-2 ring-[var(--dashboard-input-border)]"
+                            className="relative h-16 w-16 overflow-hidden rounded-xl ring-2 ring-[var(--dashboard-input-border)]"
                           >
                             <img
                               src={URL.createObjectURL(file)}
@@ -294,7 +294,7 @@ export default function CreateTicketPage({ onSuccess }) {
                             <button
                               type="button"
                               onClick={() => removeFile(index)}
-                              className="absolute right-0.5 top-0.5 rounded-none bg-black/55 p-0.5 text-white transition hover:bg-red-500"
+                              className="absolute right-0.5 top-0.5 rounded-md bg-black/55 p-0.5 text-white transition hover:bg-red-500"
                             >
                               <X size={10} />
                             </button>
@@ -303,9 +303,9 @@ export default function CreateTicketPage({ onSuccess }) {
                       </div>
                     ) : null}
 
-                    <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2 sm:overflow-x-auto sm:whitespace-nowrap sm:pb-1">
                       {files.length < 4 ? (
-                        <label className="dashboard-subpanel ml-1 inline-flex h-10 min-w-[88px] cursor-pointer items-center justify-center gap-1 rounded-none border border-dashed border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] px-3 text-[10px] font-black uppercase tracking-[0.14em] transition-all hover:border-[var(--dashboard-accent-strong)]">
+                        <label className="dashboard-subpanel inline-flex h-10 w-full cursor-pointer items-center justify-center gap-1 rounded-xl border border-dashed border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] px-3 text-[10px] font-black uppercase tracking-[0.14em] transition-all hover:border-[var(--dashboard-accent-strong)] sm:ml-1 sm:min-w-[88px] sm:w-auto">
                           <Paperclip size={12} className="dashboard-text-faint" />
                           <span className="dashboard-text-faint">Add</span>
                           <input type="file" hidden multiple accept="image/*" onChange={handleFileChange} />
@@ -315,7 +315,7 @@ export default function CreateTicketPage({ onSuccess }) {
                       <button
                         type="button"
                         onClick={() => setMeetingOpen(true)}
-                        className="dashboard-muted-button ml-1 inline-flex h-10 min-w-[210px] items-center justify-center gap-2 rounded-md border px-4 text-sm font-black transition"
+                        className="dashboard-muted-button inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border px-4 text-sm font-black transition sm:ml-1 sm:min-w-[210px] sm:w-auto"
                       >
                         <CalendarDays size={16} />
                         Book a Meeting Instead
@@ -325,7 +325,7 @@ export default function CreateTicketPage({ onSuccess }) {
                         type="button"
                         onClick={submit}
                         disabled={isSubmitting || !subject.trim() || !message.trim()}
-                        className={`inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-md px-4 text-sm font-black uppercase tracking-[0.14em] transition-all ${
+                        className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-md px-4 text-sm font-black uppercase tracking-[0.14em] transition-all sm:min-w-[180px] sm:w-auto ${
                           isSubmitting || !subject.trim() || !message.trim()
                             ? "cursor-not-allowed dashboard-muted-button border"
                             : "dashboard-accent-surface"

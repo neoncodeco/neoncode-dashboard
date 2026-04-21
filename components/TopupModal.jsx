@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
 
 export default function TopupModal({ open, onClose }) {
   const router = useRouter();
@@ -21,10 +22,10 @@ export default function TopupModal({ open, onClose }) {
         </p>
 
         <button
-          onClick={() => router.push("/user-dashboard/payment-methods")}
+          onClick={() => router.push(userDashboardRoutes.billing)}
           className="w-full rounded-2xl bg-amber-500 py-3 text-sm font-black text-white transition hover:bg-amber-600"
         >
-          Go to Top Up
+          Open Billing
         </button>
       </div>
     </div>

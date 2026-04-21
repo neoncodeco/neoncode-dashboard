@@ -8,7 +8,7 @@ export default function Overview() {
   const [isReqAdAcModalOpen, setIsReqAdAcModalOpen] = useState(false);
 
   return (
-    <div className="user-dashboard-theme-scope min-h-screen space-y-8 bg-transparent px-6 pt-4 md:px-4 md:pt-0">
+    <div className="user-dashboard-theme-scope min-h-screen space-y-6 bg-transparent p-3 sm:space-y-8 sm:p-4 lg:p-6">
       <ReqAdAcModal
         isOpen={isReqAdAcModalOpen}
         onClose={() => setIsReqAdAcModalOpen(false)}

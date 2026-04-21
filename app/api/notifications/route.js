@@ -61,6 +61,7 @@ export async function GET(req) {
       }),
       unseenCount,
       lastSeenAt,
+      fetchedAt: new Date(),
     });
   } catch (error) {
     console.error("GET NOTIFICATIONS ERROR:", error);

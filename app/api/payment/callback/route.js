@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { convertBdtToUsd, DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@/lib/currency";
+import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
 
 const VERIFIED_SUCCESS_STATUS = "COMPLETED";
 const getGatewayApiKey = () => {
@@ -192,8 +193,8 @@ export async function GET(req) {
     process.env.NEXT_PUBLIC_BASE_URL?.trim() ||
     process.env.APP_BASE_URL?.trim() ||
     new URL(req.url).origin;
-  const successUrl = new URL("/user-dashboard/payment-methods?payment=success", origin);
-  const failedUrl = new URL("/user-dashboard/payment-methods?payment=failed", origin);
+  const successUrl = new URL(`${userDashboardRoutes.billing}?payment=success`, origin);
+  const failedUrl = new URL(`${userDashboardRoutes.billing}?payment=failed`, origin);
 
   try {
     const { searchParams } = new URL(req.url);

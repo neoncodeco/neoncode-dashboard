@@ -4,6 +4,7 @@ import { verifyToken } from "@/lib/verifyToken";
 import crypto from "crypto";
 import { convertBdtToUsd, DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@/lib/currency";
 import { ensureWritableUser } from "@/lib/userAccess";
+import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
 import { parseWholeNumberAmount } from "@/lib/wholeAmount";
 
 const withInvoiceId = (url, trackingId) => {
@@ -85,7 +86,7 @@ export async function POST(req) {
     const gatewayBaseUrl = getGatewayBaseUrl();
     const publicBaseUrl = getPublicBaseUrl(req);
     const redirectBase =
-      process.env.UDDOKTAPAY_REDIRECT?.trim() || `${publicBaseUrl}/user-dashboard/payment-methods`;
+      process.env.UDDOKTAPAY_REDIRECT?.trim() || `${publicBaseUrl}${userDashboardRoutes.billing}`;
     const cancelBase =
       process.env.UDDOKTAPAY_CANCEL?.trim() || `${publicBaseUrl}/api/payment/cancel`;
     const webhookUrl =

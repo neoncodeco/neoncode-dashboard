@@ -59,17 +59,17 @@ export default function AffiliatePage() {
   };
 
   return (
-    <div className="user-dashboard-theme-scope mx-auto min-h-screen space-y-8 bg-transparent p-3 sm:p-4 lg:p-6">
+    <div className="user-dashboard-theme-scope mx-auto min-h-screen space-y-6 bg-transparent p-2.5 sm:space-y-8 sm:p-4 lg:p-6">
       
       {/* ================= HEADER ================= */}
-      <div className="dashboard-subpanel mt-4 rounded-[32px] border border-white/10 p-6 md:p-8">
+      <div className="dashboard-subpanel mt-3 rounded-[28px] border border-white/10 p-4 sm:mt-4 sm:rounded-[32px] sm:p-6 md:p-8">
         <div className="flex flex-col gap-8 xl:flex-row xl:items-stretch xl:justify-between">
           <div className="max-w-3xl xl:flex xl:flex-col xl:justify-center">
             <span className="dashboard-chip inline-flex items-center gap-2 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.18em]">
               <ShieldCheck size={14} />
               Trusted Affiliate Program
             </span>
-            <h1 className="dashboard-text-strong mt-5 max-w-2xl text-[2.2rem] font-black leading-[0.98] tracking-tight sm:text-5xl">
+            <h1 className="dashboard-text-strong mt-4 max-w-2xl text-[1.8rem] font-black leading-[1.02] tracking-tight sm:mt-5 sm:text-[2.2rem] lg:text-5xl">
               Affiliate Dashboard
             </h1>
             <p className="dashboard-text-muted mt-4 max-w-2xl text-sm leading-7 sm:text-base">
@@ -77,23 +77,23 @@ export default function AffiliatePage() {
             </p>
           </div>
 
-          <div className="w-full space-y-4 xl:w-[600px]">
+          <div className="w-full space-y-3 sm:space-y-4 xl:w-[600px]">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="dashboard-subpanel rounded-[28px] border !border-emerald-300/45 !bg-[linear-gradient(135deg,rgba(183,223,105,0.34),rgba(183,223,105,0.12)_48%,rgba(255,255,255,0.96))] p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
                 <p className="dashboard-text-muted text-sm font-bold">Available Now</p>
-                <p className="dashboard-text-strong mt-3 text-[1.9rem] font-black tracking-tight">${availableToWithdraw}</p>
+                <p className="dashboard-text-strong mt-3 text-[1.55rem] font-black tracking-tight sm:text-[1.9rem]">${availableToWithdraw}</p>
                 <p className="dashboard-text-muted mt-2 text-sm">Ready for withdrawal</p>
               </div>
               <div className="dashboard-subpanel rounded-[28px] border !border-sky-300/45 !bg-[linear-gradient(135deg,rgba(115,200,255,0.28),rgba(115,200,255,0.12)_50%,rgba(255,255,255,0.96))] p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
                 <p className="dashboard-text-muted text-sm font-bold">Qualified Referrals</p>
-                <p className="dashboard-text-strong mt-3 text-[1.9rem] font-black tracking-tight">{completedUsers}</p>
+                <p className="dashboard-text-strong mt-3 text-[1.55rem] font-black tracking-tight sm:text-[1.9rem]">{completedUsers}</p>
                 <p className="dashboard-text-muted mt-2 text-sm">Completed top-up threshold</p>
               </div>
             </div>
 
             <button
               onClick={() => setWithdrawOpen(true)}
-              className="dashboard-accent-surface inline-flex items-center justify-center gap-2 self-start rounded-xl px-4 py-2.5 text-center text-sm font-black transition hover:-translate-y-0.5"
+              className="dashboard-accent-surface inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-center text-sm font-black transition hover:-translate-y-0.5 sm:w-auto sm:self-start"
             >
               <span>Cash Out Available Balance</span>
               <ArrowRight size={18} />
@@ -127,16 +127,16 @@ export default function AffiliatePage() {
             </span>
           </div>
 
-          <div className="flex flex-col xl:flex-row gap-3">
-              <div className="dashboard-subpanel flex flex-1 rounded-2xl border p-2">
+          <div className="flex flex-col gap-3 xl:flex-row">
+              <div className="dashboard-subpanel flex flex-1 flex-col gap-2 rounded-2xl border p-2 sm:flex-row sm:items-center">
               <input
                 value={referralLink}
                 readOnly
-                  className="dashboard-text-strong flex-1 truncate bg-transparent px-4 text-sm font-semibold outline-none"
+                  className="dashboard-text-strong w-full flex-1 truncate bg-transparent px-3 py-1.5 text-sm font-semibold outline-none sm:px-4"
               />
               <button
                 onClick={copyLink}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all ${
+                className={`flex w-full items-center justify-center gap-2 rounded-xl px-6 py-2.5 font-bold transition-all sm:w-auto ${
                     copied ? "dashboard-accent-surface" : "dashboard-accent-surface"
                 }`}
               >
@@ -145,14 +145,14 @@ export default function AffiliatePage() {
               </button>
             </div>
             
-            <div className="flex gap-2">
-              <button onClick={() => shareOnSocial('whatsapp')} className="dashboard-subpanel rounded-xl px-4 py-3 transition-colors hover:opacity-90">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-2">
+              <button onClick={() => shareOnSocial('whatsapp')} className="dashboard-subpanel rounded-xl px-3 py-3 transition-colors hover:opacity-90 sm:px-4">
                 <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wide">
                   <MessageCircle size={14} />
                   WhatsApp
                 </span>
               </button>
-              <button onClick={() => shareOnSocial('facebook')} className="dashboard-subpanel rounded-xl px-4 py-3 transition-colors hover:opacity-90">
+              <button onClick={() => shareOnSocial('facebook')} className="dashboard-subpanel rounded-xl px-3 py-3 transition-colors hover:opacity-90 sm:px-4">
                 <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wide">
                   <Facebook size={14} />
                   Facebook
@@ -177,8 +177,8 @@ export default function AffiliatePage() {
 
       {/* ================= MILESTONES PROGRESS ================= */}
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
-            <h2 className="dashboard-text-strong text-2xl font-black tracking-tight">Milestones Progress</h2>
+        <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="dashboard-text-strong text-xl font-black tracking-tight sm:text-2xl">Milestones Progress</h2>
             <span className="dashboard-chip px-4 py-1.5 text-xs font-black uppercase tracking-wider">Cash Rewards</span>
         </div>
 

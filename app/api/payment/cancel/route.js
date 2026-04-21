@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
+import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
 
 export async function GET(req) {
   try {
@@ -20,9 +21,9 @@ export async function GET(req) {
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://app.neoncode.co";
-    return NextResponse.redirect(new URL("/user-dashboard/payment-methods/cancel", baseUrl).toString(), 303);
+    return NextResponse.redirect(new URL(userDashboardRoutes.billingCancel, baseUrl).toString(), 303);
     
   } catch (error) {
-    return NextResponse.redirect(new URL("/user-dashboard/payment-methods", req.url));
+    return NextResponse.redirect(new URL(userDashboardRoutes.billing, req.url));
   }
 }

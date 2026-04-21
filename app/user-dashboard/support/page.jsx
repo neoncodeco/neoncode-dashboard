@@ -245,18 +245,18 @@ export default function MyTicketsPage() {
 
   return (
     <div className="user-dashboard-theme-scope min-h-screen space-y-5 bg-transparent p-3 sm:p-4 lg:p-6">
-      <div className="dashboard-subpanel mt-4 flex flex-col gap-4 rounded-[28px] border p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+      <div className="dashboard-subpanel mt-4 flex flex-col gap-4 rounded-[24px] border p-4 sm:flex-row sm:items-center sm:justify-between sm:rounded-[28px] sm:p-6">
         <div>
           <p className="dashboard-text-faint text-[10px] font-black uppercase tracking-[0.2em]">Support</p>
           <h1 className="dashboard-text-strong mt-2 text-2xl font-black tracking-tight sm:text-3xl">Support Center</h1>
           <p className="dashboard-text-muted mt-2 text-sm">Create new ticket অথবা history থেকে আগের ticket comments দেখুন।</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:ml-auto sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-end">
           <button
             type="button"
             onClick={() => setActiveTab("create")}
-            className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-black transition ${
+            className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-black transition sm:w-auto ${
               activeTab === "create" ? "dashboard-accent-surface" : "dashboard-muted-button border"
             }`}
           >
@@ -267,7 +267,7 @@ export default function MyTicketsPage() {
           <button
             type="button"
             onClick={() => setActiveTab("history")}
-            className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-black transition ${
+            className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-black transition sm:w-auto ${
               activeTab === "history" ? "dashboard-accent-surface" : "dashboard-muted-button border"
             }`}
           >
@@ -279,7 +279,7 @@ export default function MyTicketsPage() {
             <button
               type="button"
               onClick={() => setMeetingOpen(true)}
-              className="dashboard-muted-button inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-black transition"
+              className="dashboard-muted-button inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-black transition sm:w-auto"
             >
               <CalendarDays size={16} />
               Discovery Call
@@ -289,7 +289,7 @@ export default function MyTicketsPage() {
       </div>
 
       {activeTab === "create" ? (
-        <div className="dashboard-panel min-h-[calc(100svh-12rem)] overflow-hidden rounded-[28px] border">
+        <div className="dashboard-panel min-h-[calc(100svh-12rem)] overflow-hidden rounded-[22px] border sm:rounded-[28px]">
           <CreateTicketPage
             onSuccess={async (newId) => {
               await fetchTickets();
@@ -333,7 +333,7 @@ export default function MyTicketsPage() {
               const isUploadingReply = Boolean(isUploadingReplyByTicket[ticketId]);
 
               return (
-                <div key={ticketId} className=" border border-slate-300/55 bg-[linear-gradient(140deg,rgba(255,255,255,0.98),rgba(245,248,255,0.94)_55%,rgba(255,255,255,0.98))] p-4 shadow-[0_16px_38px_rgba(15,23,42,0.08)] sm:p-5">
+                <div key={ticketId} className="rounded-[20px] border border-slate-300/55 bg-[linear-gradient(140deg,rgba(255,255,255,0.98),rgba(245,248,255,0.94)_55%,rgba(255,255,255,0.98))] p-4 shadow-[0_16px_38px_rgba(15,23,42,0.08)] sm:rounded-[24px] sm:p-5">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -361,7 +361,7 @@ export default function MyTicketsPage() {
                     <button
                       type="button"
                       onClick={() => toggleComments(ticketId, ticket.status)}
-                      className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2 text-xs font-black uppercase tracking-[0.14em] transition-all ${
+                      className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-2 text-xs font-black uppercase tracking-[0.14em] transition-all sm:w-auto ${
                         isOpenStatus
                           ? "border-emerald-300/50 bg-emerald-100/80 text-emerald-700 shadow-[0_8px_20px_rgba(16,185,129,0.12)]"
                           : "dashboard-muted-button hover:border-sky-300/45 hover:bg-sky-100/60"
@@ -463,7 +463,7 @@ export default function MyTicketsPage() {
                           ) : null}
 
                           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-                            <div className="flex min-h-[52px] flex-1 items-end  bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+                            <div className="flex min-h-[52px] flex-1 items-end rounded-xl bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
                               <textarea
                                 value={replyDraft.text}
                                 onChange={(event) => setReplyText(ticketId, event.target.value)}
@@ -477,7 +477,7 @@ export default function MyTicketsPage() {
                               />
                             </div>
 
-                            <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-sky-300/50 bg-sky-100/65 px-4 text-sm font-bold text-sky-700 transition hover:bg-sky-200/65">
+                            <label className="inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-sky-300/50 bg-sky-100/65 px-4 text-sm font-bold text-sky-700 transition hover:bg-sky-200/65 sm:w-auto">
                               <Paperclip size={15} />
                               Attach
                               <input
@@ -497,7 +497,7 @@ export default function MyTicketsPage() {
                               type="button"
                               onClick={() => sendReply(ticketId, ticket.status)}
                               disabled={isSendingReply || isUploadingReply || (!replyDraft.text.trim() && replyDraft.files.length === 0)}
-                              className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-black transition-all ${
+                              className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-black transition-all sm:w-auto ${
                                 isSendingReply || isUploadingReply || (!replyDraft.text.trim() && replyDraft.files.length === 0)
                                   ? "dashboard-muted-button border"
                                   : "dashboard-accent-surface shadow-[0_12px_26px_rgba(163,201,74,0.25)] hover:brightness-105"

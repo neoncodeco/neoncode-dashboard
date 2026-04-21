@@ -7,6 +7,7 @@ import Loader from "@/components/Loader";
 import TeamMemberSidebar from "@/components/TeamMemberSidebar";
 import useDashboardTheme from "@/hooks/useDashboardTheme";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
 
 export default function TeamMemberLayout({ children }) {
   const router = useRouter();
@@ -28,7 +29,7 @@ export default function TeamMemberLayout({ children }) {
       return;
     }
 
-    router.replace("/user-dashboard/overview");
+    router.replace(userDashboardRoutes.dashboard);
   }, [authReady, loadingRole, role, router, user]);
 
   if (!authReady || loadingRole || !user || role !== "team_member") {

@@ -34,6 +34,7 @@ import {
   useMetaSpendingOverviewData,
 } from "@/components/MetaSpendingOverview";
 import { formatUsd, resolveUsdToBdtRate } from "@/lib/currency";
+import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
 const FUND_COLORS = ["#B7DF69", "#8ED868", "#73C8FF", "#67A3FF", "#A4E05F"];
 const TOPUP_CHART_COLOR = "#9BC44F";
 const TOPUP_CHART_TINT = "rgba(155, 196, 79, 0.14)";
@@ -214,10 +215,10 @@ export default function OverviewPage() {
   ];
 
   const quickLinks = [
-    { label: "Payment Methods", href: "/user-dashboard/payment-methods", icon: CreditCard },
-    { label: "Activity History", href: "/user-dashboard/history", icon: ReceiptText },
-    { label: "Meta Ads Accounts", href: "/user-dashboard/meta-ads-account", icon: BadgeDollarSign },
-    { label: "Support", href: "/user-dashboard/support", icon: ShieldCheck },
+    { label: "Billing", href: userDashboardRoutes.billing, icon: CreditCard },
+    { label: "Activity", href: userDashboardRoutes.activity, icon: ReceiptText },
+    { label: "Ad Accounts", href: userDashboardRoutes.adAccounts, icon: BadgeDollarSign },
+    { label: "Support", href: userDashboardRoutes.support, icon: ShieldCheck },
   ];
 
   return (

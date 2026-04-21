@@ -385,21 +385,16 @@ export default function AdAccountUi({ onRequestNewAccount }) {
   return (
     <>
       <div className="space-y-6">
-        <section className="dashboard-subpanel mt-2 overflow-hidden rounded-[32px] border border-white/10 p-5 sm:p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="dashboard-chip inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em]">
-                <Sparkles size={12} />
-                Meta Ads Control
-              </div>
-              <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] dashboard-text-muted">
-                Live account workspace
-              </div>
+        <section className="dashboard-subpanel mt-2 overflow-hidden rounded-[28px] border border-white/10 p-4 sm:rounded-[32px] sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="dashboard-text-strong text-2xl font-black tracking-tight sm:text-3xl">Ad Accounts</h1>
+              <p className="dashboard-text-muted mt-2 text-sm leading-6">Manage account readiness, live balances, and account actions from one workspace.</p>
             </div>
 
             <button
               onClick={handleRequestNewAccount}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/30 transition-all hover:bg-blue-600"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/30 transition-all hover:bg-blue-600 sm:w-auto"
             >
               <PlusIcon size={18} />
               Request New Account
@@ -483,36 +478,32 @@ export default function AdAccountUi({ onRequestNewAccount }) {
         )}
 
         <div className="space-y-6">
-          <MetaSpendingOverview className="p-6" />
+          <MetaSpendingOverview className="p-4 sm:p-6" />
 
           <section className="rounded-[2rem]">
             <div className="px-1 py-1">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <div className="dashboard-chip mb-2 inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em]">
-                    <ShieldCheck size={12} />
-                    Account Workspace
-                  </div>
                   <h3 className="dashboard-text-strong text-xl font-black">Ad Accounts</h3>
                   <p className="dashboard-text-muted text-sm">
                     Review account readiness, balance sync, and available actions from one workspace.
                   </p>
                 </div>
 
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <div className="relative">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:items-center">
+                  <div className="relative sm:col-span-2 lg:col-span-1">
                     <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                     <input
                       placeholder="Search account..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full rounded-xl border border-white/10 bg-[#132546] py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-400/20 sm:w-60"
+                      className="w-full rounded-2xl border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] py-2.5 pl-10 pr-4 text-sm dashboard-text-strong placeholder:dashboard-text-faint focus:outline-none focus:ring-2 focus:ring-blue-400/20 lg:w-60"
                     />
                   </div>
 
                   <div className="relative">
                     <select
-                      className="appearance-none rounded-xl border border-white/10 bg-[#132546] py-2.5 pl-4 pr-10 text-xs font-bold text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
+                      className="w-full appearance-none rounded-2xl border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] py-2.5 pl-4 pr-10 text-xs font-bold dashboard-text-strong focus:outline-none focus:ring-2 focus:ring-blue-400/20"
                       value={filter}
                       onChange={(e) => setFilter(e.target.value)}
                     >
@@ -526,7 +517,7 @@ export default function AdAccountUi({ onRequestNewAccount }) {
                   <button
                     onClick={refreshBalances}
                     disabled={refreshing}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-black text-slate-900 transition-all hover:bg-slate-100 disabled:opacity-60"
+                    className="dashboard-muted-button inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition-all hover:bg-[var(--dashboard-panel-soft)] disabled:opacity-60 sm:w-auto"
                   >
                     <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
                     Refresh
@@ -535,7 +526,7 @@ export default function AdAccountUi({ onRequestNewAccount }) {
               </div>
             </div>
 
-            <div className="space-y-4 p-6">
+            <div className="space-y-4 p-4 sm:p-6">
               {filteredAccounts.length === 0 ? (
                 <div className="rounded-3xl border border-dashed border-white/10 bg-white/5 px-6 py-14 text-center">
                   <span className="dashboard-accent-surface mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl">
@@ -565,7 +556,7 @@ export default function AdAccountUi({ onRequestNewAccount }) {
                         <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-white/70 blur-3xl" />
                         <div className="pointer-events-none absolute -left-12 bottom-0 h-28 w-28 rounded-full bg-cyan-100/60 blur-3xl" />
 
-                        <div className="relative flex items-start justify-between gap-4">
+                        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                           <div className="min-w-0">
                             <div className="mb-4 flex items-center gap-3">
                               <div
@@ -701,7 +692,7 @@ export default function AdAccountUi({ onRequestNewAccount }) {
                           </div>
                         </div>
 
-                        <div className="relative mt-5 flex flex-wrap justify-end gap-2">
+                        <div className="relative mt-5 flex flex-wrap justify-start gap-2 sm:justify-end">
                           {showIncrease && canFetchBalance && !hasError && (
                             <button
                               onClick={() =>
@@ -711,7 +702,7 @@ export default function AdAccountUi({ onRequestNewAccount }) {
                                   oldLimit: balance?.spendCap,
                                 })
                               }
-                              className="dashboard-accent-surface rounded-2xl px-4 py-2.5 text-[11px] font-black transition-all hover:-translate-y-0.5"
+                              className="dashboard-accent-surface w-full rounded-2xl px-4 py-2.5 text-[11px] font-black transition-all hover:-translate-y-0.5 sm:w-auto"
                             >
                               Increase Budget
                             </button>
@@ -719,9 +710,9 @@ export default function AdAccountUi({ onRequestNewAccount }) {
                           {showTopup && canFetchBalance && !hasError && (
                             <button
                               onClick={() => setTopupModal(true)}
-                              className="dashboard-accent-surface rounded-2xl px-4 py-2.5 text-[11px] font-black transition-all hover:-translate-y-0.5"
+                              className="dashboard-accent-surface w-full rounded-2xl px-4 py-2.5 text-[11px] font-black transition-all hover:-translate-y-0.5 sm:w-auto"
                             >
-                              Top Up Wallet
+                              Add Funds
                             </button>
                           )}
                         </div>

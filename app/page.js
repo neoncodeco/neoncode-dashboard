@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import Loader from "@/components/Loader";
+import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
 
 export default function Home() {
   const router = useRouter();
@@ -29,7 +30,7 @@ export default function Home() {
       return;
     }
 
-    router.replace("/user-dashboard/overview");
+    router.replace(userDashboardRoutes.dashboard);
   }, [authReady, user, role, loadingRole, router]);
 
   return <Loader />;

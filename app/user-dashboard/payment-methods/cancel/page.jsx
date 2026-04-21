@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { XCircle, ArrowLeft, RefreshCw, AlertCircle } from "lucide-react";
+import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
 
 export default function PaymentCancelPage() {
   return (
@@ -47,7 +48,7 @@ export default function PaymentCancelPage() {
           {/* Action Buttons */}
           <div className="flex flex-col gap-4">
             <Link 
-              href="/user-dashboard/payment-methods" 
+              href={userDashboardRoutes.billing}
               className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl transition-all duration-200 shadow-lg shadow-blue-200 active:scale-95"
             >
               <RefreshCw className="w-5 h-5" />
@@ -60,7 +61,7 @@ export default function PaymentCancelPage() {
         {/* Footer Support Info */}
         <div className="bg-slate-50 border-t border-slate-100 p-5 text-center">
           <p className="text-sm text-slate-400">
-            Need help? <a href="#" className="text-blue-500 hover:underline font-medium">Contact Support</a>
+            Need help? <Link href={userDashboardRoutes.support} className="text-blue-500 hover:underline font-medium">Contact Support</Link>
           </p>
         </div>
       </div>

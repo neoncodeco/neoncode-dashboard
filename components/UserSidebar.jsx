@@ -5,41 +5,23 @@ import Image from "next/image";
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  CircleHelp,
-  CreditCard,
-  Ellipsis,
-  Headset,
-  Home,
-  LayoutDashboard,
-  LogOut,
-  Layers3,
-  LifeBuoy,
-  Share2,
-  WalletCards,
-  History,
-} from "lucide-react";
-import DashboardThemeToggle from "@/components/DashboardThemeToggle";
+import { Ellipsis, LogOut } from "lucide-react";
+// import DashboardThemeToggle from "@/components/DashboardThemeToggle";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
-import { userDashboardMenuItems } from "@/lib/userDashboardNav";
+import {
+  userDashboardAccountNavItems,
+  userDashboardMainNavItems,
+  userDashboardMoreMenuItems,
+  userDashboardPrimaryMobileItems,
+} from "@/lib/userDashboardNav";
+import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
 
 const mobileTabs = [
-  { name: "Home", icon: Home, href: "/user-dashboard/overview", tooltip: "Overview" },
-  { name: "Services", icon: Layers3, href: "/user-dashboard/services", tooltip: "Our Services" },
-  { name: "Meta Ads", icon: WalletCards, href: "/user-dashboard/meta-ads-account", tooltip: "Meta Ads Account" },
-  { name: "History", icon: History, href: "/user-dashboard/history", tooltip: "Activity History" },
+  ...userDashboardPrimaryMobileItems,
   { name: "More", icon: Ellipsis, href: "#more", tooltip: "More Menu" },
 ];
 
-const profileSubItems = [
-
-  { name: "Support Tickets", href: "/user-dashboard/support", icon: LifeBuoy },
-  { name: "History", href: "/user-dashboard/history", icon: History },
-  { name: "Affiliate", href: "/user-dashboard/affiliate", icon: Share2 },
-  { name: "Settings", href: "/user-dashboard/profile", icon: CircleHelp },
-];
-
-function UserIdentity({ user, href = "/user-dashboard/overview" }) {
+function UserIdentity({ user, href = userDashboardRoutes.dashboard }) {
 
   const initials = useMemo(() => {
     const base = user?.displayName || user?.email || "NC";
@@ -82,16 +64,14 @@ const UserSidebar = ({ theme, toggleTheme }) => {
   const router = useRouter();
   const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [servicesMenuOpen, setServicesMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { user, logout } = useFirebaseAuth();
   const portalRoot = typeof document !== "undefined" ? document.body : null;
   useEffect(() => {
-    if (!servicesMenuOpen && !profileMenuOpen) return undefined;
+    if (!profileMenuOpen) return undefined;
 
     const closeOnEscape = (event) => {
       if (event.key === "Escape") {
-        setServicesMenuOpen(false);
         setProfileMenuOpen(false);
       }
     };
@@ -100,7 +80,7 @@ const UserSidebar = ({ theme, toggleTheme }) => {
     return () => {
       document.removeEventListener("keydown", closeOnEscape);
     };
-  }, [servicesMenuOpen, profileMenuOpen]);
+  }, [profileMenuOpen]);
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -114,21 +94,28 @@ const UserSidebar = ({ theme, toggleTheme }) => {
     }
   };
 
-  const mainNavItems = [
-    { name: "Overview", icon: LayoutDashboard, href: "/user-dashboard/overview" },
-    { name: "Our Services", icon: Layers3, href: "/user-dashboard/services" },
-    { name: "Meta Ads Account", icon: WalletCards, href: "/user-dashboard/meta-ads-account" },
-    { name: "Billing", icon: CreditCard, href: "/user-dashboard/payment-methods" },
-  ];
+  const mainNavItems = userDashboardMainNavItems;
+  const accountNavItems = userDashboardAccountNavItems;
 
-  const accountNavItems = [
-    { name: "Support Tickets", icon: LifeBuoy, href: "/user-dashboard/support" },
-    { name: "Affiliate", icon: Share2, href: "/user-dashboard/affiliate" },
-    { name: "Profile & Settings", icon: CircleHelp, href: "/user-dashboard/profile" },
-    { name: "Activity History", icon: History, href: "/user-dashboard/history" },
-  ];
+  const isRouteActive = (href) => {
+    const normalizedHref = href.split("?")[0];
+    return pathname === normalizedHref || pathname.startsWith(`${normalizedHref}/`);
+  };
 
-  const isRouteActive = (href) => pathname === href || pathname.startsWith(`${href}/`);
+  const isMoreTabActive = profileMenuOpen || accountNavItems.some((item) => isRouteActive(item.href));
+
+  const openTarget = (href) => {
+    setProfileMenuOpen(false);
+
+    if (href === userDashboardRoutes.accountChat) {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("open-live-chat"));
+      }
+      return;
+    }
+
+    router.push(href);
+  };
 
   const renderNavItem = (item) => {
     const isActive = isRouteActive(item.href);
@@ -159,7 +146,7 @@ const UserSidebar = ({ theme, toggleTheme }) => {
       {/* Logo */}
       <div className="flex-none pb-5">
         <Link
-          href="/user-dashboard/overview"
+          href={userDashboardRoutes.dashboard}
           className="flex items-center gap-3 rounded-2xl px-1 py-1 transition hover:opacity-80"
         >
           <span className="dashboard-accent-surface flex h-10 w-10 flex-none items-center justify-center rounded-xl p-2">
@@ -195,19 +182,19 @@ const UserSidebar = ({ theme, toggleTheme }) => {
 
       {/* Footer */}
       <div className="flex-none space-y-2 border-t pt-4" style={{ borderColor: "var(--dashboard-frame-border)" }}>
-        <UserIdentity user={user} href="/user-dashboard/profile" />
+        <UserIdentity user={user} href={userDashboardRoutes.account} />
         <div className="flex items-center gap-2">
-          <DashboardThemeToggle
+          {/* <DashboardThemeToggle
             theme={theme}
             toggleTheme={toggleTheme}
             iconOnly
             className="h-10 w-10 flex-none rounded-xl border-0 dashboard-subpanel"
-          />
+          /> */}
           {user ? (
             <button
               type="button"
               onClick={handleLogout}
-              className="dashboard-subpanel flex flex-1 items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold dashboard-text-muted transition hover:text-red-400"
+              className="dashboard-subpanel flex flex-1 items-center justify-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold dashboard-text-muted transition hover:text-red-400"
             >
               <LogOut size={15} />
               {isLoggingOut ? "Logging out..." : "Logout"}
@@ -215,7 +202,7 @@ const UserSidebar = ({ theme, toggleTheme }) => {
           ) : (
             <Link
               href="/login"
-              className="dashboard-subpanel flex flex-1 items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold dashboard-text-muted"
+              className="dashboard-subpanel flex flex-1 items-center justify-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold dashboard-text-muted"
             >
               <LogOut size={15} />
               Login
@@ -239,38 +226,10 @@ const UserSidebar = ({ theme, toggleTheme }) => {
       {portalRoot
         ? createPortal(
             <>
-              {servicesMenuOpen ? (
-                <div
-                  className="fixed inset-x-4 z-[85] flex justify-center"
-                  style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 6.25rem)" }}
-                >
-                  <div className="dashboard-app-frame sidebar-shell user-sidebar-shell w-full max-w-[21rem] overflow-hidden rounded-[30px] p-3">
-                    <div className="grid gap-2">
-                      {[
-                        { name: "Our Services", href: "/user-dashboard/services", icon: Layers3 },
-                        // { name: "Freepik Premium", href: "/user-dashboard/freepik-premium", icon: PackageOpen },
-                        { name: "Premium Service", href: "/user-dashboard/services", icon: Share2 },
-                      ].map((item) => (
-                        <Link
-                          key={item.name}
-                          href={item.href}
-                          className="dashboard-subpanel flex items-center gap-3 rounded-2xl px-4 py-3"
-                        >
-                          <span className="dashboard-accent-surface flex h-9 w-9 items-center justify-center rounded-2xl">
-                            <item.icon size={16} />
-                          </span>
-                          <span className="dashboard-text-strong text-sm font-semibold">{item.name}</span>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
               {profileMenuOpen ? (
                 <div
                   className="fixed inset-x-4 z-[86] flex justify-end"
-                  style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 6.25rem)" }}
+                  style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5.75rem)" }}
                 >
                   <div className="dashboard-app-frame sidebar-shell user-sidebar-shell w-full max-w-[18.5rem] overflow-hidden rounded-[30px] p-3">
                     <div className="dashboard-subpanel flex items-center justify-center p-3">
@@ -290,51 +249,31 @@ const UserSidebar = ({ theme, toggleTheme }) => {
                     </div>
 
                     <div className="mt-3 grid gap-2">
-                      <DashboardThemeToggle
+                      {/* <DashboardThemeToggle
                         theme={theme}
                         toggleTheme={toggleTheme}
                         className="w-full justify-start rounded-2xl px-4 py-3"
-                      />
+                      /> */}
 
-                      {[
-                        { name: "Wallet", href: "/user-dashboard/payment-methods", icon: CreditCard },
-                        { name: "Profile", href: "/user-dashboard/profile", icon: CircleHelp },
-                        { name: "History", href: "/user-dashboard/history", icon: History },
-                        { name: "Live Chat", href: "/user-dashboard/profile?panel=chat", icon: Headset },
-                        { name: "Affiliate", href: "/user-dashboard/affiliate", icon: Share2 },
-                        { name: "Support Tickets", href: "/user-dashboard/support", icon: LifeBuoy },
-                      ].map((item) => (
-                        item.name === "Live Chat" ? (
+                      {userDashboardMoreMenuItems.map((item) => {
+                        const isActive = item.href === userDashboardRoutes.accountChat ? false : isRouteActive(item.href);
+
+                        return (
                           <button
                             key={item.name}
                             type="button"
-                            onClick={() => {
-                              setProfileMenuOpen(false);
-                              if (typeof window !== "undefined") {
-                                window.dispatchEvent(new Event("open-live-chat"));
-                              }
-                            }}
-                            className="dashboard-subpanel flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left"
+                            onClick={() => openTarget(item.href)}
+                            className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left ${
+                              isActive ? "sidebar-active" : "dashboard-subpanel"
+                            }`}
                           >
                             <span className="dashboard-subpanel flex h-9 w-9 items-center justify-center rounded-2xl">
                               <item.icon size={16} className="dashboard-text-muted" />
                             </span>
                             <span className="dashboard-text-strong text-sm font-semibold">{item.name}</span>
                           </button>
-                        ) : (
-                          <Link
-                            key={item.name}
-                            href={item.href}
-                            onClick={() => setProfileMenuOpen(false)}
-                            className="dashboard-subpanel flex items-center gap-3 rounded-2xl px-4 py-3"
-                          >
-                            <span className="dashboard-subpanel flex h-9 w-9 items-center justify-center rounded-2xl">
-                              <item.icon size={16} className="dashboard-text-muted" />
-                            </span>
-                            <span className="dashboard-text-strong text-sm font-semibold">{item.name}</span>
-                          </Link>
-                        )
-                      ))}
+                        );
+                      })}
 
                       <button
                         type="button"
@@ -352,46 +291,37 @@ const UserSidebar = ({ theme, toggleTheme }) => {
               ) : null}
 
               <nav
-                className="dashboard-app-frame sidebar-shell user-sidebar-shell fixed left-1/2 z-[70] grid lg:hidden w-[calc(100%-1.5rem)] max-w-[22rem] -translate-x-1/2 grid-cols-5 gap-1 rounded-[26px] px-2 py-2"
+                className="dashboard-app-frame sidebar-shell user-sidebar-shell fixed left-1/2 z-[70] grid lg:hidden w-[calc(100%-1.5rem)] max-w-[22rem] -translate-x-1/2 grid-cols-5 gap-1 rounded-[24px] px-1.5 py-1.5"
                 style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 0.55rem)" }}
               >
                 {mobileTabs.map((item) => {
-                  const isActive = pathname === item.href;
-                  const isServices = item.name === "Services";
-                  const isMore = item.name === "More";
+                  const isMore = item.href === "#more";
+                  const isActive = isMore ? isMoreTabActive : isRouteActive(item.href);
 
                   return (
                     <button
                       key={item.name}
                       type="button"
                       onClick={() => {
-                        if (isServices) {
-                          setProfileMenuOpen(false);
-                          setServicesMenuOpen((prev) => !prev);
-                          return;
-                        }
                         if (isMore) {
-                          setServicesMenuOpen(false);
                           setProfileMenuOpen((prev) => !prev);
                           return;
                         }
-                        setServicesMenuOpen(false);
-                        setProfileMenuOpen(false);
-                        router.push(item.href);
+                        openTarget(item.href);
                       }}
-                      className={`group relative flex min-h-[60px] flex-col items-center justify-center gap-1 rounded-[20px] px-1 py-2 text-center transition-all duration-200 ${
+                      className={`group relative flex min-h-[54px] flex-col items-center justify-center gap-0.5 rounded-[18px] px-1 py-1.5 text-center transition-all duration-200 ${
                         isActive || (isMore && profileMenuOpen) ? "sidebar-active scale-[1.02]" : "sidebar-link"
                       }`}
                     >
                       <span
-                        className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all ${
+                        className={`flex h-8 w-8 items-center justify-center rounded-[0.95rem] transition-all ${
                           isActive || (isMore && profileMenuOpen) ? "dashboard-accent-surface" : "dashboard-subpanel"
                         }`}
                       >
-                        <item.icon size={16} strokeWidth={2.2} />
+                        <item.icon size={15} strokeWidth={2.2} />
                       </span>
                       <span
-                        className={`text-[10px] font-semibold leading-none ${
+                        className={`text-[9px] font-semibold leading-none ${
                           isActive || (isMore && profileMenuOpen) ? "dashboard-text-strong" : "dashboard-text-muted"
                         }`}
                       >

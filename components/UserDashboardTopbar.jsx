@@ -1,69 +1,52 @@
 "use client";
 
 import React from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
+import { Sora } from "next/font/google";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, ChevronRight, CreditCard, LifeBuoy, LogOut, Menu, Search, Settings, Share2, UserRound, Headset, History, X } from "lucide-react";
-import DashboardThemeToggle from "@/components/DashboardThemeToggle";
+import { Bell, CreditCard, Search, X } from "lucide-react";
+// import DashboardThemeToggle from "@/components/DashboardThemeToggle";
+import UserNotificationsPanel from "@/components/UserNotificationsPanel";
 import { useUserNotifications } from "@/components/UserNotificationsProvider";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import { userDashboardMenuItems } from "@/lib/userDashboardNav";
+import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
 
-function formatNotificationTime(value) {
-  if (!value) return "";
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
-}
+const brandFont = Sora({
+  subsets: ["latin"],
+  weight: ["800"],
+});
 
 export default function UserDashboardTopbar({ theme, toggleTheme }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, userData, logout } = useFirebaseAuth();
-  const { notifications, unseenCount, isMarkingSeen, markAllSeen } = useUserNotifications();
+  const { user, userData } = useFirebaseAuth();
+  const {
+    notifications,
+    unseenCount,
+    loading: notificationsLoading,
+    error: notificationsError,
+    lastUpdatedAt,
+    isMarkingSeen,
+    loadNotifications,
+    markAllSeen,
+  } = useUserNotifications();
   const [query, setQuery] = React.useState("");
   const [isFocused, setIsFocused] = React.useState(false);
-  const [profileMenuOpen, setProfileMenuOpen] = React.useState(false);
-  const [profileSectionOpen, setProfileSectionOpen] = React.useState(false);
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
-  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
-  const profileMenuRef = React.useRef(null);
   const notificationsRef = React.useRef(null);
   const mobileNotificationsRef = React.useRef(null);
   const searchInputRef = React.useRef(null);
   const profileName = user?.displayName || userData?.name || "Neon Client";
-  const profileId = userData?.referralCode || userData?.userId?.slice(-6) || "585D93";
-  const isProfileSectionActive =
-    pathname === "/user-dashboard/profile" ||
-    pathname === "/user-dashboard/support" ||
-    pathname === "/user-dashboard/affiliate";
-  const isProfileSectionVisible = profileSectionOpen || isProfileSectionActive;
   const initials = profileName
     .split(/\s+/)
     .map((part) => part[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
-
-  const quickLinks = React.useMemo(
-    () => [
-      ...userDashboardMenuItems,
-      {
-        name: "Top Up Wallet",
-        href: "/user-dashboard/payment-methods",
-        keywords: ["top up", "topup", "wallet", "payment", "add money"],
-      },
-    ],
-    []
-  );
+  const quickLinks = userDashboardMenuItems;
 
   const results = React.useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -84,36 +67,21 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
       .slice(0, 6);
   }, [query, quickLinks]);
 
-  const mobileDrawerItems = React.useMemo(
-    () => [
-      ...userDashboardMenuItems
-        .filter((item) => !["Support Tickets", "Affiliate"].includes(item.name))
-        .map((item) => ({
-          label: item.name,
-          href: item.href,
-          icon: item.icon,
-        })),
-    ],
-    []
-  );
-  const profileMenuItems = React.useMemo(
-    () => [
-      { label: "History", href: "/user-dashboard/history", icon: History },
-      { label: "Live Chat", href: "/user-dashboard/profile?panel=chat", icon: Headset },
-      { label: "Support Tickets", href: "/user-dashboard/support", icon: LifeBuoy },
-      { label: "Affiliate", href: "/user-dashboard/affiliate", icon: Share2 },
-      { label: "Settings", href: "/user-dashboard/profile", icon: Settings },
-    ],
-    []
+  const isRouteActive = React.useCallback(
+    (href) => {
+      const normalizedHref = href.split("?")[0];
+      return pathname === normalizedHref || pathname.startsWith(`${normalizedHref}/`);
+    },
+    [pathname]
   );
 
   const openTarget = React.useCallback(
     (href) => {
       setQuery("");
       setIsFocused(false);
-      setProfileMenuOpen(false);
+      setNotificationsOpen(false);
 
-      if (href === "/user-dashboard/profile?panel=chat") {
+      if (href === userDashboardRoutes.accountChat) {
         if (typeof window !== "undefined") {
           window.dispatchEvent(new Event("open-live-chat"));
         }
@@ -125,18 +93,17 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
     [router]
   );
 
-  React.useEffect(() => {
-    if (!profileMenuOpen) return undefined;
+  const openNotificationsPanel = React.useCallback(() => {
+    setNotificationsOpen(true);
+    loadNotifications({ silent: notifications.length > 0 });
+  }, [loadNotifications, notifications.length]);
 
-    const handlePointerDown = (event) => {
-      if (!profileMenuRef.current?.contains(event.target)) {
-        setProfileMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, [profileMenuOpen]);
+  const toggleNotificationsPanel = React.useCallback(() => {
+    if (!notificationsOpen) {
+      loadNotifications({ silent: notifications.length > 0 });
+    }
+    setNotificationsOpen((prev) => !prev);
+  }, [loadNotifications, notifications.length, notificationsOpen]);
 
   React.useEffect(() => {
     if (!notificationsOpen) return undefined;
@@ -155,22 +122,13 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
   }, [notificationsOpen]);
 
   React.useEffect(() => {
-    if (notificationsOpen && unseenCount > 0) {
-      markAllSeen();
-    }
-  }, [markAllSeen, notificationsOpen, unseenCount]);
+    const handleOpenNotifications = () => {
+      openNotificationsPanel();
+    };
 
-  const handleLogout = async () => {
-    if (isLoggingOut) return;
-    setIsLoggingOut(true);
-
-    try {
-      await logout("/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-      setIsLoggingOut(false);
-    }
-  };
+    window.addEventListener("open-user-notifications", handleOpenNotifications);
+    return () => window.removeEventListener("open-user-notifications", handleOpenNotifications);
+  }, [openNotificationsPanel]);
 
   const handleKeyDown = (event) => {
     if (event.key === "Enter" && results[0]?.href) {
@@ -236,7 +194,7 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
               {results.length ? (
                 <div className="space-y-1">
                   {results.map((item) => {
-                    const isActive = pathname === item.href;
+                    const isActive = isRouteActive(item.href);
                     return (
                       <button
                         key={`${item.name}-${item.href}`}
@@ -259,7 +217,7 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
                 <div className="px-3 py-4">
                   <p className="dashboard-text-strong text-sm font-bold">No matching page</p>
                   <p className="dashboard-text-muted mt-1 text-xs">
-                    Try exact words like payment, support, profile, history, or overview.
+                    Try words like billing, support, account, activity, or dashboard.
                   </p>
                 </div>
               )}
@@ -273,103 +231,87 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
           {/* Top Up Button */}
           <button
             type="button"
-            onClick={() => router.push("/user-dashboard/payment-methods")}
+            onClick={() => router.push(userDashboardRoutes.billing)}
             className="topbar-topup-btn inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold"
           >
             <CreditCard size={15} />
-            Top Up
+            Add Funds
           </button>
 
           {/* Notifications */}
           <div ref={notificationsRef} className="relative">
             <button
               type="button"
-              onClick={() => setNotificationsOpen((prev) => !prev)}
-              className="topbar-icon-btn relative flex h-10 w-10 items-center justify-center rounded-2xl dashboard-text-muted"
+              onClick={toggleNotificationsPanel}
+              className={`topbar-icon-btn relative flex h-10 w-10 items-center justify-center rounded-2xl transition ${
+                notificationsOpen ? "dashboard-accent-surface" : "dashboard-text-muted"
+              }`}
               aria-label="Notifications"
+              aria-expanded={notificationsOpen}
             >
               <Bell size={17} />
-              {unseenCount > 0 ? (
-                <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-sky-500 px-1 py-0.5 text-[9px] font-black text-white">
-                  {unseenCount > 9 ? "9+" : unseenCount}
-                </span>
-              ) : null}
+              <AnimatePresence>
+                {unseenCount > 0 ? (
+                  <motion.span
+                    initial={{ opacity: 0, scale: 0.7, y: 4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.75, y: 4 }}
+                    className="absolute -right-0.5 -top-0.5 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-sky-500 px-1 py-0.5 text-[9px] font-black text-white shadow-[0_10px_24px_rgba(14,165,233,0.35)]"
+                  >
+                    {unseenCount > 9 ? "9+" : unseenCount}
+                  </motion.span>
+                ) : null}
+              </AnimatePresence>
             </button>
 
-            {notificationsOpen ? (
-              <div className="dashboard-app-frame absolute right-0 top-[calc(100%+0.65rem)] z-30 w-[360px] rounded-[26px] p-3">
-                <div className="flex items-center justify-between gap-3 px-2 py-1">
-                  <div>
-                    <p className="dashboard-text-strong text-sm font-black">Notifications</p>
-                    <p className="dashboard-text-muted text-[11px]">
-                      {unseenCount > 0 ? `${unseenCount} unread update${unseenCount > 1 ? "s" : ""}` : "All caught up"}
-                    </p>
-                  </div>
-                  {notifications.length ? (
-                    <button
-                      type="button"
-                      onClick={markAllSeen}
-                      disabled={isMarkingSeen || unseenCount <= 0}
-                      className="dashboard-muted-button rounded-xl px-3 py-2 text-[11px] font-bold disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {isMarkingSeen ? "Updating..." : "Mark read"}
-                    </button>
-                  ) : null}
-                </div>
-
-                <div className="mt-2 max-h-[360px] space-y-2 overflow-y-auto pr-1">
-                  {notifications.length ? (
-                    notifications.map((item) => (
-                      <div
-                        key={item.id}
-                        className={`rounded-2xl border px-3 py-3 ${
-                          item.isSeen
-                            ? "border-transparent dashboard-subpanel"
-                            : "border-sky-400/30 bg-sky-500/10"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <p className="dashboard-text-strong text-sm font-bold">{item.title}</p>
-                          {!item.isSeen ? (
-                            <span className="rounded-full bg-sky-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-white">
-                              New
-                            </span>
-                          ) : null}
-                        </div>
-                        <p className="dashboard-text-muted mt-1 text-xs leading-6">{item.message}</p>
-                        <p className="dashboard-text-faint mt-2 text-[10px] font-bold uppercase tracking-[0.14em]">
-                          {formatNotificationTime(item.publishedAt)}
-                        </p>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="dashboard-subpanel rounded-2xl px-4 py-5">
-                      <p className="dashboard-text-strong text-sm font-bold">No notifications yet</p>
-                      <p className="dashboard-text-muted mt-1 text-xs">Admin announcements will show up here for every user.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : null}
+            <AnimatePresence>
+              {notificationsOpen ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="absolute right-0 top-[calc(100%+0.65rem)] z-30"
+                >
+                  <UserNotificationsPanel
+                    notifications={notifications}
+                    unseenCount={unseenCount}
+                    loading={notificationsLoading}
+                    error={notificationsError}
+                    lastUpdatedAt={lastUpdatedAt}
+                    isMarkingSeen={isMarkingSeen}
+                    onRefresh={loadNotifications}
+                    onMarkAllSeen={markAllSeen}
+                    className="w-[380px]"
+                  />
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
           </div>
 
-          {/* Theme toggle */}
-          <DashboardThemeToggle
+          {/* Theme toggle (temporarily disabled) */}
+          {/* <DashboardThemeToggle
             theme={theme}
             toggleTheme={toggleTheme}
             compact
             className="text-xs"
-          />
+          /> */}
 
           {/* Profile avatar only */}
           <button
             type="button"
-            onClick={() => router.push("/user-dashboard/profile")}
+            onClick={() => router.push(userDashboardRoutes.account)}
             className="dashboard-accent-surface flex h-10 w-10 flex-none items-center justify-center rounded-xl text-xs font-black transition hover:opacity-85"
             aria-label="Open profile"
           >
             {user?.photoURL ? (
-              <img src={user.photoURL} alt={profileName} className="h-10 w-10 rounded-xl object-cover" />
+              <Image
+                src={user.photoURL}
+                alt={profileName}
+                width={40}
+                height={40}
+                className="h-10 w-10 rounded-xl object-cover"
+              />
             ) : (
               initials
             )}
@@ -378,181 +320,78 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
       </div>
 
       {/* ── MOBILE TOPBAR ── */}
-      <div ref={profileMenuRef} className="relative mt-2 lg:hidden">
+      <div className="relative mt-2 lg:hidden">
         <div className="topbar-shell flex items-center justify-between gap-2 rounded-[22px] px-2 py-2">
-          <button
-            type="button"
-            onClick={() => { setNotificationsOpen(false); setProfileMenuOpen((prev) => !prev); }}
-            className="flex h-10 w-10 flex-none items-center justify-center rounded-[16px] dashboard-subpanel"
-            aria-label="Open dashboard menu"
-          >
-            <span className="dashboard-accent-surface flex h-8 w-8 items-center justify-center rounded-[13px]">
-              <Menu size={16} />
-            </span>
-          </button>
-
           <Link
-            href="/user-dashboard/overview"
-            className="flex min-w-0 flex-1 items-center justify-center gap-2 transition hover:opacity-80"
+            href={userDashboardRoutes.dashboard}
+            className="flex min-w-0 flex-1 items-center gap-2.5 px-1.5 transition hover:opacity-85"
+            aria-label="Go to dashboard"
           >
-            <span className="dashboard-subpanel flex h-8 w-8 flex-none items-center justify-center rounded-[13px] p-1.5">
-              <Image src="/neon-code-logo.jpg" alt="Neon Code" width={22} height={22} className="rounded-[6px]" />
+            <Image src="/neon-code-logo.jpg" alt="Neon Code" width={34} height={34} className="rounded-[10px]" />
+            <span className={`${brandFont.className} truncate text-[1.04rem] font-extrabold tracking-[-0.03em] dashboard-text-strong`}>
+              Neon Code
             </span>
-            <span className="truncate text-sm font-black tracking-tight dashboard-text-strong">Neon Code</span>
           </Link>
 
           <div className="flex flex-none items-center gap-1.5">
             <div ref={mobileNotificationsRef} className="relative">
               <button
                 type="button"
-                onClick={() => { setProfileMenuOpen(false); setNotificationsOpen((prev) => !prev); }}
-                className="relative flex h-10 w-10 items-center justify-center rounded-[16px] dashboard-subpanel dashboard-text-muted"
+                onClick={toggleNotificationsPanel}
+                className={`relative flex h-10 w-10 items-center justify-center rounded-[16px] transition ${
+                  notificationsOpen ? "dashboard-accent-surface" : "dashboard-subpanel dashboard-text-muted"
+                }`}
                 aria-label="Notifications"
+                aria-expanded={notificationsOpen}
               >
                 <Bell size={16} />
-                {unseenCount > 0 ? (
-                  <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-sky-500 px-1 py-0.5 text-[9px] font-black text-white">
-                    {unseenCount > 9 ? "9+" : unseenCount}
-                  </span>
-                ) : null}
+                <AnimatePresence>
+                  {unseenCount > 0 ? (
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0.7, y: 4 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.75, y: 4 }}
+                      className="absolute -right-0.5 -top-0.5 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-sky-500 px-1 py-0.5 text-[9px] font-black text-white shadow-[0_10px_24px_rgba(14,165,233,0.35)]"
+                    >
+                      {unseenCount > 9 ? "9+" : unseenCount}
+                    </motion.span>
+                  ) : null}
+                </AnimatePresence>
               </button>
 
-              {notificationsOpen ? (
-                <div className="dashboard-app-frame absolute right-0 top-[calc(100%+0.55rem)] z-30 w-[min(22rem,calc(100vw-2rem))] rounded-[24px] p-3">
-                  <div className="flex items-center justify-between gap-3 px-2 py-1">
-                    <div>
-                      <p className="dashboard-text-strong text-sm font-black">Notifications</p>
-                      <p className="dashboard-text-muted text-[11px]">
-                        {unseenCount > 0 ? `${unseenCount} unread` : "All caught up"}
-                      </p>
-                    </div>
-                    {notifications.length ? (
-                      <button
-                        type="button"
-                        onClick={markAllSeen}
-                        disabled={isMarkingSeen || unseenCount <= 0}
-                        className="dashboard-muted-button rounded-xl px-3 py-2 text-[11px] font-bold disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {isMarkingSeen ? "Updating…" : "Mark read"}
-                      </button>
-                    ) : null}
-                  </div>
-                  <div className="mt-2 max-h-[300px] space-y-2 overflow-y-auto pr-1">
-                    {notifications.length ? (
-                      notifications.map((item) => (
-                        <div
-                          key={item.id}
-                          className={`rounded-2xl border px-3 py-3 ${item.isSeen ? "border-transparent dashboard-subpanel" : "border-sky-400/30 bg-sky-500/10"}`}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <p className="dashboard-text-strong text-sm font-bold">{item.title}</p>
-                            {!item.isSeen ? (
-                              <span className="rounded-full bg-sky-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-white">New</span>
-                            ) : null}
-                          </div>
-                          <p className="dashboard-text-muted mt-1 text-xs leading-5">{item.message}</p>
-                          <p className="dashboard-text-faint mt-2 text-[10px] font-bold uppercase tracking-[0.14em]">
-                            {formatNotificationTime(item.publishedAt)}
-                          </p>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="dashboard-subpanel rounded-2xl px-4 py-5">
-                        <p className="dashboard-text-strong text-sm font-bold">No notifications yet</p>
-                        <p className="dashboard-text-muted mt-1 text-xs">Admin announcements will appear here.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : null}
+              <AnimatePresence>
+                {notificationsOpen ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="absolute right-0 top-[calc(100%+0.55rem)] z-30"
+                  >
+                    <UserNotificationsPanel
+                      notifications={notifications}
+                      unseenCount={unseenCount}
+                      loading={notificationsLoading}
+                      error={notificationsError}
+                      lastUpdatedAt={lastUpdatedAt}
+                      isMarkingSeen={isMarkingSeen}
+                      onRefresh={loadNotifications}
+                      onMarkAllSeen={markAllSeen}
+                      className="w-[min(22rem,calc(100vw-2rem))]"
+                    />
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
             </div>
 
-            <DashboardThemeToggle
+            {/* <DashboardThemeToggle
               theme={theme}
               toggleTheme={toggleTheme}
               iconOnly
               className="h-10 w-10 rounded-[16px] dashboard-subpanel border-0"
-            />
+            /> */}
           </div>
         </div>
-
-        {profileMenuOpen ? (
-          <div className="dashboard-app-frame absolute left-0 top-[calc(100%+0.55rem)] z-30 w-[min(22rem,calc(100vw-2rem))] rounded-[28px] p-3">
-            <button
-              type="button"
-              onClick={() => openTarget("/user-dashboard/overview")}
-              className="dashboard-subpanel flex w-full items-center gap-3 p-3 text-left transition hover:bg-[var(--sidebar-link-hover-bg)]"
-            >
-              <div className="dashboard-accent-surface flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-black">
-                {initials}
-              </div>
-              <div className="min-w-0">
-                <p className="dashboard-text-strong truncate text-sm font-bold">{profileName}</p>
-                <p className="dashboard-text-muted truncate text-[11px]">ID {profileId}</p>
-              </div>
-            </button>
-
-            <div className="mt-3 space-y-1.5">
-              {mobileDrawerItems.map((item) => (
-                <React.Fragment key={item.label}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (item.label === "Profile") {
-                        setProfileSectionOpen(!isProfileSectionVisible);
-                        return;
-                      }
-                      openTarget(item.href);
-                    }}
-                    className={`dashboard-subpanel flex w-full items-center justify-between rounded-2xl px-3 py-3 text-left ${
-                      pathname === item.href || (item.label === "Profile" && isProfileSectionActive) ? "sidebar-active" : ""
-                    }`}
-                  >
-                    <span className="flex items-center gap-3">
-                      <span className="dashboard-subpanel flex h-8 w-8 items-center justify-center rounded-xl">
-                        <item.icon size={15} className="dashboard-text-muted" />
-                      </span>
-                      <span className="dashboard-text-strong text-sm font-semibold">{item.label}</span>
-                    </span>
-                    <ChevronRight size={15} className="dashboard-text-faint" />
-                  </button>
-
-                  {item.label === "Profile" && isProfileSectionVisible ? (
-                    <div className="ml-4 space-y-1.5 border-l border-[var(--dashboard-frame-border)] pl-3">
-                      {profileMenuItems.map((subItem) => (
-                        <button
-                          key={subItem.label}
-                          type="button"
-                          onClick={() => openTarget(subItem.href)}
-                          className="dashboard-subpanel flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left"
-                        >
-                          <span className="flex items-center gap-3">
-                            <span className="dashboard-subpanel flex h-8 w-8 items-center justify-center rounded-xl">
-                              <subItem.icon size={15} className="dashboard-text-muted" />
-                            </span>
-                            <span className="dashboard-text-strong text-sm font-semibold">{subItem.label}</span>
-                          </span>
-                          <ChevronRight size={15} className="dashboard-text-faint" />
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-                </React.Fragment>
-              ))}
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="dashboard-subpanel flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-semibold text-red-400"
-              >
-                <span className="dashboard-subpanel flex h-8 w-8 items-center justify-center rounded-xl">
-                  <LogOut size={15} className="text-red-400" />
-                </span>
-                {isLoggingOut ? "Logging out..." : "Logout"}
-              </button>
-            </div>
-          </div>
-        ) : null}
       </div>
     </div>
   );
