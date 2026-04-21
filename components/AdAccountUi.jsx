@@ -538,7 +538,9 @@ export default function AdAccountUi({ onRequestNewAccount }) {
             <div className="space-y-4 p-6">
               {filteredAccounts.length === 0 ? (
                 <div className="rounded-3xl border border-dashed border-white/10 bg-white/5 px-6 py-14 text-center">
-                  <Building2 size={30} className="mx-auto text-slate-400" />
+                  <span className="dashboard-accent-surface mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl">
+                    <Building2 size={28} className="text-[var(--dashboard-accent-text)]" />
+                  </span>
                   <p className="mt-4 text-lg font-black text-white">No account found</p>
                   <p className="mt-2 text-sm text-slate-400">
                     Try a different search or filter, or request a new account from the top of this page.

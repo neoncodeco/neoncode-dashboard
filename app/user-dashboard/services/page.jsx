@@ -3,261 +3,249 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
+import { ArrowRight, MessageCircleMore, Search } from "lucide-react";
 import LeadProjectPopup from "@/components/LeadProjectPopup";
 import { serviceCategories } from "./servicesData";
 
-export default function ServicesPage() {
+const ALL_CATEGORY_ID = "all";
+const SUMMARY_CLAMP_STYLE = {
+  display: "-webkit-box",
+  WebkitBoxOrient: "vertical",
+  WebkitLineClamp: 3,
+  overflow: "hidden",
+};
 
-  const [activeCategory, setActiveCategory] = useState(serviceCategories[0].id);
-  const [expandedService, setExpandedService] = useState(null);
-  const [selectedService, setSelectedService] = useState(null);
+const numberFormatter = new Intl.NumberFormat("en-US");
+
+function formatPrice(price) {
+  return `৳${numberFormatter.format(price)}`;
+}
+
+function formatCount(count) {
+  return numberFormatter.format(count);
+}
+
+export default function ServicesPage() {
+  const [activeCategory, setActiveCategory] = useState(ALL_CATEGORY_ID);
+  const [searchTerm, setSearchTerm] = useState("");
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupPrefill, setPopupPrefill] = useState({ projectName: "", serviceType: "" });
-  const [discoveryOpen, setDiscoveryOpen] = useState(false);
 
-  const currentCategory = useMemo(
-    () => serviceCategories.find((category) => category.id === activeCategory) ?? serviceCategories[0],
-    [activeCategory]
+  const allServices = useMemo(
+    () =>
+      serviceCategories.flatMap((category) =>
+        category.services.map((service) => ({
+          ...service,
+          categoryId: category.id,
+          categoryTitle: category.title,
+          categoryTitleBn: category.titleBn ?? category.title,
+          categoryTagline: category.taglineBn ?? category.tagline,
+        }))
+      ),
+    []
   );
 
+  const categoryTabs = useMemo(
+    () => [
+      {
+        id: ALL_CATEGORY_ID,
+        label: "All",
+        count: allServices.length,
+      },
+      ...serviceCategories.map((category) => ({
+        id: category.id,
+        label: category.title,
+        count: category.services.length,
+      })),
+    ],
+    [allServices.length]
+  );
 
+  const filteredServices = useMemo(() => {
+    const normalizedQuery = searchTerm.trim().toLowerCase();
+
+    return allServices.filter((service) => {
+      const matchesCategory = activeCategory === ALL_CATEGORY_ID || service.categoryId === activeCategory;
+
+      if (!normalizedQuery) {
+        return matchesCategory;
+      }
+
+      const haystack = [
+        service.name,
+        service.summary,
+        service.bestFor,
+        service.model,
+        service.badge,
+        service.categoryTitle,
+        service.categoryTitleBn,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return matchesCategory && haystack.includes(normalizedQuery);
+    });
+  }, [activeCategory, allServices, searchTerm]);
 
   return (
     <main className="user-dashboard-theme-scope services-page relative min-h-screen overflow-hidden bg-transparent px-1 pt-6 pb-20">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-[-8%] top-[5%] h-80 w-80 rounded-full bg-[#214211]/22 blur-[120px]" />
-        <div className="absolute right-[-10%] top-[25%] h-[28rem] w-[28rem] rounded-full bg-[#d8ff30]/8 blur-[140px]" />
-        <div className="absolute bottom-[-15%] left-[30%] h-96 w-96 rounded-full bg-[#214211]/16 blur-[140px]" />
+        <div className="absolute left-[-8%] top-[4%] h-72 w-72 rounded-full bg-[#234612]/14 blur-[120px]" />
+        <div className="absolute right-[-12%] top-[18%] h-[24rem] w-[24rem] rounded-full bg-[#d8ff30]/10 blur-[140px]" />
+        <div className="absolute bottom-[-16%] left-[22%] h-[22rem] w-[22rem] rounded-full bg-[#44631b]/12 blur-[130px]" />
       </div>
 
-      <div className="container relative z-10 mx-auto px-5 md:px-8">
+      <div className="relative z-10 mx-auto w-full px-4 sm:px-5 lg:px-6">
         <motion.section
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-          className="mb-12"
+          transition={{ duration: 0.45 }}
+          className="mx-auto max-w-3xl text-center"
         >
-          <p className="mb-4 inline-flex rounded-full border border-lime-200 bg-lime-50 px-4 py-1 text-xs font-bold uppercase tracking-[0.25em] text-lime-700">
-            Service Architecture
+          <h1 className="mt-5 text-3xl font-black tracking-tight text-[var(--dashboard-text-strong)] md:text-5xl">
+            Our Services
+          </h1>
+          <p className="dashboard-text-muted mx-auto mt-3 max-w-2xl text-sm leading-7 md:text-base">
+            আমাদের ডিজিটাল সার্ভিস দেখুন এবং WhatsApp-এ যোগাযোগ করুন 
           </p>
-          
-        </motion.section>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
+            {categoryTabs.map((category) => {
+              const isActive = category.id === activeCategory;
 
-        <section className="mb-10 flex flex-wrap gap-3">
-          {serviceCategories.map((category) => {
-            const isActive = category.id === activeCategory;
-            return (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() => {
-                  setActiveCategory(category.id);
-                  setExpandedService(null);
-                }}
-                className={`rounded-2xl border px-5 py-3 text-left transition-all duration-300 ${
-                  isActive
-                    ? "border-lime-200 bg-lime-50 text-slate-900 shadow-[0_10px_30px_rgba(163,230,53,0.12)]"
-                    : "border-slate-200 bg-white/80 text-slate-700 hover:border-lime-200 hover:bg-lime-50/70"
-                }`}
-              >
-                <p className="text-sm font-semibold">{category.title}</p>
-                <p className="dashboard-text-muted text-xs">{category.services.length} active services</p>
-              </button>
-            );
-          })}
-        </section>
-
-        <motion.section
-          key={currentCategory.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="dashboard-subpanel relative overflow-hidden rounded-3xl p-6 md:p-8"
-        >
-          <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-extrabold md:text-3xl">{currentCategory.title}</h2>
-              <p className="dashboard-text-muted mt-2 text-sm md:text-base">{currentCategory.tagline}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setDiscoveryOpen(true)}
-              className="btn-primary rounded-xl px-5 py-2 text-sm font-bold transition hover:scale-[1.03]"
-            >
-              Book discovery call
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            {currentCategory.services.map((service, index) => {
-              const isExpanded = expandedService === service.id;
               return (
-                <motion.article
-                  key={service.id}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.06, duration: 0.35 }}
-                  className="dashboard-subpanel overflow-hidden rounded-2xl"
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => setActiveCategory(category.id)}
+                  className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-bold transition-all ${
+                    isActive
+                      ? "border-[#C1EA2D] bg-[#C1EA2D] text-[#0d1504] shadow-[0_12px_28px_rgba(193,234,45,0.28)]"
+                      : "border-[color:rgba(70,88,14,0.14)] bg-white/88 text-[#30420d] hover:border-[color:rgba(70,88,14,0.24)] hover:bg-[#f7fbeb]"
+                  }`}
                 >
-                  <div className="relative h-44 w-full">
-                    <Image src={service.image} alt={service.name} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
-                    <span className="dashboard-chip absolute right-4 top-4 px-3 py-1 text-[11px] uppercase tracking-widest">
-                      {service.timeline}
-                    </span>
-                  </div>
-
-                  <div className="p-5">
-                    <h3 className="dashboard-text-strong text-xl font-bold leading-tight">{service.name}</h3>
-                    <p className="dashboard-text-muted mt-3 mb-4 text-sm leading-relaxed">{service.summary}</p>
-
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div className="dashboard-subpanel rounded-xl p-3">
-                        <p className="dashboard-text-faint mb-1 text-[10px] uppercase tracking-[0.15em]">Best for</p>
-                        <p className="dashboard-text-strong font-medium">{service.bestFor}</p>
-                      </div>
-                      <div className="dashboard-subpanel rounded-xl p-3">
-                        <p className="dashboard-text-faint mb-1 text-[10px] uppercase tracking-[0.15em]">Pricing model</p>
-                        <p className="dashboard-text-strong font-medium">{service.model}</p>
-                      </div>
-                    </div>
-
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedService(service)}
-                        className="rounded-lg border border-lime-200 bg-lime-50 px-4 py-2 text-xs font-semibold text-lime-700 transition hover:bg-lime-100"
-                      >
-                        View details
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setExpandedService((prev) => (prev === service.id ? null : service.id))}
-                        className="rounded-lg border border-slate-200 bg-white/90 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                      >
-                        {isExpanded ? "Hide preview" : "See sample workflow"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPopupPrefill({
-                            projectName: `${service.name} Project`,
-                            serviceType: service.name,
-                          });
-                          setPopupOpen(true);
-                        }}
-                        className="rounded-lg border border-slate-200 bg-white/90 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:border-lime-200 hover:bg-lime-50/60"
-                      >
-                        Start this service
-                      </button>
-                    </div>
-
-                    <AnimatePresence>
-                      {isExpanded && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="dashboard-subpanel mt-4 overflow-hidden rounded-xl"
-                        >
-                          <div className="p-4">
-                            <p className="dashboard-text-faint mb-3 text-xs font-semibold uppercase tracking-[0.2em]">Included deliverables</p>
-                            <ul className="grid gap-2 text-sm">
-                              {service.whatYouGet.map((item) => (
-                                <li key={item} className="dashboard-subpanel dashboard-text-strong rounded-lg px-3 py-2">
-                                  {item}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </motion.article>
+                  {category.label}
+                  <span className={`ml-2 text-[11px] ${isActive ? "text-[#223107]" : "text-[#61782b]"}`}>
+                    {formatCount(category.count)}
+                  </span>
+                </button>
               );
             })}
           </div>
+
+          <p className="dashboard-text-faint mt-4 text-xs font-semibold uppercase tracking-[0.2em]">
+            {filteredServices.length ? `${formatCount(filteredServices.length)} services found` : "No services found"}
+          </p>
         </motion.section>
+
+        <section className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {filteredServices.map((service, index) => (
+            <motion.article
+              key={service.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.04, duration: 0.28 }}
+              className="group dashboard-subpanel overflow-hidden rounded-[26px] border border-[color:rgba(70,88,14,0.14)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,251,235,0.96))] shadow-[0_18px_42px_rgba(15,23,42,0.08)]"
+            >
+              <Link href={`/user-dashboard/services/${service.id}`} className="block">
+                <div className="relative aspect-[1.58/1] overflow-hidden border-b border-[color:rgba(70,88,14,0.12)]">
+                  <Image
+                    src={service.image}
+                    alt={service.name}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a1004]/32 via-[#0a1004]/10 to-transparent" />
+                  <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#0a1004]/72 via-[#0a1004]/34 to-transparent" />
+
+                  <div
+                    className="absolute left-3 top-3 rounded-full border px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] backdrop-blur-md"
+                    style={{
+                      background: "rgba(13, 21, 4, 0.84)",
+                      borderColor: "rgba(255, 255, 255, 0.14)",
+                      color: "#f5ffd4",
+                      boxShadow: "0 10px 24px rgba(10, 16, 4, 0.24)",
+                    }}
+                  >
+                    {service.badge || service.categoryTitleBn}
+                  </div>
+
+                  <div
+                    className="absolute right-3 top-3 rounded-full border px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.16em]"
+                    style={{
+                      background: "#C1EA2D",
+                      borderColor: "#d7f47b",
+                      color: "#111704",
+                      boxShadow: "0 10px 24px rgba(193, 234, 45, 0.26)",
+                    }}
+                  >
+                    {service.timeline}
+                  </div>
+                </div>
+              </Link>
+
+              <div className="p-5">
+                <Link href={`/user-dashboard/services/${service.id}`} className="block">
+                  <h2 className="text-[1.12rem] font-black leading-snug text-[var(--dashboard-text-strong)] transition-colors group-hover:text-[#182406]">
+                    {service.name}
+                  </h2>
+                </Link>
+
+                <p
+                  className="dashboard-text-muted mt-3 min-h-[4.75rem] text-sm leading-6"
+                  style={SUMMARY_CLAMP_STYLE}
+                >
+                  {service.summary}
+                </p>
+
+                <div className="mt-4 rounded-[18px] border border-[color:rgba(70,88,14,0.12)] bg-white/76 px-4 py-3">
+                  <p className="dashboard-text-faint text-[10px] font-black uppercase tracking-[0.15em]">Best For</p>
+                  <p className="mt-1 text-sm font-semibold text-[var(--dashboard-text-strong)]">{service.bestFor}</p>
+                </div>
+
+                <div className="mt-5 flex items-end justify-between gap-3">
+                  <div>
+                    <p className="dashboard-text-faint text-[10px] font-black uppercase tracking-[0.16em]">Starts At</p>
+                    <p className="mt-1 text-2xl font-black tracking-tight text-[#0d1504]">
+                      {formatPrice(service.startingPrice)}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPopupPrefill({
+                          projectName: `${service.name} Project`,
+                          serviceType: service.name,
+                        });
+                        setPopupOpen(true);
+                      }}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-[14px] border border-[#C1EA2D] bg-[#C1EA2D] text-[#0d1504] transition-transform hover:-translate-y-0.5 hover:bg-[#b6df28]"
+                      aria-label={`${service.name} quick brief`}
+                      title="Quick brief"
+                    >
+                      <MessageCircleMore size={18} />
+                    </button>
+
+                    <Link
+                      href={`/user-dashboard/services/${service.id}`}
+                      className="inline-flex h-10 items-center gap-2 rounded-[14px] bg-[#C1EA2D] px-4 text-sm font-bold text-[#0d1504] transition-transform hover:-translate-y-0.5 hover:bg-[#b6df28]"
+                    >
+                      Details
+                      <ArrowRight size={15} />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </motion.article>
+          ))}
+        </section>
+
       </div>
 
-      <AnimatePresence>
-        {selectedService && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4"
-            onClick={() => setSelectedService(null)}
-          >
-            <motion.div
-              initial={{ y: 30, opacity: 0, scale: 0.96 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: 20, opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.25 }}
-              onClick={(event) => event.stopPropagation()}
-              className="dashboard-subpanel w-full max-w-3xl overflow-hidden rounded-3xl"
-            >
-              <div className="relative h-56 w-full">
-                <Image src={selectedService.image} alt={selectedService.name} fill sizes="(max-width: 1024px) 100vw, 60vw" className="object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-              </div>
-
-              <div className="p-6 md:p-8">
-                <div className="mb-4 flex items-start justify-between gap-3">
-                  <div>
-                    <p className="dashboard-text-faint text-xs uppercase tracking-[0.2em]">Service Detail</p>
-                    <h3 className="dashboard-text-strong mt-2 text-2xl font-black leading-tight">{selectedService.name}</h3>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedService(null)}
-                    className="dashboard-muted-button rounded-lg border px-3 py-1 text-sm"
-                  >
-                    Close
-                  </button>
-                </div>
-
-                <p className="dashboard-text-muted mb-5 text-sm leading-relaxed">{selectedService.summary}</p>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  {selectedService.whatYouGet.map((item) => (
-                    <div key={item} className="dashboard-subpanel dashboard-text-strong rounded-xl px-4 py-3 text-sm">
-                      {item}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPopupPrefill({
-                        projectName: `${selectedService.name} Project`,
-                        serviceType: selectedService.name,
-                      });
-                      setPopupOpen(true);
-                      setSelectedService(null);
-                    }}
-                    className="btn-primary rounded-xl px-5 py-2 text-sm font-bold transition hover:scale-[1.02]"
-                  >
-                    Request proposal
-                  </button>
-                  <Link
-                    href="/portfolio"
-                    className="btn-secondary rounded-xl px-5 py-2 text-sm font-semibold"
-                  >
-                    View work samples
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {popupOpen && (
+      {popupOpen ? (
         <LeadProjectPopup
           open={popupOpen}
           onClose={() => setPopupOpen(false)}
@@ -265,17 +253,7 @@ export default function ServicesPage() {
           defaultServiceType={popupPrefill.serviceType}
           key={`${popupPrefill.projectName}-${popupPrefill.serviceType}`}
         />
-      )}
-
-      {discoveryOpen && (
-        <LeadProjectPopup
-          open={discoveryOpen}
-          onClose={() => setDiscoveryOpen(false)}
-          meetingOnly
-          title="Book Discovery Call"
-          key="discovery-meeting"
-        />
-      )}
+      ) : null}
     </main>
   );
 }

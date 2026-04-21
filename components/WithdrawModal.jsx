@@ -183,13 +183,13 @@ export default function WithdrawModal({ balance, onClose }) {
 
   /* ================= 7. UI RENDER ================= */
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4 backdrop-blur-[2px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center  px-4 backdrop-blur-[10px]">
       <div className="relative w-full max-w-lg overflow-hidden rounded-[28px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-frame-bg)] p-6 shadow-[0_26px_80px_rgba(15,23,42,0.24)] sm:p-7">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)] text-[var(--dashboard-text-muted)] transition hover:text-[var(--dashboard-text-strong)]"
+          className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center text-[var(--dashboard-text-muted)] transition hover:text-[var(--dashboard-text-strong)]"
         >
-          <X size={18} />
+          <X size={18} className="h-8 w-8 bg-[#C2EB2D] p-1 rounded-full" />
         </button>
 
         <div className="mb-6 flex items-center gap-3 border-b border-[var(--dashboard-frame-border)] pb-4 pr-10">

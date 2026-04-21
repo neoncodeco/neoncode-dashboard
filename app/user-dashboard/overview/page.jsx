@@ -78,9 +78,9 @@ function MetricCard({ title, value, subtext, icon: Icon, tone = "default" }) {
 
 function InfoRow({ label, value }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-[var(--dashboard-frame-border)] py-3 last:border-b-0">
-      <span className="text-[11px] font-black uppercase tracking-[0.18em] dashboard-text-faint">{label}</span>
-      <span className="truncate text-sm font-semibold dashboard-text-strong">{value}</span>
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)] px-3.5 py-3">
+      <span className="text-[11px] font-black uppercase tracking-[0.16em] dashboard-text-muted">{label}</span>
+      <span className="truncate text-sm font-bold dashboard-text-strong">{value}</span>
     </div>
   );
 }
@@ -412,10 +412,10 @@ export default function OverviewPage() {
       <MetaSpendingOverviewPanel className="p-0" dataState={spendingOverview} showSummaryCards={false} />
 
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="dashboard-subpanel rounded-[32px] border border-white/10 p-5 sm:p-6">
+        <div className="dashboard-subpanel rounded-[32px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-bg)] p-5 shadow-[0_20px_48px_rgba(15,23,42,0.16)] sm:p-6">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">
+              <div className="dashboard-chip mb-2 inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em]">
                 <Users size={12} />
                 Quick Links
               </div>
@@ -428,13 +428,13 @@ export default function OverviewPage() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="dashboard-subpanel flex items-center justify-between rounded-[24px] border border-[var(--dashboard-frame-border)] px-4 py-4 transition hover:-translate-y-0.5 hover:bg-[rgba(255,255,255,0.04)]"
+                className="flex items-center justify-between rounded-[24px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)] px-4 py-4 transition hover:-translate-y-0.5 hover:border-[var(--dashboard-accent)]/50 hover:bg-[var(--dashboard-input-bg)]"
               >
                 <div className="flex items-center gap-3">
-                  <span className="dashboard-accent-surface flex h-11 w-11 items-center justify-center rounded-2xl text-white">
+                  <span className="dashboard-accent-surface flex h-11 w-11 items-center justify-center rounded-2xl">
                     <item.icon size={18} />
                   </span>
-                  <span className="text-sm font-bold dashboard-text-strong">{item.label}</span>
+                  <span className="text-sm font-extrabold dashboard-text-strong">{item.label}</span>
                 </div>
                 <ArrowUpRight size={16} className="dashboard-text-faint" />
               </Link>
@@ -442,25 +442,25 @@ export default function OverviewPage() {
           </div>
         </div>
 
-        <div className="dashboard-subpanel rounded-[32px] border border-white/10 p-5 sm:p-6">
+        <div className="dashboard-subpanel rounded-[32px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-bg)] p-5 shadow-[0_20px_48px_rgba(15,23,42,0.16)] sm:p-6">
           <div className="mb-5">
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">
+            <div className="dashboard-chip mb-2 inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em]">
               <ShieldCheck size={12} />
               Account Snapshot
             </div>
             <h2 className="text-xl font-black tracking-tight dashboard-text-strong">Profile health</h2>
-            <p className="mt-1 text-sm dashboard-text-muted">A concise status board for your account identity.</p>
+            <p className="mt-1 text-sm font-medium dashboard-text-muted">A concise status board for your account identity.</p>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-2">
             {accountHealth.map((item) => (
               <InfoRow key={item.label} label={item.label} value={item.value} />
             ))}
           </div>
 
-          <div className="mt-5 rounded-[24px] border border-[var(--dashboard-frame-border)] bg-[linear-gradient(180deg,rgba(34,197,94,0.12),rgba(255,255,255,0.02))] p-4">
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-300">Status note</p>
-            <p className="mt-2 text-sm leading-6 text-slate-200">
+          <div className="mt-5 rounded-[24px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-success-soft)] p-4">
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] dashboard-text-muted">Status note</p>
+            <p className="mt-2 text-sm leading-6 dashboard-text-strong">
               {totalWallet > 0
                 ? "Your wallet has active balance available for current operations."
                 : "Your wallet is currently empty. A topup will unlock more actions and visibility."}

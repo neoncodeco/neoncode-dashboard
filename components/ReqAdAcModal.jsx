@@ -162,11 +162,11 @@ export default function ReqAdAcModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/72 p-4 backdrop-blur-[3px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center  p-6 backdrop-blur-[10px]">
       <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[30px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] shadow-[0_36px_90px_rgba(2,6,23,0.5)] transition-all [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
 
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] px-6 py-5">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] px-6 py-2">
           <div>
             <h2 className="text-2xl font-black tracking-tight text-slate-900">Request New Ad Account</h2>
             <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Meta account request form</p>
@@ -176,12 +176,12 @@ export default function ReqAdAcModal({ isOpen, onClose }) {
             disabled={loading}
             className="rounded-full border border-slate-200 bg-white p-2 text-slate-400 shadow-sm transition hover:border-slate-300 hover:bg-slate-100 hover:text-slate-700"
           >
-            <X className="h-5 w-5" />
+            <X className="h-8 w-8 bg-[#C2EB2D] p-1 rounded-full" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="space-y-6 p-6 md:p-7">
+        <div className="space-y-6 p-6">
 
           {statusMessage.message && (
             <div className={`rounded-2xl border px-4 py-3 text-sm font-semibold shadow-sm

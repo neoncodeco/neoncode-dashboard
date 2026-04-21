@@ -409,7 +409,9 @@ export function MetaSpendingOverviewPanel({ className = "", showSummaryCards = t
           </>
         ) : (
           <div className="flex h-[280px] flex-col items-center justify-center rounded-[28px] border border-dashed border-slate-300 bg-white/75 text-center">
-            <Building2 size={30} className="text-slate-400" />
+            <span className="dashboard-accent-surface inline-flex h-14 w-14 items-center justify-center rounded-2xl">
+              <Building2 size={28} className="text-[var(--dashboard-accent-text)]" />
+            </span>
             <p className="mt-4 text-lg font-black text-slate-900">No synced performance data yet</p>
             <p className="mt-2 max-w-xs text-sm text-slate-500">
               Once an account is active with a valid Meta account ID, its budget metrics will appear here.

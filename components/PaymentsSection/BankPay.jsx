@@ -162,33 +162,43 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
   const bankBadgeCount = bankDetails.length;
 
   return (
-    <section className="w-full rounded-[32px] border border-emerald-200/70 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.12),_rgba(255,255,255,0.98)_42%,_rgba(248,250,252,0.96)_100%)] p-4 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:p-6 lg:p-8">
-      <div className="mb-6 flex flex-col gap-4 border-b border-slate-200/80 pb-5 sm:flex-row sm:items-start sm:justify-between">
+    <section className="w-full rounded-[32px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-bg)] p-4 shadow-[0_24px_80px_rgba(15,23,42,0.12)] sm:p-6 lg:p-8">
+      <div className="mb-6 flex flex-col gap-4 border-b border-[var(--dashboard-frame-border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="max-w-2xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-emerald-700">
+          <div className="dashboard-chip inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em]">
             <Landmark size={12} />
             Manual bank transfer
           </div>
-          <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+          <h2 className="dashboard-text-strong mt-3 text-2xl font-black tracking-tight sm:text-3xl">
             Bank Payment
           </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
+          <p className="dashboard-text-muted mt-2 text-sm leading-6">
             Transfer to one of the listed bank accounts and upload your payment proof.
           </p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Available accounts</p>
-          <p className="mt-1 text-sm font-bold text-slate-900">{bankBadgeCount} configured bank{bankBadgeCount === 1 ? "" : "s"}</p>
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:items-end">
+          <button
+            className="btn-secondary inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-bold transition"
+            onClick={() => {
+              setMethod(null);
+              setAmount("");
+              setTrxId("");
+              setScreenshot(null);
+            }}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to selection
+          </button>
         </div>
       </div>
 
       <div className="space-y-6">
-        <div className="rounded-[28px] border border-slate-200 bg-white/80 p-5 shadow-[0_16px_45px_rgba(15,23,42,0.06)] sm:p-6">
+        <div className="rounded-[28px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)] p-5 shadow-[0_16px_45px_rgba(15,23,42,0.08)] sm:p-6">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Destination account</p>
-              <h3 className="mt-2 text-lg font-black tracking-tight text-slate-900">
+              <p className="dashboard-text-muted text-[10px] font-black uppercase tracking-[0.22em]">Destination account</p>
+              <h3 className="dashboard-text-strong mt-2 text-lg font-black tracking-tight">
                 Choose the bank account for transfer
               </h3>
             </div>
@@ -198,8 +208,8 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
             <>
               <div>
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <label className="block text-sm font-bold text-slate-700">Select Bank</label>
-                  <div className="hidden rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700 sm:inline-flex">
+                  <label className="dashboard-text-muted block text-sm font-bold">Select Bank</label>
+                  <div className="dashboard-chip hidden px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] sm:inline-flex">
                     {bankBadgeCount} options
                   </div>
                 </div>
@@ -214,12 +224,12 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
                         onClick={() => setSelectedBankId(bank.id)}
                         className={`group relative flex h-full cursor-pointer flex-col gap-3 overflow-hidden rounded-[26px] border-2 p-4 text-left transition-all duration-200 hover:-translate-y-0.5 ${
                           isSelected
-                            ? "border-emerald-400 bg-[linear-gradient(180deg,rgba(236,253,245,0.98),rgba(255,255,255,0.99))] shadow-[0_18px_50px_rgba(5,150,105,0.18)] ring-2 ring-emerald-200"
-                            : "border-slate-400 bg-white shadow-[0_10px_24px_rgba(15,23,42,0.05)] hover:border-emerald-300 hover:shadow-[0_14px_32px_rgba(15,23,42,0.08)]"
+                            ? "border-[var(--dashboard-accent)] bg-[var(--dashboard-input-bg)] shadow-[0_18px_50px_rgba(15,23,42,0.14)] ring-2 ring-[var(--dashboard-success-soft)]"
+                            : "border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-bg)] shadow-[0_10px_24px_rgba(15,23,42,0.08)] hover:border-[var(--dashboard-accent)]/55 hover:shadow-[0_14px_32px_rgba(15,23,42,0.12)]"
                         }`}
                       >
                         {isSelected ? (
-                          <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-sm">
+                          <span className="dashboard-accent-surface absolute right-4 top-4 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] shadow-sm">
                             <CheckCircle2 size={11} />
                             Active
                           </span>
@@ -259,8 +269,8 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
                             <span
                               className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${
                                 isSelected
-                                  ? "bg-emerald-100 text-emerald-700"
-                                  : "bg-slate-100 text-slate-600"
+                                  ? "bg-[var(--dashboard-success-soft)] dashboard-text-strong"
+                                  : "bg-[var(--dashboard-panel-soft)] dashboard-text-muted"
                               }`}
                             >
                               {isSelected ? "Selected" : "Tap to select"}
@@ -283,7 +293,7 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
               </div>
 
               {selectedBank ? (
-                <div className="mt-5 rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.98))] p-4 sm:p-5">
+                <div className="mt-5 rounded-[28px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-input-bg)] p-4 sm:p-5">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="flex items-start gap-4">
                       <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] border border-emerald-200 bg-white shadow-sm">
@@ -298,13 +308,13 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
                       </div>
 
                       <div className="min-w-0">
-                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                        <p className="dashboard-text-muted text-[10px] font-black uppercase tracking-[0.18em]">
                           Selected account
                         </p>
-                        <h4 className="mt-1 truncate text-xl font-black tracking-tight text-slate-900">
+                        <h4 className="dashboard-text-strong mt-1 truncate text-xl font-black tracking-tight">
                           {getBankOptionLabel(selectedBank, bankDetails.findIndex((bank) => bank.id === selectedBank.id))}
                         </h4>
-                        <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-bold text-emerald-700">
+                        <div className="dashboard-accent-surface mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold">
                           <CheckCircle2 size={12} />
                           Transfer destination
                         </div>
@@ -367,22 +377,22 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_0.72fr]">
-          <div className="rounded-[28px] border border-slate-200 bg-white/80 p-5 shadow-[0_16px_45px_rgba(15,23,42,0.06)] sm:p-6">
+          <div className="rounded-[28px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)] p-5 shadow-[0_16px_45px_rgba(15,23,42,0.08)] sm:p-6">
             <div className="mb-5">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Payment details</p>
-              <h3 className="mt-2 text-lg font-black tracking-tight text-slate-900">
+              <p className="dashboard-text-muted text-[10px] font-black uppercase tracking-[0.22em]">Payment details</p>
+              <h3 className="dashboard-text-strong mt-2 text-lg font-black tracking-tight">
                 Fill in your transfer information
               </h3>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700">Amount (BDT)</label>
+                <label className="dashboard-text-muted mb-2 block text-sm font-bold">Amount (BDT)</label>
                 <input
                   type="text"
                   inputMode="numeric"
                   pattern="[0-9]*"
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-base font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                  className="w-full rounded-2xl border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] px-4 py-3.5 text-base font-semibold text-[var(--dashboard-text-strong)] outline-none transition placeholder:text-[var(--dashboard-placeholder)] focus:border-[var(--dashboard-accent)] focus:ring-4 focus:ring-[var(--dashboard-success-soft)]"
                   placeholder={`Enter minimum Tk ${MIN_BANK_PAYMENT_AMOUNT_BDT}`}
                   value={amount}
                   onKeyDown={blockDecimalInput}
@@ -391,16 +401,16 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
                     if (isWholeNumberInputValue(value)) setAmount(value);
                   }}
                 />
-                <p className="mt-2 text-xs leading-5 text-slate-500">
+                <p className="dashboard-text-muted mt-2 text-xs leading-5">
                   Bank transfer is available only for amounts of Tk {MIN_BANK_PAYMENT_AMOUNT_BDT} or more.
                 </p>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700">Transaction ID / Slip No.</label>
+                <label className="dashboard-text-muted mb-2 block text-sm font-bold">Transaction ID / Slip No.</label>
                 <input
                   type="text"
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-base font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                  className="w-full rounded-2xl border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] px-4 py-3.5 text-base font-semibold text-[var(--dashboard-text-strong)] outline-none transition placeholder:text-[var(--dashboard-placeholder)] focus:border-[var(--dashboard-accent)] focus:ring-4 focus:ring-[var(--dashboard-success-soft)]"
                   placeholder="Enter the transaction reference ID"
                   value={trxId}
                   onChange={(e) => setTrxId(e.target.value)}
@@ -408,13 +418,13 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700">Payment Screenshot (Proof)</label>
-                <label className="flex cursor-pointer flex-col gap-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 transition hover:border-emerald-300 hover:bg-emerald-50/60">
-                  <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
-                    <Upload size={16} className="text-emerald-600" />
+                <label className="dashboard-text-muted mb-2 block text-sm font-bold">Payment Screenshot (Proof)</label>
+                <label className="flex cursor-pointer flex-col gap-3 rounded-2xl border border-dashed border-[var(--dashboard-frame-border)] bg-[var(--dashboard-input-bg)] px-4 py-4 transition hover:border-[var(--dashboard-accent)]/60 hover:bg-[var(--dashboard-success-soft)]">
+                  <span className="dashboard-text-strong inline-flex items-center gap-2 text-sm font-semibold">
+                    <Upload size={16} className="text-[var(--dashboard-accent)]" />
                     {screenshot?.name ? screenshot.name : "Upload screenshot image"}
                   </span>
-                  <span className="text-xs leading-5 text-slate-500">
+                  <span className="dashboard-text-muted text-xs leading-5">
                     PNG, JPG, or WEBP. Upload the screenshot of your successful transfer.
                   </span>
                   <input
@@ -428,39 +438,27 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.98))] p-5 shadow-[0_16px_45px_rgba(15,23,42,0.05)] sm:p-6">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Before you submit</p>
-            <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-              <li className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+          <div className="rounded-[28px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)] p-5 shadow-[0_16px_45px_rgba(15,23,42,0.07)] sm:p-6">
+            <p className="dashboard-text-muted text-[10px] font-black uppercase tracking-[0.22em]">Before you submit</p>
+            <ul className="dashboard-text-muted mt-4 space-y-3 text-sm leading-6">
+              <li className="rounded-2xl border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-input-bg)] px-4 py-3">
                 Double-check the selected bank account before sending money.
               </li>
-              <li className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+              <li className="rounded-2xl border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-input-bg)] px-4 py-3">
                 Keep the transaction ID and screenshot visible for verification.
               </li>
-              <li className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+              <li className="rounded-2xl border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-input-bg)] px-4 py-3">
                 Requests below Tk {MIN_BANK_PAYMENT_AMOUNT_BDT} are not accepted here.
               </li>
             </ul>
 
             <button
               onClick={handleManualPayment}
-              className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3.5 text-sm font-bold text-white shadow-[0_12px_30px_rgba(5,150,105,0.24)] transition hover:-translate-y-0.5 hover:bg-emerald-700"
+              className="btn-primary mt-6 inline-flex w-full items-center justify-center rounded-2xl border px-5 py-3.5 text-sm font-bold transition hover:-translate-y-0.5"
             >
               Submit Payment Request
             </button>
 
-            <button
-              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              onClick={() => {
-                setMethod(null);
-                setAmount("");
-                setTrxId("");
-                setScreenshot(null);
-              }}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to selection
-            </button>
           </div>
         </div>
       </div>

@@ -19,18 +19,18 @@ function PaymentOptionCard({
 }) {
   const accentStyles = {
     blue: {
-      shell: "dashboard-subpanel !border-sky-300/45 !bg-[linear-gradient(135deg,rgba(115,200,255,0.28),rgba(115,200,255,0.12)_50%,rgba(255,255,255,0.96))]",
-      badge: "dashboard-accent-surface text-white",
+      shell: "dashboard-subpanel border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-bg)]",
+      badge: "dashboard-accent-surface",
       button: "dashboard-accent-surface text-[var(--dashboard-accent-text)]",
-      glow: "from-sky-500/14 via-sky-300/10 to-transparent",
-      ring: "group-hover:!border-sky-300/60",
+      glow: "from-[var(--dashboard-success-soft)] via-transparent to-transparent",
+      ring: "group-hover:!border-[var(--dashboard-accent)]/55",
     },
     emerald: {
-      shell: "dashboard-subpanel !border-emerald-300/45 !bg-[linear-gradient(135deg,rgba(183,223,105,0.34),rgba(183,223,105,0.12)_48%,rgba(255,255,255,0.96))]",
-      badge: "dashboard-accent-surface text-white",
+      shell: "dashboard-subpanel border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-bg)]",
+      badge: "dashboard-accent-surface",
       button: "dashboard-accent-surface text-[var(--dashboard-accent-text)]",
-      glow: "from-emerald-500/16 via-emerald-300/10 to-transparent",
-      ring: "group-hover:!border-emerald-300/60",
+      glow: "from-[var(--dashboard-success-soft)] via-transparent to-transparent",
+      ring: "group-hover:!border-[var(--dashboard-accent)]/55",
     },
   };
 
@@ -127,21 +127,21 @@ export default function PaymentPageClient() {
 
   return (
     <div className="user-dashboard-theme-scope min-h-screen space-y-6 bg-transparent p-3 sm:p-4 lg:p-6">
-      <div className="dashboard-subpanel mt-4 rounded-[32px] border border-white/10 p-5 sm:p-6">
+      <div className="dashboard-subpanel mt-3 rounded-[32px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-bg)] p-3 shadow-[0_20px_48px_rgba(15,23,42,0.14)] sm:p-4">
         <div className="max-w-2xl">
-          <p className="dashboard-text-faint text-[10px] font-black uppercase tracking-[0.28em]">Payments</p>
-          <h1 className="dashboard-text-strong mt-2 text-3xl font-black tracking-tight md:text-4xl">
+          <p className="dashboard-text-muted text-[10px] font-black uppercase tracking-[0.28em]">Payments</p>
+          <h1 className="dashboard-text-strong mt-0.5 text-2xl font-black tracking-tight md:text-3xl">
             Select a payment method
           </h1>
-          <p className="dashboard-text-muted mt-3 text-sm leading-6">
+          <p className="dashboard-text-muted mt-1 text-sm leading-5">
             Pick the option that works best for you.
           </p>
         </div>
       </div>
 
       {paymentStatus?.issues?.length ? (
-        <div className="dashboard-subpanel flex items-start gap-3 rounded-[24px] border border-amber-300/50 bg-[linear-gradient(135deg,rgba(245,158,11,0.16),rgba(255,255,255,0.96)_55%)] p-4 shadow-[0_14px_40px_rgba(245,158,11,0.12)]">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-700">
+        <div className="dashboard-subpanel flex items-start gap-3 rounded-[24px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-warn-soft)] p-4 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
+          <div className="dashboard-accent-surface flex h-10 w-10 items-center justify-center rounded-2xl">
             <AlertTriangle size={18} />
           </div>
           <div className="flex-1">

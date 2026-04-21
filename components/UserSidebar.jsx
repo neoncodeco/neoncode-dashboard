@@ -118,7 +118,7 @@ const UserSidebar = ({ theme, toggleTheme }) => {
     { name: "Overview", icon: LayoutDashboard, href: "/user-dashboard/overview" },
     { name: "Our Services", icon: Layers3, href: "/user-dashboard/services" },
     { name: "Meta Ads Account", icon: WalletCards, href: "/user-dashboard/meta-ads-account" },
-    { name: "Payment Methods", icon: CreditCard, href: "/user-dashboard/payment-methods" },
+    { name: "Billing", icon: CreditCard, href: "/user-dashboard/payment-methods" },
   ];
 
   const accountNavItems = [

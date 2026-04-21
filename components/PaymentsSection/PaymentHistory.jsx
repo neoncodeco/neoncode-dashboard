@@ -112,17 +112,17 @@ const PaymentHistory = () => {
 
   if (loading)
     return (
-      <p className="text-center py-10 text-lg font-medium text-gray-700">
+      <p className="dashboard-text-muted py-10 text-center text-lg font-medium">
         Loading Payment History...
       </p>
     );
 
   return (
     <div className="p-2">
-      <div className="bg-white text-black rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="overflow-hidden rounded-[28px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-bg)] text-[var(--dashboard-text-strong)] shadow-[0_18px_42px_rgba(15,23,42,0.12)]">
         {/* Header & Actions */}
-        <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row gap-4 justify-between items-center">
-          <h2 className="text-2xl  md:hidden lg:block font-bold text-gray-800 flex items-center gap-2">
+        <div className="flex flex-col items-center justify-between gap-4 border-b border-[var(--dashboard-frame-border)] p-6 md:flex-row">
+          <h2 className="dashboard-text-strong flex items-center gap-2 text-2xl font-bold md:hidden lg:block">
             Payment History
           </h2>
 
@@ -134,14 +134,14 @@ const PaymentHistory = () => {
               </label>
               <div className="relative">
                 <Filter
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  className="dashboard-text-faint absolute left-3 top-1/2 -translate-y-1/2"
                   size={18}
                 />
                 <select
                   id="status-filter"
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full md:w-40 appearance-none pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer"
+                  className="dashboard-text-strong w-full cursor-pointer appearance-none rounded-lg border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] py-2 pl-10 pr-4 text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-[var(--dashboard-success-soft)] md:w-40"
                 >
                   {STATUS_OPTIONS.map((status) => (
                     <option key={status} value={status}>
@@ -150,7 +150,7 @@ const PaymentHistory = () => {
                   ))}
                 </select>
                 <ChevronDown
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+                  className="dashboard-text-faint pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
                   size={16}
                 />
               </div>
@@ -162,7 +162,7 @@ const PaymentHistory = () => {
                 fetchData();
                 setFilterStatus("All");
               }}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition"
+              className="btn-secondary flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition"
             >
               <RefreshCw size={16} /> Refresh
             </button>
@@ -170,7 +170,7 @@ const PaymentHistory = () => {
             {/* Export CSV Button */}
             <button
               onClick={exportCSV}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition shadow-md"
+              className="btn-primary flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-bold transition"
             >
               <Download size={16} /> Export
             </button>
@@ -181,7 +181,7 @@ const PaymentHistory = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 text-gray-600 text-sm uppercase font-bold tracking-wider">
+              <tr className="dashboard-text-muted bg-[var(--dashboard-table-head)] text-sm font-bold uppercase tracking-wider">
                 <th className="px-6 py-4">Transaction ID</th>
                 <th className="px-6 py-4">Date</th>
                 <th className="px-6 py-4">Description</th>
@@ -191,41 +191,41 @@ const PaymentHistory = () => {
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-[var(--dashboard-frame-border)]">
               {currentPageData.map((p) => (
-                <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-mono font-medium text-gray-700">
+                <tr key={p.id} className="transition-colors hover:bg-[var(--dashboard-table-row-hover)]">
+                  <td className="dashboard-text-strong px-6 py-4 text-sm font-mono font-medium">
                     {p.id}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  <td className="dashboard-text-muted px-6 py-4 text-sm">
                     {new Date(p.date).toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">
+                  <td className="dashboard-text-strong px-6 py-4 text-sm">
                     {p.description}
                   </td>
-                  <td className="px-6 py-4 text-sm font-extrabold text-green-600">
+                  <td className="px-6 py-4 text-sm font-extrabold text-[var(--dashboard-accent)]">
                     {(Number(p.creditedUsdAmount) || 0) > 0 ? (
-                      <div className="text-sm font-extrabold text-green-600">{formatUsd(p.creditedUsdAmount)}</div>
+                      <div className="text-sm font-extrabold text-[var(--dashboard-accent)]">{formatUsd(p.creditedUsdAmount)}</div>
                     ) : (
-                      <div className="text-sm font-extrabold text-green-600">{formatBdt(p.amountBdt ?? p.amount)}</div>
+                      <div className="text-sm font-extrabold text-[var(--dashboard-accent)]">{formatBdt(p.amountBdt ?? p.amount)}</div>
                     )}
-                    <div className="text-xs font-semibold text-gray-500">{formatBdt(p.amountBdt ?? p.amount)} deposit</div>
+                    <div className="dashboard-text-muted text-xs font-semibold">{formatBdt(p.amountBdt ?? p.amount)} deposit</div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
+                  <td className="dashboard-text-muted px-6 py-4 text-sm">
                     {p.method}
                   </td>
                   <td className="px-6 py-4">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         p?.status?.toLowerCase() === "approved"
-                          ? "bg-green-100 text-green-700"
+                          ? "bg-[var(--dashboard-success-soft)] text-[var(--dashboard-accent-text)]"
                           : p?.status?.toLowerCase() === "pending"
-                          ? "bg-yellow-100 text-yellow-700"
+                          ? "bg-[var(--dashboard-warn-soft)] dashboard-text-strong"
                           : p?.status?.toLowerCase() === "rejected"
-                          ? "bg-red-100 text-red-600"
+                          ? "bg-[var(--dashboard-danger-soft)] dashboard-text-strong"
                           : p?.status?.toLowerCase() === "cancelled"
-                          ? "bg-red-100 text-red-600"
-                          : "bg-gray-200 text-gray-700"
+                          ? "bg-[var(--dashboard-danger-soft)] dashboard-text-strong"
+                          : "bg-[var(--dashboard-panel-soft)] dashboard-text-muted"
                       }`}
                     >
                       {p?.status}
@@ -238,7 +238,7 @@ const PaymentHistory = () => {
                 <tr>
                   <td
                     colSpan="6"
-                    className="text-center py-10 text-gray-500 text-lg"
+                    className="dashboard-text-muted py-10 text-center text-lg"
                   >
                     No {filterStatus !== "All" ? filterStatus : ""} Payments
                     Found.
@@ -251,7 +251,7 @@ const PaymentHistory = () => {
 
         {/* Pagination Footer */}
         {filteredPayments.length > ROWS_PER_PAGE && (
-          <div className="p-4 border-t border-gray-100 flex justify-between items-center text-sm text-gray-600">
+          <div className="dashboard-text-muted flex items-center justify-between border-t border-[var(--dashboard-frame-border)] p-4 text-sm">
             <p>
               Showing{" "}
               {Math.min(
@@ -266,17 +266,17 @@ const PaymentHistory = () => {
               <button
                 onClick={goToPrevPage}
                 disabled={page === 1}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="btn-secondary rounded-lg border p-2 transition disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ChevronLeft size={16} />
               </button>
-              <span className="p-2 px-4 bg-blue-600 text-white rounded-lg font-medium">
+              <span className="btn-primary rounded-lg border p-2 px-4 font-medium">
                 {page}
               </span>
               <button
                 onClick={goToNextPage}
                 disabled={page === totalPages || totalPages === 0}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="btn-secondary rounded-lg border p-2 transition disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ChevronRight size={16} />
               </button>
