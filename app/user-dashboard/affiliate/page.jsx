@@ -25,7 +25,7 @@ const LEVEL1_MILESTONES = [
 ];
 const MIN_TOPUP_FOR_COMMISSION = 2000;
 const panelClass =
-  "dashboard-subpanel overflow-hidden rounded-[28px] border border-white/10 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:p-8";
+  "dashboard-subpanel overflow-hidden rounded-[28px] border border-sky-300/35 bg-[linear-gradient(135deg,rgba(115,200,255,0.24),rgba(183,223,105,0.12)_52%,rgba(255,255,255,0.94))] p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:p-8";
 
 export default function AffiliatePage() {
   const { userData } = useFirebaseAuth();
@@ -62,7 +62,7 @@ export default function AffiliatePage() {
     <div className="user-dashboard-theme-scope mx-auto min-h-screen space-y-6 bg-transparent p-2.5 sm:space-y-8 sm:p-4 lg:p-6">
       
       {/* ================= HEADER ================= */}
-      <div className="dashboard-subpanel mt-3 rounded-[28px] border border-white/10 p-4 sm:mt-4 sm:rounded-[32px] sm:p-6 md:p-8">
+      <div className="dashboard-subpanel mt-3 rounded-[28px] border border-emerald-300/35 bg-[linear-gradient(135deg,rgba(183,223,105,0.24),rgba(115,200,255,0.12)_52%,rgba(255,255,255,0.94))] p-4 sm:mt-4 sm:rounded-[32px] sm:p-6 md:p-8">
         <div className="flex flex-col gap-8 xl:flex-row xl:items-stretch xl:justify-between">
           <div className="max-w-3xl xl:flex xl:flex-col xl:justify-center">
             <span className="dashboard-chip inline-flex items-center gap-2 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.18em]">
@@ -79,12 +79,12 @@ export default function AffiliatePage() {
 
           <div className="w-full space-y-3 sm:space-y-4 xl:w-[600px]">
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="dashboard-subpanel rounded-[28px] border !border-emerald-300/45 !bg-[linear-gradient(135deg,rgba(183,223,105,0.34),rgba(183,223,105,0.12)_48%,rgba(255,255,255,0.96))] p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+              <div className="dashboard-subpanel rounded-[28px] border !border-emerald-300/60 !bg-[linear-gradient(135deg,rgba(183,223,105,0.52),rgba(183,223,105,0.24)_48%,rgba(255,255,255,0.94))] p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
                 <p className="dashboard-text-muted text-sm font-bold">Available Now</p>
                 <p className="dashboard-text-strong mt-3 text-[1.55rem] font-black tracking-tight sm:text-[1.9rem]">${availableToWithdraw}</p>
                 <p className="dashboard-text-muted mt-2 text-sm">Ready for withdrawal</p>
               </div>
-              <div className="dashboard-subpanel rounded-[28px] border !border-sky-300/45 !bg-[linear-gradient(135deg,rgba(115,200,255,0.28),rgba(115,200,255,0.12)_50%,rgba(255,255,255,0.96))] p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+              <div className="dashboard-subpanel rounded-[28px] border !border-sky-300/60 !bg-[linear-gradient(135deg,rgba(115,200,255,0.44),rgba(115,200,255,0.2)_50%,rgba(255,255,255,0.94))] p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
                 <p className="dashboard-text-muted text-sm font-bold">Qualified Referrals</p>
                 <p className="dashboard-text-strong mt-3 text-[1.55rem] font-black tracking-tight sm:text-[1.9rem]">{completedUsers}</p>
                 <p className="dashboard-text-muted mt-2 text-sm">Completed top-up threshold</p>
@@ -162,7 +162,7 @@ export default function AffiliatePage() {
           </div>
         </div>
 
-        <div className="dashboard-subpanel rounded-[28px] border !border-indigo-300/40 !bg-[linear-gradient(135deg,rgba(103,163,255,0.28),rgba(103,163,255,0.1)_52%,rgba(255,255,255,0.96))] p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:p-8">
+        <div className="dashboard-subpanel rounded-[28px] border !border-indigo-300/55 !bg-[linear-gradient(135deg,rgba(103,163,255,0.42),rgba(103,163,255,0.18)_52%,rgba(255,255,255,0.94))] p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:p-8">
           <p className="dashboard-text-muted text-[11px] font-black uppercase tracking-[0.16em]">Next Target</p>
           <p className="dashboard-text-strong mt-2 text-2xl font-black">
             {nextMilestone ? `${nextMilestone.count} referrals` : "All milestones cleared"}
@@ -188,7 +188,7 @@ export default function AffiliatePage() {
             const completed = completedUsers >= m.count;
 
             return (
-              <div key={i} className={`dashboard-subpanel rounded-[28px] border p-6 transition-all sm:p-8 ${completed ? "!border-emerald-300/50 !bg-[linear-gradient(135deg,rgba(183,223,105,0.3),rgba(183,223,105,0.12)_52%,rgba(255,255,255,0.96))]" : "!border-indigo-300/35 !bg-[linear-gradient(135deg,rgba(103,163,255,0.22),rgba(103,163,255,0.08)_52%,rgba(255,255,255,0.96))] hover:-translate-y-1"}`}>
+              <div key={i} className={`dashboard-subpanel rounded-[28px] border p-6 transition-all sm:p-8 ${completed ? "!border-emerald-300/60 !bg-[linear-gradient(135deg,rgba(183,223,105,0.46),rgba(183,223,105,0.2)_52%,rgba(255,255,255,0.94))]" : "!border-indigo-300/50 !bg-[linear-gradient(135deg,rgba(103,163,255,0.36),rgba(103,163,255,0.16)_52%,rgba(255,255,255,0.94))] hover:-translate-y-1"}`}>
                 <div className="flex justify-between items-center mb-6">
                   <div className={`p-3 rounded-2xl ${completed ? "bg-green-500 text-white" : "bg-gray-100 text-gray-400 dark:bg-slate-800 dark:text-slate-400"}`}>
                     <Gift size={24} />
@@ -229,17 +229,17 @@ const StatCard = ({ label, value, sub, icon: Icon, color }) => {
   const gradients = {
     indigo: {
       icon: "bg-indigo-50 text-indigo-600",
-      card: "!border-indigo-300/40 !bg-[linear-gradient(135deg,rgba(103,163,255,0.28),rgba(103,163,255,0.1)_52%,rgba(255,255,255,0.96))]",
+      card: "!border-indigo-300/55 !bg-[linear-gradient(135deg,rgba(103,163,255,0.42),rgba(103,163,255,0.18)_52%,rgba(255,255,255,0.94))]",
       hoverValue: "group-hover:text-indigo-600",
     },
     teal: {
       icon: "bg-emerald-50 text-emerald-600",
-      card: "!border-emerald-300/45 !bg-[linear-gradient(135deg,rgba(183,223,105,0.34),rgba(183,223,105,0.12)_48%,rgba(255,255,255,0.96))]",
+      card: "!border-emerald-300/60 !bg-[linear-gradient(135deg,rgba(183,223,105,0.52),rgba(183,223,105,0.24)_48%,rgba(255,255,255,0.94))]",
       hoverValue: "group-hover:text-emerald-600",
     },
     pink: {
       icon: "bg-rose-50 text-rose-600",
-      card: "!border-rose-300/45 !bg-[linear-gradient(135deg,rgba(251,113,133,0.24),rgba(251,113,133,0.1)_52%,rgba(255,255,255,0.96))]",
+      card: "!border-rose-300/60 !bg-[linear-gradient(135deg,rgba(251,113,133,0.36),rgba(251,113,133,0.18)_52%,rgba(255,255,255,0.94))]",
       hoverValue: "group-hover:text-rose-600",
     },
   };

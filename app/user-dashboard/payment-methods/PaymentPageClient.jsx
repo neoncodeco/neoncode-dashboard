@@ -19,17 +19,17 @@ function PaymentOptionCard({
 }) {
   const accentStyles = {
     blue: {
-      shell: "dashboard-subpanel border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-bg)]",
+      shell: "dashboard-subpanel border-sky-300/55 bg-[linear-gradient(135deg,rgba(115,200,255,0.42),rgba(115,200,255,0.18)_48%,rgba(255,255,255,0.94))]",
       badge: "dashboard-accent-surface",
       button: "dashboard-accent-surface text-[var(--dashboard-accent-text)]",
-      glow: "from-[var(--dashboard-success-soft)] via-transparent to-transparent",
+      glow: "from-sky-300/35 via-transparent to-transparent",
       ring: "group-hover:!border-[var(--dashboard-accent)]/55",
     },
     emerald: {
-      shell: "dashboard-subpanel border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-bg)]",
+      shell: "dashboard-subpanel border-emerald-300/60 bg-[linear-gradient(135deg,rgba(183,223,105,0.5),rgba(183,223,105,0.22)_48%,rgba(255,255,255,0.94))]",
       badge: "dashboard-accent-surface",
       button: "dashboard-accent-surface text-[var(--dashboard-accent-text)]",
-      glow: "from-[var(--dashboard-success-soft)] via-transparent to-transparent",
+      glow: "from-emerald-300/35 via-transparent to-transparent",
       ring: "group-hover:!border-[var(--dashboard-accent)]/55",
     },
   };
@@ -127,7 +127,7 @@ export default function PaymentPageClient() {
 
   return (
     <div className="user-dashboard-theme-scope min-h-screen space-y-6 bg-transparent p-3 sm:p-4 lg:p-6">
-      <div className="dashboard-subpanel mt-3 rounded-[32px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-bg)] p-3 shadow-[0_20px_48px_rgba(15,23,42,0.14)] sm:p-4">
+      <div className="dashboard-subpanel mt-3 rounded-[32px] border border-emerald-300/35 bg-[linear-gradient(135deg,rgba(183,223,105,0.26),rgba(115,200,255,0.16)_52%,rgba(255,255,255,0.94))] p-3 shadow-[0_20px_48px_rgba(15,23,42,0.14)] sm:p-4">
         <div className="max-w-2xl">
           <p className="dashboard-text-muted text-[10px] font-black uppercase tracking-[0.28em]">Payments</p>
           <h1 className="dashboard-text-strong mt-0.5 text-2xl font-black tracking-tight md:text-3xl">

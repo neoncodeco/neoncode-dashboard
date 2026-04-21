@@ -162,7 +162,7 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
   const bankBadgeCount = bankDetails.length;
 
   return (
-    <section className="w-full rounded-[32px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-bg)] p-4 shadow-[0_24px_80px_rgba(15,23,42,0.12)] sm:p-6 lg:p-8">
+    <section className="w-full rounded-[32px] border border-emerald-300/35 bg-[linear-gradient(135deg,rgba(183,223,105,0.26),rgba(115,200,255,0.14)_52%,rgba(255,255,255,0.94))] p-4 shadow-[0_24px_80px_rgba(15,23,42,0.12)] sm:p-6 lg:p-8">
       <div className="mb-6 flex flex-col gap-4 border-b border-[var(--dashboard-frame-border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="max-w-2xl">
           <div className="dashboard-chip inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em]">
@@ -194,7 +194,7 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
       </div>
 
       <div className="space-y-6">
-        <div className="rounded-[28px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)] p-5 shadow-[0_16px_45px_rgba(15,23,42,0.08)] sm:p-6">
+        <div className="rounded-[28px] border border-emerald-300/45 bg-[linear-gradient(135deg,rgba(183,223,105,0.3),rgba(255,255,255,0.9)_55%)] p-5 shadow-[0_16px_45px_rgba(15,23,42,0.08)] sm:p-6">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="dashboard-text-muted text-[10px] font-black uppercase tracking-[0.22em]">Destination account</p>
@@ -224,8 +224,8 @@ export default function BankPayForm({ token, setMethod, bankDetails = [] }) {
                         onClick={() => setSelectedBankId(bank.id)}
                         className={`group relative flex h-full cursor-pointer flex-col gap-3 overflow-hidden rounded-[26px] border-2 p-4 text-left transition-all duration-200 hover:-translate-y-0.5 ${
                           isSelected
-                            ? "border-[var(--dashboard-accent)] bg-[var(--dashboard-input-bg)] shadow-[0_18px_50px_rgba(15,23,42,0.14)] ring-2 ring-[var(--dashboard-success-soft)]"
-                            : "border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-bg)] shadow-[0_10px_24px_rgba(15,23,42,0.08)] hover:border-[var(--dashboard-accent)]/55 hover:shadow-[0_14px_32px_rgba(15,23,42,0.12)]"
+                            ? "border-[var(--dashboard-accent)] bg-[linear-gradient(135deg,rgba(183,223,105,0.38),rgba(255,255,255,0.94)_58%)] shadow-[0_18px_50px_rgba(15,23,42,0.14)] ring-2 ring-[var(--dashboard-success-soft)]"
+                            : "border-[var(--dashboard-frame-border)] bg-[linear-gradient(135deg,rgba(115,200,255,0.18),rgba(255,255,255,0.94)_58%)] shadow-[0_10px_24px_rgba(15,23,42,0.08)] hover:border-[var(--dashboard-accent)]/55 hover:shadow-[0_14px_32px_rgba(15,23,42,0.12)]"
                         }`}
                       >
                         {isSelected ? (

@@ -29,24 +29,24 @@ const adAccountPageCache = new Map();
 const getCardTone = (stateMeta, hasError, canFetchBalance) => {
   if (hasError) {
     return {
-      accent: "from-amber-400/40 via-orange-300/20 to-transparent",
-      icon: "border-amber-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,248,232,0.92))] text-amber-800",
-      stat: "border-amber-200/60 bg-[rgba(255,248,236,0.9)]",
+      accent: "from-amber-400/55 via-orange-300/32 to-transparent",
+      icon: "border-amber-200/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,238,190,0.96))] text-amber-800",
+      stat: "border-amber-200/75 bg-[rgba(255,243,210,0.96)]",
     };
   }
 
   if (!canFetchBalance || stateMeta.label === "Pending Setup" || stateMeta.label === "Syncing") {
     return {
-      accent: "from-slate-300/50 via-cyan-200/20 to-transparent",
-      icon: "border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(244,247,250,0.92))] text-slate-700",
-      stat: "border-slate-200/70 bg-[rgba(255,255,255,0.92)]",
+      accent: "from-slate-300/60 via-cyan-200/34 to-transparent",
+      icon: "border-slate-200/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(226,246,255,0.96))] text-slate-700",
+      stat: "border-slate-200/80 bg-[rgba(235,248,255,0.96)]",
     };
   }
 
   return {
-    accent: "from-emerald-400/40 via-sky-300/20 to-transparent",
-    icon: "border-emerald-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(234,252,243,0.92))] text-emerald-800",
-    stat: "border-emerald-100/70 bg-[rgba(255,255,255,0.94)]",
+    accent: "from-emerald-400/55 via-sky-300/32 to-transparent",
+    icon: "border-emerald-200/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(218,250,235,0.96))] text-emerald-800",
+    stat: "border-emerald-100/80 bg-[rgba(230,252,241,0.96)]",
   };
 };
 
@@ -385,16 +385,16 @@ export default function AdAccountUi({ onRequestNewAccount }) {
   return (
     <>
       <div className="space-y-6">
-        <section className="dashboard-subpanel mt-2 overflow-hidden rounded-[28px] border border-white/10 p-4 sm:rounded-[32px] sm:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <section className="dashboard-subpanel mt-2 overflow-hidden rounded-[26px] border border-white/10 px-4 py-3.5 sm:rounded-[30px] sm:px-5 sm:py-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="dashboard-text-strong text-2xl font-black tracking-tight sm:text-3xl">Ad Accounts</h1>
-              <p className="dashboard-text-muted mt-2 text-sm leading-6">Manage account readiness, live balances, and account actions from one workspace.</p>
+              <h1 className="dashboard-text-strong text-[1.5rem] font-black tracking-tight sm:text-[1.7rem]">Ad Accounts</h1>
+              <p className="dashboard-text-muted mt-1.5 text-sm leading-5">Manage account readiness, live balances, and account actions from one workspace.</p>
             </div>
 
             <button
               onClick={handleRequestNewAccount}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/30 transition-all hover:bg-blue-600 sm:w-auto"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-500 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-blue-900/30 transition-all hover:bg-blue-600 sm:w-auto"
             >
               <PlusIcon size={18} />
               Request New Account
@@ -403,7 +403,7 @@ export default function AdAccountUi({ onRequestNewAccount }) {
         </section>
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          <div className={`${statCardBaseClass} !border-emerald-300/45 !bg-[linear-gradient(135deg,rgba(183,223,105,0.34),rgba(183,223,105,0.12)_48%,rgba(255,255,255,0.96))]`}>
+          <div className={`${statCardBaseClass} !border-emerald-300/60 !bg-[linear-gradient(135deg,rgba(183,223,105,0.52),rgba(183,223,105,0.24)_48%,rgba(255,255,255,0.94))]`}>
             <div className="mb-5 flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold dashboard-text-muted">Ready Accounts</p>
@@ -419,7 +419,7 @@ export default function AdAccountUi({ onRequestNewAccount }) {
             </div>
           </div>
 
-          <div className={`${statCardBaseClass} !border-sky-300/45 !bg-[linear-gradient(135deg,rgba(115,200,255,0.28),rgba(115,200,255,0.12)_50%,rgba(255,255,255,0.96))]`}>
+          <div className={`${statCardBaseClass} !border-sky-300/60 !bg-[linear-gradient(135deg,rgba(115,200,255,0.44),rgba(115,200,255,0.2)_50%,rgba(255,255,255,0.94))]`}>
             <div className="mb-5 flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold dashboard-text-muted">Pending Setup</p>
@@ -435,7 +435,7 @@ export default function AdAccountUi({ onRequestNewAccount }) {
             </div>
           </div>
 
-          <div className={`${statCardBaseClass} !border-amber-300/45 !bg-[linear-gradient(135deg,rgba(245,158,11,0.24),rgba(251,191,36,0.12)_50%,rgba(255,255,255,0.96))]`}>
+          <div className={`${statCardBaseClass} !border-amber-300/60 !bg-[linear-gradient(135deg,rgba(245,158,11,0.38),rgba(251,191,36,0.2)_50%,rgba(255,255,255,0.94))]`}>
             <div className="mb-5 flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold dashboard-text-muted">Needs Attention</p>
@@ -451,7 +451,7 @@ export default function AdAccountUi({ onRequestNewAccount }) {
             </div>
           </div>
 
-          <div className={`${statCardBaseClass} !border-indigo-300/40 !bg-[linear-gradient(135deg,rgba(103,163,255,0.28),rgba(103,163,255,0.1)_52%,rgba(255,255,255,0.96))]`}>
+          <div className={`${statCardBaseClass} !border-indigo-300/55 !bg-[linear-gradient(135deg,rgba(103,163,255,0.42),rgba(103,163,255,0.18)_52%,rgba(255,255,255,0.94))]`}>
             <div className="mb-5 flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold dashboard-text-muted">Total Remaining</p>
@@ -550,11 +550,11 @@ export default function AdAccountUi({ onRequestNewAccount }) {
                     return (
                       <article
                         key={`${account.MetaAccountID || account._id || i}-${i}`}
-                        className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,248,250,0.94))] p-5 shadow-[0_18px_36px_rgba(0,0,0,0.08)] ring-1 ring-black/5"
+                        className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-[linear-gradient(145deg,rgba(255,255,255,0.98),rgba(232,250,218,0.72)_42%,rgba(226,245,255,0.7))] p-5 shadow-[0_18px_36px_rgba(0,0,0,0.08)] ring-1 ring-black/5"
                       >
                         <div className={`pointer-events-none absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${getCardTone(stateMeta, hasError, canFetchBalance).accent}`} />
                         <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-white/70 blur-3xl" />
-                        <div className="pointer-events-none absolute -left-12 bottom-0 h-28 w-28 rounded-full bg-cyan-100/60 blur-3xl" />
+                        <div className="pointer-events-none absolute -left-12 bottom-0 h-28 w-28 rounded-full bg-cyan-100/80 blur-3xl" />
 
                         <div className="relative flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                           <div className="min-w-0">

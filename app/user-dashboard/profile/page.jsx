@@ -325,7 +325,7 @@ const handleVerifyOtp = async () => {
   return (
     <div className="user-dashboard-theme-scope min-h-screen pb-20">
       <div
-        className="relative h-56 overflow-hidden bg-gradient-to-r from-indigo-700 to-sky-700 md:h-72"
+        className="relative mx-3 mt-3 h-56 overflow-hidden rounded-[28px] bg-[radial-gradient(circle_at_14%_18%,rgba(194,235,45,0.5),transparent_30%),radial-gradient(circle_at_84%_24%,rgba(115,200,255,0.34),transparent_34%),linear-gradient(135deg,#7f9d33_0%,#c2eb2d_46%,#f2fad1_100%)] md:mx-6 2xl:mx-2 md:mt-4 md:h-72 md:rounded-[36px]"
         style={
           formData.coverPhoto
             ? {

@@ -245,7 +245,7 @@ export default function MyTicketsPage() {
 
   return (
     <div className="user-dashboard-theme-scope min-h-screen space-y-5 bg-transparent p-3 sm:p-4 lg:p-6">
-      <div className="dashboard-subpanel mt-4 flex flex-col gap-4 rounded-[24px] border p-4 sm:flex-row sm:items-center sm:justify-between sm:rounded-[28px] sm:p-6">
+      <div className="dashboard-subpanel mt-4 flex flex-col gap-4 rounded-[24px] border border-sky-300/35 bg-[linear-gradient(135deg,rgba(115,200,255,0.24),rgba(183,223,105,0.14)_52%,rgba(255,255,255,0.94))] p-4 sm:flex-row sm:items-center sm:justify-between sm:rounded-[28px] sm:p-6">
         <div>
           <p className="dashboard-text-faint text-[10px] font-black uppercase tracking-[0.2em]">Support</p>
           <h1 className="dashboard-text-strong mt-2 text-2xl font-black tracking-tight sm:text-3xl">Support Center</h1>
@@ -289,7 +289,7 @@ export default function MyTicketsPage() {
       </div>
 
       {activeTab === "create" ? (
-        <div className="dashboard-panel min-h-[calc(100svh-12rem)] overflow-hidden rounded-[22px] border sm:rounded-[28px]">
+        <div className="dashboard-panel min-h-[calc(100svh-12rem)] overflow-hidden rounded-[22px] border border-emerald-300/30 bg-[linear-gradient(135deg,rgba(183,223,105,0.16),rgba(115,200,255,0.1)_55%,rgba(255,255,255,0.9))] sm:rounded-[28px]">
           <CreateTicketPage
             onSuccess={async (newId) => {
               await fetchTickets();
@@ -308,14 +308,14 @@ export default function MyTicketsPage() {
       ) : (
         <div className="space-y-4">
           {isLoadingTickets ? (
-            <div className="dashboard-subpanel flex min-h-[220px] items-center justify-center rounded-[24px] border p-6 shadow-[0_14px_36px_rgba(15,23,42,0.08)]">
+            <div className="dashboard-subpanel flex min-h-[220px] items-center justify-center rounded-[24px] border border-sky-300/35 bg-[linear-gradient(135deg,rgba(115,200,255,0.22),rgba(255,255,255,0.92)_58%)] p-6 shadow-[0_14px_36px_rgba(15,23,42,0.08)]">
               <div className="flex items-center gap-3">
                 <Loader2 size={18} className="animate-spin dashboard-text-muted" />
                 <span className="dashboard-text-muted text-sm font-semibold">Loading ticket history...</span>
               </div>
             </div>
           ) : historyTickets.length === 0 ? (
-            <div className="dashboard-subpanel flex min-h-[220px] flex-col items-center justify-center rounded-[24px] border p-6 text-center shadow-[0_14px_36px_rgba(15,23,42,0.08)]">
+            <div className="dashboard-subpanel flex min-h-[220px] flex-col items-center justify-center rounded-[24px] border border-emerald-300/35 bg-[linear-gradient(135deg,rgba(183,223,105,0.24),rgba(255,255,255,0.92)_58%)] p-6 text-center shadow-[0_14px_36px_rgba(15,23,42,0.08)]">
               <MessagesSquare size={28} className="dashboard-text-faint" />
               <p className="dashboard-text-strong mt-4 text-base font-bold">No support history found</p>
               <p className="dashboard-text-muted mt-1 text-sm">আপনার created ticket history এখানে comment-style এ দেখাবে।</p>
@@ -333,7 +333,7 @@ export default function MyTicketsPage() {
               const isUploadingReply = Boolean(isUploadingReplyByTicket[ticketId]);
 
               return (
-                <div key={ticketId} className="rounded-[20px] border border-slate-300/55 bg-[linear-gradient(140deg,rgba(255,255,255,0.98),rgba(245,248,255,0.94)_55%,rgba(255,255,255,0.98))] p-4 shadow-[0_16px_38px_rgba(15,23,42,0.08)] sm:rounded-[24px] sm:p-5">
+                <div key={ticketId} className="rounded-[20px] border border-sky-300/55 bg-[linear-gradient(140deg,rgba(255,255,255,0.98),rgba(223,244,255,0.76)_45%,rgba(235,250,220,0.7))] p-4 shadow-[0_16px_38px_rgba(15,23,42,0.08)] sm:rounded-[24px] sm:p-5">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -391,8 +391,8 @@ export default function MyTicketsPage() {
                               key={`${ticketId}-${index}`}
                               className={`rounded-2xl border p-4 shadow-[0_8px_20px_rgba(15,23,42,0.05)] ${
                                 isAdmin
-                                  ? "border-sky-300/45 bg-[linear-gradient(140deg,rgba(186,230,253,0.28),rgba(255,255,255,0.96)_52%)]"
-                                  : "border-emerald-300/45 bg-[linear-gradient(140deg,rgba(190,242,211,0.3),rgba(255,255,255,0.96)_55%)]"
+                                  ? "border-sky-300/55 bg-[linear-gradient(140deg,rgba(186,230,253,0.44),rgba(255,255,255,0.94)_52%)]"
+                                  : "border-emerald-300/55 bg-[linear-gradient(140deg,rgba(190,242,211,0.46),rgba(255,255,255,0.94)_55%)]"
                               }`}
                             >
                               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -439,7 +439,7 @@ export default function MyTicketsPage() {
                       )}
 
                       {isOpenStatus ? (
-                        <div className="dashboard-panel mt-4 rounded-2xl border border-emerald-300/45 bg-[linear-gradient(140deg,rgba(190,242,211,0.22),rgba(255,255,255,0.98)_55%)] p-3 sm:p-4">
+                        <div className="dashboard-panel mt-4 rounded-2xl border border-emerald-300/55 bg-[linear-gradient(140deg,rgba(190,242,211,0.38),rgba(255,255,255,0.96)_55%)] p-3 sm:p-4">
                           <p className="dashboard-text-faint mb-2 text-[10px] font-black uppercase tracking-[0.18em]">Add Reply</p>
 
                           {replyDraft.files.length > 0 ? (

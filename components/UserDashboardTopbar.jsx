@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import { Sora } from "next/font/google";
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { Bell, CreditCard, Search, X } from "lucide-react";
 // import DashboardThemeToggle from "@/components/DashboardThemeToggle";
@@ -38,7 +39,10 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
   const notificationsRef = React.useRef(null);
   const mobileNotificationsRef = React.useRef(null);
+  const mobileNotificationsPanelRef = React.useRef(null);
   const searchInputRef = React.useRef(null);
+  const tabletSearchInputRef = React.useRef(null);
+  const portalRoot = typeof document !== "undefined" ? document.body : null;
   const profileName = user?.displayName || userData?.name || "Neon Client";
   const initials = profileName
     .split(/\s+/)
@@ -111,7 +115,8 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
     const handlePointerDown = (event) => {
       if (
         !notificationsRef.current?.contains(event.target) &&
-        !mobileNotificationsRef.current?.contains(event.target)
+        !mobileNotificationsRef.current?.contains(event.target) &&
+        !mobileNotificationsPanelRef.current?.contains(event.target)
       ) {
         setNotificationsOpen(false);
       }
@@ -138,8 +143,20 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
     if (event.key === "Escape") {
       setQuery("");
       setIsFocused(false);
-      searchInputRef.current?.blur();
+      event.currentTarget?.blur();
     }
+  };
+
+  const handleMobileNotificationsPointerDown = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleNotificationsPanel();
+  };
+
+  const handleMobileNotificationsKeyDown = (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    toggleNotificationsPanel();
   };
 
   return (
@@ -320,11 +337,22 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
       </div>
 
       {/* ── MOBILE TOPBAR ── */}
-      <div className="relative mt-2 lg:hidden">
-        <div className="topbar-shell flex items-center justify-between gap-2 rounded-[22px] px-2 py-2">
+      <div className="relative z-[80] mt-2 lg:hidden">
+        <div className="topbar-shell topbar-mobile-border-animate flex items-center justify-between gap-2 rounded-full px-2 py-2 md:grid md:grid-cols-[minmax(9rem,1fr)_minmax(16rem,22rem)_minmax(3rem,1fr)] md:gap-3 md:px-3">
+          <svg
+            className="topbar-mobile-snake-frame"
+            viewBox="0 0 390 58"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <rect className="topbar-mobile-snake-track" x="2" y="2" width="386" height="54" rx="27" ry="27" pathLength="100" fill="none" />
+            <rect className="topbar-mobile-snake-glow" x="2" y="2" width="386" height="54" rx="27" ry="27" pathLength="100" fill="none" />
+            <rect className="topbar-mobile-snake-line" x="2" y="2" width="386" height="54" rx="27" ry="27" pathLength="100" fill="none" />
+          </svg>
           <Link
             href={userDashboardRoutes.dashboard}
-            className="flex min-w-0 flex-1 items-center gap-2.5 px-1.5 transition hover:opacity-85"
+            className="flex min-w-0 flex-1 items-center gap-2.5 px-1.5 transition hover:opacity-85 md:flex-none"
             aria-label="Go to dashboard"
           >
             <Image src="/neon-code-logo.jpg" alt="Neon Code" width={34} height={34} className="rounded-[10px]" />
@@ -333,11 +361,78 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
             </span>
           </Link>
 
-          <div className="flex flex-none items-center gap-1.5">
+          <div className="relative hidden min-w-0 md:block lg:hidden">
+            <div className="topbar-search-wrap flex h-10 items-center gap-2.5 rounded-2xl px-3">
+              <Search size={15} className="flex-none dashboard-text-faint" />
+              <input
+                ref={tabletSearchInputRef}
+                type="text"
+                placeholder="Search pages..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setTimeout(() => setIsFocused(false), 150)}
+                onKeyDown={handleKeyDown}
+                className="w-full bg-transparent p-1 text-sm font-medium dashboard-text-strong placeholder:dashboard-text-faint outline-none focus:outline-none"
+              />
+              {query ? (
+                <button
+                  type="button"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    setQuery("");
+                    tabletSearchInputRef.current?.focus();
+                  }}
+                  className="flex-none dashboard-text-faint transition-colors hover:dashboard-text-muted"
+                  aria-label="Clear search"
+                >
+                  <X size={13} />
+                </button>
+              ) : null}
+            </div>
+
+            {isFocused && query.trim() ? (
+              <div className="topbar-search-dropdown absolute left-1/2 top-[calc(100%+0.6rem)] z-[100] w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded-[20px] p-2">
+                {results.length ? (
+                  <div className="space-y-1">
+                    {results.map((item) => {
+                      const isActive = isRouteActive(item.href);
+                      return (
+                        <button
+                          key={`${item.name}-${item.href}`}
+                          type="button"
+                          onMouseDown={() => openTarget(item.href)}
+                          className={`flex w-full items-center justify-between rounded-2xl px-3 py-3 text-left transition ${
+                            isActive ? "dashboard-accent-surface" : "search-result-item"
+                          }`}
+                        >
+                          <div>
+                            <p className="dashboard-text-strong text-sm font-bold">{item.name}</p>
+                            <p className="dashboard-text-muted text-[11px]">{item.href.replace("/user-dashboard/", "")}</p>
+                          </div>
+                          <span className="topbar-open-badge">Open</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="px-3 py-4">
+                    <p className="dashboard-text-strong text-sm font-bold">No matching page</p>
+                    <p className="dashboard-text-muted mt-1 text-xs">
+                      Try words like billing, support, account, activity, or dashboard.
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex flex-none items-center gap-1.5 md:justify-self-end">
             <div ref={mobileNotificationsRef} className="relative">
               <button
                 type="button"
-                onClick={toggleNotificationsPanel}
+                onPointerDown={handleMobileNotificationsPointerDown}
+                onKeyDown={handleMobileNotificationsKeyDown}
                 className={`relative flex h-10 w-10 items-center justify-center rounded-[16px] transition ${
                   notificationsOpen ? "dashboard-accent-surface" : "dashboard-subpanel dashboard-text-muted"
                 }`}
@@ -359,29 +454,6 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
                 </AnimatePresence>
               </button>
 
-              <AnimatePresence>
-                {notificationsOpen ? (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="absolute right-0 top-[calc(100%+0.55rem)] z-30"
-                  >
-                    <UserNotificationsPanel
-                      notifications={notifications}
-                      unseenCount={unseenCount}
-                      loading={notificationsLoading}
-                      error={notificationsError}
-                      lastUpdatedAt={lastUpdatedAt}
-                      isMarkingSeen={isMarkingSeen}
-                      onRefresh={loadNotifications}
-                      onMarkAllSeen={markAllSeen}
-                      className="w-[min(22rem,calc(100vw-2rem))]"
-                    />
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
             </div>
 
             {/* <DashboardThemeToggle
@@ -393,6 +465,36 @@ export default function UserDashboardTopbar({ theme, toggleTheme }) {
           </div>
         </div>
       </div>
+
+      {portalRoot
+        ? createPortal(
+            <AnimatePresence>
+              {notificationsOpen ? (
+                <motion.div
+                  ref={mobileNotificationsPanelRef}
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="fixed right-3 top-[4.75rem] z-[120] lg:hidden"
+                >
+                  <UserNotificationsPanel
+                    notifications={notifications}
+                    unseenCount={unseenCount}
+                    loading={notificationsLoading}
+                    error={notificationsError}
+                    lastUpdatedAt={lastUpdatedAt}
+                    isMarkingSeen={isMarkingSeen}
+                    onRefresh={loadNotifications}
+                    onMarkAllSeen={markAllSeen}
+                    className="w-[min(22rem,calc(100vw-1.5rem))]"
+                  />
+                </motion.div>
+              ) : null}
+            </AnimatePresence>,
+            portalRoot
+          )
+        : null}
     </div>
   );
 }

@@ -126,8 +126,8 @@ export default function CreateTicketPage({ onSuccess }) {
           color: "var(--dashboard-text-strong)",
         }}
       >
-        <div className="absolute left-[-10%] top-[-10%] h-72 w-72 rounded-full bg-[#8ab4ff]/12 blur-[120px]" />
-        <div className="absolute bottom-[-15%] right-[-10%] h-80 w-80 rounded-full bg-[#45cf9b]/10 blur-[140px]" />
+        <div className="absolute left-[-10%] top-[-10%] h-72 w-72 rounded-full bg-[#8ab4ff]/18 blur-[120px]" />
+        <div className="absolute bottom-[-15%] right-[-10%] h-80 w-80 rounded-full bg-[#45cf9b]/16 blur-[140px]" />
 
         <div className="relative z-10 flex-1 rounded overflow-y-auto px-0 pb-4 pt-0 md:px-0 md:pb-8 md:pt-0">
           {!selectedDepartment ? (
@@ -138,7 +138,7 @@ export default function CreateTicketPage({ onSuccess }) {
                     key={department.id}
                     type="button"
                     onClick={() => handleDepartmentSelect(department.id)}
-                    className={`group dashboard-subpanel relative overflow-hidden rounded-[28px] p-6 text-left transition-all hover:-translate-y-1`}
+                    className={`group dashboard-subpanel relative overflow-hidden rounded-[28px] border border-sky-300/30 p-6 text-left transition-all hover:-translate-y-1`}
                   >
                     <div className={`absolute inset-0 bg-gradient-to-br ${department.accentClass} opacity-100`} />
                     <div className="relative z-10">
@@ -158,9 +158,9 @@ export default function CreateTicketPage({ onSuccess }) {
                 <button
                   type="button"
                   onClick={() => setMeetingOpen(true)}
-                  className="group dashboard-subpanel relative overflow-hidden rounded-[28px] p-6 text-left transition-all hover:-translate-y-1"
+                  className="group dashboard-subpanel relative overflow-hidden rounded-[28px] border border-emerald-300/35 p-6 text-left transition-all hover:-translate-y-1"
                 >
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(69,207,155,0.18),transparent_45%)]" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(69,207,155,0.34),transparent_45%)]" />
                   <div className="relative z-10">
                     <span className="inline-flex rounded-full bg-[#45cf9b]/22 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#1e6247]">
                       Live Booking
@@ -179,7 +179,7 @@ export default function CreateTicketPage({ onSuccess }) {
             </div>
           ) : (
             <div className="w-full">
-              <div className="mt-4 overflow-hidden rounded-[20px] border sm:mt-5 sm:rounded-[24px]">
+              <div className="mt-4 overflow-hidden rounded-[20px] border border-emerald-300/35 bg-[linear-gradient(135deg,rgba(183,223,105,0.18),rgba(115,200,255,0.1)_52%,rgba(255,255,255,0.9))] sm:mt-5 sm:rounded-[24px]">
                 <div className="space-y-6 p-4 sm:space-y-8 sm:p-6 md:p-8">
                   <button
                     type="button"
@@ -190,7 +190,7 @@ export default function CreateTicketPage({ onSuccess }) {
                     Back to Departments
                   </button>
 
-                  <div className="dashboard-panel flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="dashboard-panel flex flex-col gap-4 rounded-xl border border-emerald-300/40 bg-[linear-gradient(135deg,rgba(183,223,105,0.24),rgba(255,255,255,0.9)_56%)] p-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex items-start gap-3">
                       <div className="dashboard-accent-surface rounded-none p-3 text-white">
                         <CheckCircle2 size={20} className="text-white" />

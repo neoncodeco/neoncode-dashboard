@@ -56,10 +56,10 @@ const formatLongDate = (value) =>
 function MetricCard({ title, value, subtext, icon: Icon, tone = "default" }) {
   const toneClass =
     tone === "accent"
-      ? "!border-emerald-300/45 !bg-[linear-gradient(135deg,rgba(183,223,105,0.34),rgba(183,223,105,0.12)_48%,rgba(255,255,255,0.96))]"
+      ? "!border-emerald-300/60 !bg-[linear-gradient(135deg,rgba(183,223,105,0.52),rgba(183,223,105,0.24)_48%,rgba(255,255,255,0.94))]"
       : tone === "soft"
-      ? "!border-sky-300/45 !bg-[linear-gradient(135deg,rgba(115,200,255,0.28),rgba(115,200,255,0.12)_50%,rgba(255,255,255,0.96))]"
-      : "!border-indigo-300/40 !bg-[linear-gradient(135deg,rgba(103,163,255,0.28),rgba(103,163,255,0.1)_52%,rgba(255,255,255,0.96))]";
+      ? "!border-sky-300/60 !bg-[linear-gradient(135deg,rgba(115,200,255,0.44),rgba(115,200,255,0.2)_50%,rgba(255,255,255,0.94))]"
+      : "!border-indigo-300/55 !bg-[linear-gradient(135deg,rgba(103,163,255,0.42),rgba(103,163,255,0.18)_52%,rgba(255,255,255,0.94))]";
 
   return (
     <div className={`dashboard-subpanel rounded-[28px] border p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] ${toneClass}`}>

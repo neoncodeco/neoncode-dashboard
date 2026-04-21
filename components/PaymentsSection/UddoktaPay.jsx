@@ -54,7 +54,7 @@ export default function UddoktaPayForm({ token, setMethod }) {
   };
 
   return (
-    <section className="w-full rounded-[32px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-bg)] p-4 shadow-[0_24px_80px_rgba(15,23,42,0.12)] sm:p-6 lg:p-8">
+    <section className="w-full rounded-[32px] border border-emerald-300/35 bg-[linear-gradient(135deg,rgba(183,223,105,0.28),rgba(115,200,255,0.14)_52%,rgba(255,255,255,0.94))] p-4 shadow-[0_24px_80px_rgba(15,23,42,0.12)] sm:p-6 lg:p-8">
       <div className="mb-6 flex flex-col gap-4 border-b border-[var(--dashboard-frame-border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="max-w-2xl">
           <div className="dashboard-chip inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em]">
@@ -84,7 +84,7 @@ export default function UddoktaPayForm({ token, setMethod }) {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_0.72fr]">
-        <div className="rounded-[28px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)] p-5 shadow-[0_16px_45px_rgba(15,23,42,0.08)] sm:p-6">
+        <div className="rounded-[28px] border border-emerald-300/45 bg-[linear-gradient(135deg,rgba(183,223,105,0.32),rgba(255,255,255,0.88)_55%)] p-5 shadow-[0_16px_45px_rgba(15,23,42,0.08)] sm:p-6">
           <div className="mb-5">
             <p className="dashboard-text-muted text-[10px] font-black uppercase tracking-[0.22em]">Top up amount</p>
             <h3 className="dashboard-text-strong mt-2 text-lg font-black tracking-tight">
@@ -108,7 +108,7 @@ export default function UddoktaPayForm({ token, setMethod }) {
           />
 
           <div className="dashboard-text-muted mt-4 rounded-2xl border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-success-soft)] px-4 py-3 text-sm leading-6">
-            Enter a whole number only. You'll be redirected to the secure payment gateway after confirmation.
+            Enter a whole number only. You&apos;ll be redirected to the secure payment gateway after confirmation.
           </div>
 
           <button
@@ -120,7 +120,7 @@ export default function UddoktaPayForm({ token, setMethod }) {
           </button>
         </div>
 
-        <div className="rounded-[28px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)] p-5 shadow-[0_16px_45px_rgba(15,23,42,0.07)] sm:p-6">
+        <div className="rounded-[28px] border border-sky-300/45 bg-[linear-gradient(135deg,rgba(115,200,255,0.3),rgba(255,255,255,0.9)_56%)] p-5 shadow-[0_16px_45px_rgba(15,23,42,0.07)] sm:p-6">
           <p className="dashboard-text-muted text-[10px] font-black uppercase tracking-[0.22em]">Why choose this</p>
           <ul className="dashboard-text-muted mt-4 space-y-3 text-sm leading-6">
             <li className="rounded-2xl border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-input-bg)] px-4 py-3">

@@ -119,7 +119,7 @@ const PaymentHistory = () => {
 
   return (
     <div className="p-2">
-      <div className="overflow-hidden rounded-[28px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-bg)] text-[var(--dashboard-text-strong)] shadow-[0_18px_42px_rgba(15,23,42,0.12)]">
+      <div className="overflow-hidden rounded-[28px] border border-sky-300/35 bg-[linear-gradient(135deg,rgba(115,200,255,0.2),rgba(183,223,105,0.14)_48%,rgba(255,255,255,0.94))] text-[var(--dashboard-text-strong)] shadow-[0_18px_42px_rgba(15,23,42,0.12)]">
         {/* Header & Actions */}
         <div className="flex flex-col items-center justify-between gap-4 border-b border-[var(--dashboard-frame-border)] p-6 md:flex-row">
           <h2 className="dashboard-text-strong flex items-center gap-2 text-2xl font-bold md:hidden lg:block">
@@ -181,7 +181,7 @@ const PaymentHistory = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="dashboard-text-muted bg-[var(--dashboard-table-head)] text-sm font-bold uppercase tracking-wider">
+              <tr className="dashboard-text-muted bg-[rgba(115,200,255,0.14)] text-sm font-bold uppercase tracking-wider">
                 <th className="px-6 py-4">Transaction ID</th>
                 <th className="px-6 py-4">Date</th>
                 <th className="px-6 py-4">Description</th>
