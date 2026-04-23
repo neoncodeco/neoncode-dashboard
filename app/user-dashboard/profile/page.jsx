@@ -33,30 +33,45 @@ export default function FullProfilePage() {
     code: "",
   });
   const [paymentMethods, setPaymentMethods] = useState({});
- 
-useEffect(() => {
-  if (userData) {
-    setFormData({
-      name: userData.name || "",
-      photo: userData.photo || "",
-      coverPhoto: userData.coverPhoto || "",
-    });
 
-    setVerificationForm((prev) => ({
-      ...prev,
-      whatsappNumber: isEditingVerifiedPhone ? prev.whatsappNumber : userData.phone || prev.whatsappNumber || "",
-    }));
+  useEffect(() => {
+    if (typeof window === "undefined" || !userData) return;
+    if (window.location.hash !== "#whatsapp-verify") return;
+    const el = document.getElementById("whatsapp-verify");
+    if (el) {
+      requestAnimationFrame(() => {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }, [userData]);
 
-    setPaymentMethods(userData.payoutMethods || {});
-  }
-}, [isEditingVerifiedPhone, userData]);
+  useEffect(() => {
+    if (userData) {
+      setFormData({
+        name: userData.name || "",
+        photo: userData.photo || "",
+        coverPhoto: userData.coverPhoto || "",
+      });
+
+      setVerificationForm((prev) => ({
+        ...prev,
+        whatsappNumber: isEditingVerifiedPhone
+          ? prev.whatsappNumber
+          : userData.whatsappNumber || userData.phone || prev.whatsappNumber || "",
+      }));
+
+      setPaymentMethods(userData.payoutMethods || {});
+    }
+  }, [isEditingVerifiedPhone, userData]);
 
   const hasVerifiedPhone = Boolean(userData?.phoneVerification?.verified || isLocallyPhoneVerified);
   const isPhoneVerified = hasVerifiedPhone && !isEditingVerifiedPhone;
   const isOtpSent =
     hasPendingOtp || (!hasVerifiedPhone && userData?.phoneVerification?.status === "pending");
   const displayedWhatsappNumber = (
-    isPhoneVerified ? userData?.phone || verificationForm.whatsappNumber : verificationForm.whatsappNumber
+    isPhoneVerified
+      ? userData?.whatsappNumber || userData?.phone || verificationForm.whatsappNumber
+      : verificationForm.whatsappNumber
   ).replace(/^880/, "");
 
   const saveProfile = async (nextFormData, nextPaymentMethods, options = {}) => {
@@ -476,7 +491,10 @@ const handleVerifyOtp = async () => {
               </div>
             </section>
 
-            <section className="dashboard-subpanel overflow-hidden rounded-[28px] border p-0">
+            <section
+              id="whatsapp-verify"
+              className="dashboard-subpanel scroll-mt-24 overflow-hidden rounded-[28px] border p-0"
+            >
               <div className="flex flex-col gap-6 p-5 sm:p-6 md:p-7">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div className="max-w-2xl">
@@ -488,7 +506,7 @@ const handleVerifyOtp = async () => {
                       <Phone size={20} className="text-green-600" /> Verify Your Account Number
                     </h3>
                     <p className="dashboard-text-muted mt-2 text-sm leading-6">
-                      To ensure the security of your account and enable seamless transactions, please verify your WhatsApp number by receiving a one-time password (OTP). This verification step helps us confirm your identity and protect your account from unauthorized access.
+                      To ensure the security of your account and enable seamless transactions, please verify your WhatsApp number by receiving a one-time password (OTP). This verification step helps us confirm your identity and protect your account from unauthorized access. After verification, important dashboard activity (such as payments and support updates) can be sent to this WhatsApp number.
                     </p>
                   </div>
                   <span className={`inline-flex items-center gap-2 self-start rounded-full px-4 py-2 text-xs font-bold ${isPhoneVerified ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>

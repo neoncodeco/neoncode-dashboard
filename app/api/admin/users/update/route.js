@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
-import { verifyToken } from "@/lib/verifyToken";
+import { parseJsonBody, requireAuth, requireRoles } from "@/lib/apiGuard";
 import {
   normalizeTeamMemberUsername,
 } from "@/lib/teamMemberProfile";
@@ -68,19 +68,21 @@ const sanitizeMetaAdsConfig = (metaAdsConfig, fallback) => {
 
 export async function POST(req) {
   try {
-    const decoded = await verifyToken(req);
-    if (!decoded) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireAuth(req);
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { db } = await getDB();
-
-    const adminUser = await db.collection("users").findOne({ userId: decoded.uid });
-    if (!adminUser || adminUser.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const access = await requireRoles(db, auth.decoded.uid, ["admin"]);
+    if (!access.ok) {
+      return access.response;
     }
 
-    const body = await req.json();
+    const body = await parseJsonBody(req);
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ ok: false, error: "Invalid request body" }, { status: 400 });
+    }
     const {
       userId,
       role,

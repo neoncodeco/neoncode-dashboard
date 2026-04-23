@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
-import { verifyToken } from "@/lib/verifyToken";
+import { parseJsonBody, requireAuth, requireRoles } from "@/lib/apiGuard";
 import { convertBdtToUsd, DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@/lib/currency";
 
 const REQUIRED_TOTAL = 2000;
@@ -37,28 +37,22 @@ const getCreditedUsdAmount = async (db, payment) => {
 
 export async function POST(req) {
   try {
-    const decoded = await verifyToken(req);
-    if (!decoded) {
-      return NextResponse.json(
-        { ok: false, error: "Unauthorized" },
-        { status: 401 }
-      );
+    const auth = await requireAuth(req);
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { db } = await getDB();
-
-    const admin = await db
-      .collection("users")
-      .findOne({ userId: decoded.uid });
-
-    if (!admin || !["admin", "manager"].includes(admin.role)) {
-      return NextResponse.json(
-        { ok: false, error: "Forbidden" },
-        { status: 403 }
-      );
+    const access = await requireRoles(db, auth.decoded.uid, ["admin", "manager"]);
+    if (!access.ok) {
+      return access.response;
     }
 
-    const { userUid, action } = await req.json();
+    const body = await parseJsonBody(req);
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ ok: false, error: "Invalid request body" }, { status: 400 });
+    }
+    const { userUid, action } = body;
 
     if (!userUid || !["approve", "reject"].includes(action)) {
       return NextResponse.json(

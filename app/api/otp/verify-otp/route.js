@@ -6,6 +6,7 @@ import {
   MAX_OTP_ATTEMPTS,
 } from "@/lib/otpUtils"; // ✅ FIXED
 import { NextResponse } from "next/server";
+import { notifyUserDashboardActivity } from "@/lib/whatsappActivityNotify";
 
 export async function POST(req) {
   try {
@@ -102,6 +103,12 @@ export async function POST(req) {
           "phoneVerification.attempts": 0,
         },
       }
+    );
+
+    void notifyUserDashboardActivity(
+      db,
+      decoded.uid,
+      "NeonCode: Your number is verified. Important dashboard activity can now be sent to this WhatsApp."
     );
 
     return NextResponse.json({

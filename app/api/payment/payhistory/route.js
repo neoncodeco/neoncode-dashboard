@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
-import { verifyToken } from "@/lib/verifyToken";
+import { requireAuth } from "@/lib/apiGuard";
 
 export async function GET(req) {
   try {
-    // Token verify
-    const decoded = await verifyToken(req);
-    if (!decoded) {
-      return NextResponse.json(
-        { message: "Unauthorized: Invalid token" },
-        { status: 401 }
-      );
+    const auth = await requireAuth(req);
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { db } = await getDB();
@@ -18,7 +14,7 @@ export async function GET(req) {
     // Fetch all payments for this user (latest first)
     const payments = await db
       .collection("payments")
-      .find({ userUid: decoded.uid })
+      .find({ userUid: auth.decoded.uid })
       .sort({ createdAt: -1 })
       .toArray();
 
@@ -43,8 +39,9 @@ export async function GET(req) {
     });
 
   } catch (err) {
+    console.error("Payment history error:", err);
     return NextResponse.json(
-      { message: "Server error", error: err.message },
+      { ok: false, error: "Server error" },
       { status: 500 }
     );
   }

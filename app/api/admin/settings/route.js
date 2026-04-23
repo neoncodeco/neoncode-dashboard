@@ -1,20 +1,16 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
-import { verifyToken } from "@/lib/verifyToken";
+import { parseJsonBody, requireAuth, requireRoles } from "@/lib/apiGuard";
 import { DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@/lib/currency";
 import { createDefaultBankPaymentDetails, normalizeBankPaymentDetails } from "@/lib/bankDetails";
 
 export async function GET(req) {
   try {
-    const decoded = await verifyToken(req);
-    if (!decoded) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
+    const auth = await requireAuth(req);
+    if (!auth.ok) return auth.response;
     const { db } = await getDB();
-    const admin = await db.collection("users").findOne({ userId: decoded.uid });
-
-    if (!admin || (admin.role !== "admin" && admin.role !== "manager")) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const access = await requireRoles(db, auth.decoded.uid, ["admin", "manager"]);
+    if (!access.ok) return access.response;
 
     const [bmConfigSetting, usdRateSetting, bankDetailsSetting] = await Promise.all([
       db.collection("settings").findOne({ key: "FB_BM_CONFIGS" }),
@@ -36,17 +32,17 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    const decoded = await verifyToken(req);
-    if (!decoded) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
+    const auth = await requireAuth(req);
+    if (!auth.ok) return auth.response;
     const { db } = await getDB();
-    const admin = await db.collection("users").findOne({ userId: decoded.uid });
+    const access = await requireRoles(db, auth.decoded.uid, ["admin"]);
+    if (!access.ok) return access.response;
 
-    if (!admin || admin.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden. Only Admin can change settings." }, { status: 403 });
+    const body = await parseJsonBody(req);
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ ok: false, error: "Invalid request body" }, { status: 400 });
     }
-
-    const { bmConfigs, usdToBdtRate, bankPaymentDetails } = await req.json();
+    const { bmConfigs, usdToBdtRate, bankPaymentDetails } = body;
     const updates = [];
 
     if (Array.isArray(bmConfigs)) {

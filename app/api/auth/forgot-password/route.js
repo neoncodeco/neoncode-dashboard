@@ -1,24 +1,22 @@
 import getDB from "@/lib/mongodb";
 import { createPasswordResetToken } from "@/lib/passwordReset";
-
-function getBaseUrl(req) {
-  const envUrl = process.env.NEXTAUTH_URL?.trim();
-  if (envUrl) return envUrl;
-
-  try {
-    return new URL(req.url).origin;
-  } catch {
-    return "http://localhost:3000";
-  }
-}
+import { isValidEmail } from "@/lib/security";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 export async function POST(req) {
   try {
     const body = await req.json();
     const email = String(body?.email || "").trim().toLowerCase();
 
-    if (!email) {
-      return Response.json({ ok: false, error: "Email is required" }, { status: 400 });
+    if (!email || !isValidEmail(email)) {
+      return Response.json({ ok: false, error: "Valid email is required" }, { status: 400 });
+    }
+
+    const forwarded = req.headers.get("x-forwarded-for");
+    const remoteip = forwarded?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "";
+    const captchaOk = await verifyTurnstileToken(body?.turnstileToken, { remoteip });
+    if (!captchaOk) {
+      return Response.json({ ok: false, error: "Captcha verification failed" }, { status: 400 });
     }
 
     const { db } = await getDB();
@@ -31,7 +29,7 @@ export async function POST(req) {
       });
     }
 
-    const { token, tokenHash, expiresAt } = createPasswordResetToken();
+    const { tokenHash, expiresAt } = createPasswordResetToken();
 
     await db.collection("users").updateOne(
       { userId: user.userId },
@@ -44,13 +42,9 @@ export async function POST(req) {
       }
     );
 
-    const baseUrl = getBaseUrl(req);
-    const resetUrl = `${baseUrl}/reset-password?token=${token}`;
-
     return Response.json({
       ok: true,
-      message: "Reset link generated successfully.",
-      resetUrl,
+      message: "If an account exists for this email, a reset link has been generated.",
     });
   } catch (error) {
     console.error("FORGOT PASSWORD ERROR:", error);

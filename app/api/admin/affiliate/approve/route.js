@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import { ObjectId } from "mongodb";
+import { notifyUserDashboardActivity } from "@/lib/whatsappActivityNotify";
 
 export async function POST(req) {
   try {
@@ -72,6 +73,14 @@ export async function POST(req) {
         },
       }
     );
+
+    if (action === "approve" && request.userUid) {
+      void notifyUserDashboardActivity(
+        db,
+        request.userUid,
+        `NeonCode: Withdraw approved — ${request.amount} BDT (${request.method || "payout"}). Funds will follow your payout details.`
+      );
+    }
 
     return NextResponse.json({
       ok: true,

@@ -6,6 +6,7 @@ import {
   MAX_OTP_ATTEMPTS,
 } from "@/lib/whatsappOtp";
 import { NextResponse } from "next/server";
+import { notifyUserDashboardActivity } from "@/lib/whatsappActivityNotify";
 
 export async function POST(req) {
   try {
@@ -87,6 +88,12 @@ export async function POST(req) {
           updatedAt: new Date(),
         },
       }
+    );
+
+    void notifyUserDashboardActivity(
+      db,
+      decoded.uid,
+      "NeonCode: WhatsApp verified. Important dashboard activity can now be sent to this number."
     );
 
     return NextResponse.json({

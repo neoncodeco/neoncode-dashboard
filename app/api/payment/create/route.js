@@ -6,6 +6,8 @@ import { convertBdtToUsd, DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@
 import { ensureWritableUser } from "@/lib/userAccess";
 import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
 import { parseWholeNumberAmount } from "@/lib/wholeAmount";
+import { sanitizeText } from "@/lib/security";
+import { notifyUserDashboardActivity } from "@/lib/whatsappActivityNotify";
 
 const withInvoiceId = (url, trackingId) => {
   const separator = url.includes("?") ? "&" : "?";
@@ -73,8 +75,9 @@ export async function POST(req) {
 
     const { amount, reason } = await req.json();
     const numericAmountBdt = parseWholeNumberAmount(amount);
+    const normalizedReason = sanitizeText(reason, 180);
 
-    if (numericAmountBdt === null || !reason) {
+    if (numericAmountBdt === null || !normalizedReason) {
       return NextResponse.json(
         { ok: false, error: "Valid whole-number BDT amount and reason are required" },
         { status: 400 }
@@ -121,7 +124,7 @@ export async function POST(req) {
       full_name: decoded.email,
       email: decoded.email,
       amount: String(numericAmountBdt),
-      metadata: { userUid: decoded.uid, reason, currency: "BDT", usdToBdtRate },
+      metadata: { userUid: decoded.uid, reason: normalizedReason, currency: "BDT", usdToBdtRate },
       redirect_url: withInvoiceId(redirectBase, trackingId),
       cancel_url: withInvoiceId(cancelBase, trackingId),
       webhook_url: webhookUrl,
@@ -156,10 +159,16 @@ export async function POST(req) {
         creditedUsdAmount,
         currency: "BDT",
         usdToBdtRate,
-        reason,
+        reason: normalizedReason,
         status: "pending",
         createdAt: new Date(),
       });
+
+      void notifyUserDashboardActivity(
+        db,
+        decoded.uid,
+        `NeonCode: Payment started — ${numericAmountBdt} BDT. Reason: ${normalizedReason}. Ref: ${trackingId}`
+      );
 
       return NextResponse.json({
         ok: true,
@@ -198,6 +207,7 @@ export async function POST(req) {
       { status: 400 }
     );
   } catch (error) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    console.error("Payment create error:", error);
+    return NextResponse.json({ ok: false, error: "Server error" }, { status: 500 });
   }
 }

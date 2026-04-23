@@ -1,91 +1,167 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
+import { signIn } from "next-auth/react";
+import { ArrowRight, Eye, EyeOff, Github, Loader2, LockKeyhole, Mail, MoveRight } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import AuthTurnstile from "@/components/AuthTurnstile";
 import useFingerprint from "@/hooks/useFingerprint";
-import { ArrowRight, Check, Eye, EyeOff, Loader2, LockKeyhole, Mail, MoveRight, Ticket, UserRound } from "lucide-react";
 
-const REGISTER_STEPS = ["Create profile", "Set access", "Start workspace"];
+const LOGIN_STEPS = ["Enter credentials", "Verify access", "Open dashboard"];
 const normalizeTextValue = (value) => (typeof value === "string" ? value : "");
 
-export default function RegisterClient() {
-  const { signup, googleLogin } = useFirebaseAuth();
+export default function LoginPageContent() {
+  const { login, googleLogin } = useFirebaseAuth();
   const { getFingerprint, loadingFingerprint } = useFingerprint();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const initialRef = (searchParams.get("ref") || "").toUpperCase();
-
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
-  const [referralCode, setReferralCode] = useState(initialRef);
+  const [remember, setRemember] = useState(true);
   const [showPass, setShowPass] = useState(false);
-  const [agree, setAgree] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [providerLoading, setProviderLoading] = useState("");
   const [error, setError] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
+  const [notice, setNotice] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
   const turnstileRef = useRef(null);
+
+  const verifyEmailSent = searchParams.get("verify_email_sent") === "1";
+  const emailVerified = searchParams.get("email_verified");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const savedEmail = window.localStorage.getItem("neoncode_login_email");
+    if (savedEmail && savedEmail !== "[object Object]") {
+      setEmail(savedEmail);
+      setRemember(true);
+    } else if (savedEmail === "[object Object]") {
+      window.localStorage.removeItem("neoncode_login_email");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (verifyEmailSent) {
+      setNotice("Verification email sent. Check your inbox. Link expires in 5 minutes.");
+      return;
+    }
+    if (emailVerified === "1") {
+      setNotice("Email verified successfully. You can now sign in.");
+      return;
+    }
+    if (emailVerified === "0") {
+      setError("Verification link is invalid or expired. Please request a new one.");
+    }
+  }, [emailVerified, verifyEmailSent]);
+
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    if (!name.trim()) {
-      setError("Full name is required.");
-      setLoading(false);
-      return;
-    }
-
-    if (!agree) {
-      setError("Please accept the terms to continue.");
-      setLoading(false);
-      return;
-    }
-
-    if (turnstileSiteKey && !turnstileToken) {
-      setError("Please complete the security check.");
-      setLoading(false);
-      return;
-    }
-
     try {
+      const normalizedEmail = normalizeTextValue(email).trim();
+      const normalizedPass = normalizeTextValue(pass);
+
+      if (turnstileSiteKey && !turnstileToken) {
+        setError("Please complete the security check.");
+        setLoading(false);
+        return;
+      }
+
       const deviceFingerprint = await getFingerprint();
-      await signup(
-        normalizeTextValue(email).trim(),
-        normalizeTextValue(pass),
-        normalizeTextValue(name).trim(),
-        normalizeTextValue(referralCode).trim() || undefined,
-        turnstileToken,
-        deviceFingerprint
-      );
-      router.replace(`/login?verify_email_sent=1&email=${encodeURIComponent(normalizeTextValue(email).trim())}`);
-    } catch (err) {
+      await login(normalizedEmail, normalizedPass, turnstileToken, deviceFingerprint);
+
+      if (remember && typeof window !== "undefined") {
+        window.localStorage.setItem("neoncode_login_email", normalizedEmail);
+      } else if (typeof window !== "undefined") {
+        window.localStorage.removeItem("neoncode_login_email");
+      }
+
+      router.replace("/");
+    } catch {
       setTurnstileToken("");
       turnstileRef.current?.reset();
-      setError(err.message || "Registration failed");
+      setError("Email or password matched hoyni. Please try again.");
+    } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    const normalizedEmail = normalizeTextValue(email).trim();
+    if (!normalizedEmail) {
+      setError("Email field e email din, then resend click korun.");
+      return;
+    }
+
+    setResendLoading(true);
+    setError("");
+    setNotice("");
+    try {
+      const res = await fetch("/api/auth/email-verification/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json?.error || "Resend failed");
+      }
+      setNotice(json?.message || "Verification email sent.");
+    } catch (e) {
+      setError(e?.message || "Could not resend verification email.");
+    } finally {
+      setResendLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
-    setLoading(true);
+    setProviderLoading("google");
     setError("");
+
     try {
       await googleLogin();
     } catch {
-      setError("Google signup failed");
-      setLoading(false);
+      setError("Google sign-in complete korte parini. Please try again.");
+      setProviderLoading("");
     }
   };
+
+  const handleGithubLogin = async () => {
+    setProviderLoading("github");
+    setError("");
+
+    try {
+      const res = await signIn("github", {
+        redirect: false,
+        callbackUrl: "/",
+      });
+
+      if (res?.error) throw new Error(res.error);
+      if (res?.url) {
+        window.location.href = res.url;
+        return;
+      }
+
+      throw new Error("GitHub login unavailable");
+    } catch {
+      setError("GitHub sign-in ekhono configure kora nei. Google ba email diye login korun.");
+      setProviderLoading("");
+    }
+  };
+
+  const providerBusy = providerLoading === "google" || providerLoading === "github";
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#000f08] px-4 py-6 text-white sm:px-6 sm:py-8 lg:px-8">
@@ -110,22 +186,22 @@ export default function RegisterClient() {
               </div>
 
               <p className="mt-8 text-sm font-semibold uppercase tracking-[0.24em] text-[#f5ffe6]/78 sm:text-base">
-                BUILD. CREATE. LAUNCH.
+                BUILD. ACCESS. CONTINUE.
               </p>
               <div className="mt-5 h-1.5 w-24 rounded-full bg-[linear-gradient(90deg,#d8ff30,rgba(216,255,48,0.1))] shadow-[0_0_20px_rgba(216,255,48,0.5)]" />
 
               <h1 className="mt-10 text-3xl font-black leading-tight text-[#f6ffe9] sm:text-4xl xl:text-[2.9rem]">
-                Launch Your
+                Welcome Back
                 <br />
-                <span className="text-[#d8ff30]">NeonCode Workspace</span>
+                <span className="text-[#d8ff30]">Sign In Securely</span>
               </h1>
 
               <p className="mt-6 max-w-xl text-base leading-7 text-[#d6e5d6]/74 sm:text-lg">
-                Create your account and access the full dashboard, services, and workspace tools.
+                Login to your NeonCode workspace and continue your tasks, projects, and team updates.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
-                {REGISTER_STEPS.map((step) => (
+                {LOGIN_STEPS.map((step) => (
                   <span
                     key={step}
                     className="inline-flex items-center gap-2 rounded-full border border-[#d8ff30]/20 bg-[#d8ff30]/5 px-3.5 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[#eaf7dc]/90 sm:text-[0.72rem]"
@@ -142,22 +218,31 @@ export default function RegisterClient() {
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(0,255,213,0.14),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(216,255,48,0.12),transparent_26%)]" />
 
             <div className="relative z-10">
-              <h2 className="text-3xl font-black tracking-tight text-[#f8ffec] sm:text-[2.35rem]">Create Account</h2>
+              <h2 className="text-3xl font-black tracking-tight text-[#f8ffec] sm:text-[2.35rem]">Sign In</h2>
               <p className="mt-3 text-sm leading-7 text-[#d3e5d9]/74 sm:text-base">
-                Fill the form below to create your account.
+                Enter your account details to continue.
               </p>
 
+              {notice ? (
+                <div className="mt-5 rounded-[16px] border border-[#9ddb52]/28 bg-[#9ddb52]/10 px-4 py-3 text-sm text-[#e6ffd2]">
+                  <p>{notice}</p>
+                  {(verifyEmailSent || emailVerified === "0") && !resendLoading ? (
+                    <button
+                      type="button"
+                      onClick={handleResendVerification}
+                      className="mt-2 text-xs font-semibold text-[#d8ff30] underline underline-offset-4 hover:text-[#ebffd2]"
+                    >
+                      Need a new verification email?
+                    </button>
+                  ) : null}
+                  {(verifyEmailSent || emailVerified === "0") && resendLoading ? (
+                    <p className="mt-2 text-xs text-[#ecffd4]/85">Sending verification...</p>
+                  ) : null}
+                </div>
+              ) : null}
               {error ? <div className="mt-5 rounded-[16px] border border-[#ff6d6d]/18 bg-[#ff4d4d]/8 px-4 py-3 text-sm text-[#ffd5d5]">{error}</div> : null}
 
-              <form onSubmit={handleSubmit} className="mt-6 space-y-4 sm:mt-7 sm:space-y-5">
-                <AuthInput
-                  label="Full Name"
-                  icon={UserRound}
-                  value={normalizeTextValue(name)}
-                  onChange={setName}
-                  placeholder="John Doe"
-                />
-
+              <form onSubmit={handleLogin} className="mt-6 space-y-4 sm:mt-7 sm:space-y-5">
                 <AuthInput
                   label="Email Address"
                   icon={Mail}
@@ -173,7 +258,7 @@ export default function RegisterClient() {
                   type={showPass ? "text" : "password"}
                   value={normalizeTextValue(pass)}
                   onChange={setPass}
-                  placeholder="Choose a secure password"
+                  placeholder="Enter your password"
                   rightAction={
                     <button
                       type="button"
@@ -186,30 +271,24 @@ export default function RegisterClient() {
                   }
                 />
 
-                <AuthInput
-                  label="Referral Code"
-                  icon={Ticket}
-                  value={normalizeTextValue(referralCode)}
-                  onChange={(value) => setReferralCode(value.toUpperCase())}
-                  placeholder="Optional referral code"
-                />
-
-                <label className="inline-flex cursor-pointer items-start gap-3 text-sm text-[#d7e4d7]/72">
-                  <span className="relative mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#d8ff30]/35 bg-[#d8ff30]/8">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-[#d3e0d2]/74">
+                  <label className="inline-flex cursor-pointer items-center gap-2">
                     <input
                       type="checkbox"
-                      checked={agree}
-                      onChange={(e) => setAgree(e.target.checked)}
-                      className="peer absolute inset-0 cursor-pointer opacity-0"
+                      checked={remember}
+                      onChange={(e) => setRemember(e.target.checked)}
+                      className="h-4 w-4 rounded border-white/20 bg-transparent accent-[#d8ff30]"
                     />
-                    <Check className="pointer-events-none absolute h-3.5 w-3.5 scale-0 text-[#d8ff30] transition peer-checked:scale-100" />
-                  </span>
-                  <span>I agree to the terms and want to create my NeonCode workspace.</span>
-                </label>
+                    Remember email
+                  </label>
+                  <Link href="/forgot-password" className="font-semibold text-[#d8ff30] hover:text-[#ebffd2]">
+                    Forgot password?
+                  </Link>
+                </div>
 
                 <AuthTurnstile
                   ref={turnstileRef}
-                  action="register"
+                  action="login"
                   className="flex justify-center pt-1"
                   onTokenChange={setTurnstileToken}
                 />
@@ -218,11 +297,11 @@ export default function RegisterClient() {
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.98 }}
                   type="submit"
-                  disabled={loading || loadingFingerprint}
+                  disabled={loading || providerBusy || loadingFingerprint}
                   className="group relative flex min-h-[62px] w-full items-center justify-center overflow-hidden rounded-[16px] border border-[#d8ff30]/30 bg-[linear-gradient(90deg,#d1ff00_0%,#20d7ca_100%)] px-6 py-3 text-xl font-black text-[#071006] shadow-[0_18px_40px_rgba(0,255,213,0.18),0_0_35px_rgba(216,255,48,0.22)] transition duration-300 disabled:cursor-not-allowed disabled:opacity-70 sm:min-h-[66px] sm:text-2xl"
                 >
                   <span className="relative z-10 inline-flex items-center gap-3">
-                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Get Started"}
+                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Sign In"}
                     {!loading ? <MoveRight className="h-6 w-6 transition-transform duration-300 group-hover:translate-x-1" /> : null}
                   </span>
                 </motion.button>
@@ -234,20 +313,30 @@ export default function RegisterClient() {
                 <div className="h-px flex-1 bg-white/10" />
               </div>
 
-              <button
-                onClick={handleGoogleLogin}
-                disabled={loading}
-                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[14px] border border-white/12 bg-white/[0.04] px-4 text-sm font-semibold text-[#f2ffe4] transition hover:border-[#00ffd5]/25 hover:bg-white/[0.07] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FcGoogle size={18} />}
-                Sign up with Google
-              </button>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  onClick={handleGoogleLogin}
+                  disabled={loading || providerBusy}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[14px] border border-white/12 bg-white/[0.04] px-4 text-sm font-semibold text-[#f2ffe4] transition hover:border-[#00ffd5]/25 hover:bg-white/[0.07] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {providerLoading === "google" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FcGoogle size={18} />}
+                  Google
+                </button>
+                <button
+                  onClick={handleGithubLogin}
+                  disabled={loading || providerBusy}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[14px] border border-white/12 bg-white/[0.04] px-4 text-sm font-semibold text-[#f2ffe4] transition hover:border-[#00ffd5]/25 hover:bg-white/[0.07] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {providerLoading === "github" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Github className="h-4 w-4" />}
+                  GitHub
+                </button>
+              </div>
 
               <div className="mt-7 flex flex-wrap items-center gap-2 text-sm text-[#d3e0d2]/72 sm:text-base">
-                <span>Already have an account?</span>
-                <Link href="/login" className="group relative inline-flex items-center gap-2 font-semibold text-[#f4ffe6]">
+                <span>Don&apos;t have an account?</span>
+                <Link href="/register" className="group relative inline-flex items-center gap-2 font-semibold text-[#f4ffe6]">
                   <span className="relative">
-                    Login here
+                    Create account
                     <span className="absolute bottom-[-5px] left-0 h-[2px] w-0 bg-[#d8ff30] transition-all duration-300 group-hover:w-full" />
                   </span>
                   <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
@@ -274,7 +363,7 @@ function AuthInput({ label, value, onChange, rightAction, icon: Icon, type = "te
           ) : null}
           <input
             type={type}
-            required={label !== "Referral Code"}
+            required
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}

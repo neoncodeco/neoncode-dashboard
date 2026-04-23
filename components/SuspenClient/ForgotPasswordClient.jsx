@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, Loader2, Mail, MoveRight } from "lucide-react";
+import AuthTurnstile from "@/components/AuthTurnstile";
 
 const INFO_STEPS = ["Enter email", "Generate link", "Reset securely"];
 
@@ -14,6 +15,9 @@ export default function ForgotPasswordClient() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [resetUrl, setResetUrl] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef(null);
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,11 +26,17 @@ export default function ForgotPasswordClient() {
     setSuccess("");
     setResetUrl("");
 
+    if (turnstileSiteKey && !turnstileToken) {
+      setError("Please complete the security check.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, turnstileToken }),
       });
 
       const json = await res.json();
@@ -35,6 +45,8 @@ export default function ForgotPasswordClient() {
       setSuccess(json?.message || "Reset link generated.");
       setResetUrl(json?.resetUrl || "");
     } catch (err) {
+      setTurnstileToken("");
+      turnstileRef.current?.reset();
       setError(err.message || "Request failed");
     } finally {
       setLoading(false);
@@ -137,6 +149,13 @@ export default function ForgotPasswordClient() {
                     </div>
                   </div>
                 </label>
+
+                <AuthTurnstile
+                  ref={turnstileRef}
+                  action="forgot-password"
+                  className="flex justify-center pt-1"
+                  onTokenChange={setTurnstileToken}
+                />
 
                 <motion.button
                   whileHover={{ scale: 1.01 }}

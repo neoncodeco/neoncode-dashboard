@@ -1,23 +1,18 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
-import { verifyToken } from "@/lib/verifyToken";
+import { requireAuth, requireRoles } from "@/lib/apiGuard";
 
 export async function GET(req) {
   try {
-    const decoded = await verifyToken(req);
-    if (!decoded) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireAuth(req);
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { db } = await getDB();
-
-    // 🔐 only admin can see user list
-    const admin = await db
-      .collection("users")
-      .findOne({ userId: decoded.uid });
-
-    if (!admin || admin.role !== "admin" && admin.role !== "manager") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const access = await requireRoles(db, auth.decoded.uid, ["admin", "manager"]);
+    if (!access.ok) {
+      return access.response;
     }
 
     const users = await db
@@ -35,9 +30,9 @@ export async function GET(req) {
 
     return NextResponse.json({ ok: true, users });
   } catch (err) {
-    console.error(err);
+    console.error("Admin users list error:", err);
     return NextResponse.json(
-      { error: "Server error" },
+      { ok: false, error: "Server error" },
       { status: 500 }
     );
   }

@@ -58,6 +58,10 @@ export async function GET(req, { params }) {
         level1DepositCount: user.level1DepositCount ?? 0,
         name: user.name,
         phone: user.phone ?? "",
+        whatsappNumber: user.whatsappNumber ?? "",
+        dashboardFlags: {
+          whatsappIntroDismissed: Boolean(user.dashboardFlags?.whatsappIntroDismissed),
+        },
         phoneVerification: user.phoneVerification ?? {
           verified: false,
           verifiedAt: null,

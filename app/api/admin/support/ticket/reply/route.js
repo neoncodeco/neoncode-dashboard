@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
-import { verifyToken } from "@/lib/verifyToken";
+import { parseJsonBody, requireAuth, requireRoles } from "@/lib/apiGuard";
 import { ObjectId } from "mongodb";
+import { sanitizeText } from "@/lib/security";
+import { notifyUserDashboardActivity } from "@/lib/whatsappActivityNotify";
 
 const normalizeScreenshots = (screenshots = []) => {
   const isValidImgBb = (url) =>
@@ -17,17 +19,14 @@ const normalizeScreenshots = (screenshots = []) => {
 
 export async function POST(req) {
   try {
-    // 1️⃣ Verify Firebase token
-    const decoded = await verifyToken(req);
-    if (!decoded) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+    const auth = await requireAuth(req);
+    if (!auth.ok) return auth.response;
+    const body = await parseJsonBody(req);
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ ok: false, error: "Invalid request body" }, { status: 400 });
     }
-
-    // 2️⃣ Parse body (NOW includes screenshots)
-    const { ticketId, text = "", screenshots = [] } = await req.json();
+    const { ticketId, text = "", screenshots = [] } = body;
+    const normalizedText = sanitizeText(text, 5000);
     const normalizedScreenshots = normalizeScreenshots(screenshots);
     if (screenshots.length && normalizedScreenshots.length !== screenshots.length) {
       return NextResponse.json(
@@ -36,7 +35,7 @@ export async function POST(req) {
       );
     }
 
-    if (!ticketId) {
+    if (!ticketId || !ObjectId.isValid(String(ticketId))) {
       return NextResponse.json(
         { error: "ticketId required" },
         { status: 400 }
@@ -44,39 +43,27 @@ export async function POST(req) {
     }
 
     const { db } = await getDB();
+    const access = await requireRoles(db, auth.decoded.uid, ["admin", "manager"]);
+    if (!access.ok) return access.response;
+    const staff = access.user;
 
-    // 3️⃣ Load staff from DB
-    const staff = await db.collection("users").findOne({
-      userId: decoded.uid,
-    });
-
-    if (!staff) {
-      return NextResponse.json(
-        { error: "Staff not found" },
-        { status: 404 }
-      );
-    }
-
-    // 4️⃣ Role check
-    if (!["admin", "manager"].includes(staff.role)) {
-      return NextResponse.json(
-        { error: "Forbidden" },
-        { status: 403 }
-      );
+    const ticket = await db.collection("tickets").findOne({ _id: new ObjectId(String(ticketId)) });
+    if (!ticket) {
+      return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
 
     // 5️⃣ Push reply message
     await db.collection("tickets").updateOne(
-      { _id: new ObjectId(ticketId) },
+      { _id: new ObjectId(String(ticketId)) },
       {
         $push: {
           messages: {
             senderType: "staff",
-            senderId: decoded.uid,
-            senderName: staff.name,
+            senderId: auth.decoded.uid,
+            senderName: sanitizeText(staff.name, 80) || "Staff",
             senderRole: staff.role,     // admin / manager
             senderPhoto: staff.photo,
-            text: text || "",
+            text: normalizedText,
             screenshots: normalizedScreenshots,
             createdAt: new Date(),
           },
@@ -87,6 +74,18 @@ export async function POST(req) {
         },
       }
     );
+
+    const ref = ticket.ticketId || String(ticketId);
+    const preview = normalizedText
+      ? ` "${normalizedText.slice(0, 140)}${normalizedText.length > 140 ? "…" : ""}"`
+      : " (Open Support in your dashboard to read the full reply.)";
+    if (ticket.userId) {
+      void notifyUserDashboardActivity(
+        db,
+        ticket.userId,
+        `NeonCode: Support replied on ${ref}.${preview}`
+      );
+    }
 
     return NextResponse.json({ ok: true });
 

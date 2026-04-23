@@ -3,6 +3,7 @@ import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import { ObjectId } from "mongodb";
 import { normalizeAssignedAccounts } from "@/lib/adAccountRequests";
+import { notifyUserDashboardActivity } from "@/lib/whatsappActivityNotify";
 
 const assertAdmin = async (req) => {
   const decoded = await verifyToken(req);
@@ -71,6 +72,11 @@ export async function PUT(req) {
     }
 
     const updateData = buildUpdateData(payload);
+    const existing = await db.collection("adAccountRequests").findOne({ _id: new ObjectId(id) });
+    if (!existing) {
+      return NextResponse.json({ message: "Request not found in database" }, { status: 404 });
+    }
+
     const result = await db.collection("adAccountRequests").findOneAndUpdate(
       { _id: new ObjectId(id) },
       { $set: updateData },
@@ -80,6 +86,18 @@ export async function PUT(req) {
     const updatedDoc = result.value || result;
     if (!updatedDoc) {
       return NextResponse.json({ message: "Request not found in database" }, { status: 404 });
+    }
+
+    const prevStatus = String(existing.status || "").toLowerCase();
+    const nextStatus = String(updatedDoc.status || "").toLowerCase();
+    const becameActive = nextStatus === "active" && prevStatus !== "active";
+    if (becameActive && updatedDoc.userUid) {
+      const label = updatedDoc.MetaAccountID || updatedDoc.accountName || "Ad account";
+      void notifyUserDashboardActivity(
+        db,
+        updatedDoc.userUid,
+        `NeonCode: Your Meta ad account is approved — ${label}.`
+      );
     }
 
     await db.collection("otherCollection").insertOne({
@@ -131,6 +149,10 @@ export async function POST(req) {
     };
 
     const result = await db.collection("adAccountRequests").insertOne(doc);
+    if (doc.userUid && String(doc.status || "").toLowerCase() === "active") {
+      const label = doc.MetaAccountID || doc.accountName || "Ad account";
+      void notifyUserDashboardActivity(db, doc.userUid, `NeonCode: Your Meta ad account is approved — ${label}.`);
+    }
     return NextResponse.json({
       ok: true,
       message: "Ad account added successfully",

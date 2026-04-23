@@ -1,22 +1,8 @@
 import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
-import { verifyToken } from "@/lib/verifyToken";
-
-async function verifyAdminUser(req) {
-  const decoded = await verifyToken(req);
-  if (!decoded?.uid) {
-    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  }
-
-  const { db } = await getDB();
-  const admin = await db.collection("users").findOne({ userId: decoded.uid });
-  if (!admin || (admin.role !== "admin" && admin.role !== "manager")) {
-    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  }
-
-  return { db, admin };
-}
+import { parseJsonBody, requireAuth, requireRoles } from "@/lib/apiGuard";
+import { sanitizeText } from "@/lib/security";
 
 function resolveObjectId(id) {
   if (!ObjectId.isValid(id)) return null;
@@ -25,8 +11,11 @@ function resolveObjectId(id) {
 
 export async function PATCH(req, { params }) {
   try {
-    const { db, admin, error } = await verifyAdminUser(req);
-    if (error) return error;
+    const auth = await requireAuth(req);
+    if (!auth.ok) return auth.response;
+    const { db } = await getDB();
+    const access = await requireRoles(db, auth.decoded.uid, ["admin", "manager"]);
+    if (!access.ok) return access.response;
 
     const { id } = await params;
     const objectId = resolveObjectId(id);
@@ -34,9 +23,12 @@ export async function PATCH(req, { params }) {
       return NextResponse.json({ error: "Invalid notification id." }, { status: 400 });
     }
 
-    const body = await req.json();
-    const title = String(body?.title || "").trim();
-    const message = String(body?.message || "").trim();
+    const body = await parseJsonBody(req);
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ ok: false, error: "Invalid request body" }, { status: 400 });
+    }
+    const title = sanitizeText(body?.title, 160);
+    const message = sanitizeText(body?.message, 2000);
 
     if (!title || !message) {
       return NextResponse.json({ error: "Title and message are required." }, { status: 400 });
@@ -48,9 +40,9 @@ export async function PATCH(req, { params }) {
       message,
       updatedAt: now,
       editedBy: {
-        userId: admin.userId,
-        name: admin.name || admin.email || "Admin",
-        role: admin.role || "admin",
+        userId: access.user.userId,
+        name: access.user.name || access.user.email || "Admin",
+        role: access.user.role || "admin",
       },
     };
 
@@ -85,8 +77,11 @@ export async function PATCH(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
-    const { db, error } = await verifyAdminUser(req);
-    if (error) return error;
+    const auth = await requireAuth(req);
+    if (!auth.ok) return auth.response;
+    const { db } = await getDB();
+    const access = await requireRoles(db, auth.decoded.uid, ["admin", "manager"]);
+    if (!access.ok) return access.response;
 
     const { id } = await params;
     const objectId = resolveObjectId(id);

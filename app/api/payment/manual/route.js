@@ -4,6 +4,7 @@ import { verifyToken } from "@/lib/verifyToken";
 import { convertBdtToUsd, DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@/lib/currency";
 import { ensureWritableUser } from "@/lib/userAccess";
 import { parseWholeNumberAmount } from "@/lib/wholeAmount";
+import { isSafeHttpUrl, sanitizeText } from "@/lib/security";
 
 const MIN_BANK_PAYMENT_AMOUNT_BDT = 1000;
 
@@ -21,12 +22,18 @@ export async function POST(req) {
 
     const { amount, trxId, screenshotUrl } = await req.json();
     const amountBdt = parseWholeNumberAmount(amount);
+    const normalizedTrxId = sanitizeText(trxId, 120);
+    const normalizedScreenshotUrl = String(screenshotUrl || "").trim();
 
-    if (amountBdt === null || !trxId || !screenshotUrl) {
+    if (amountBdt === null || !normalizedTrxId || !normalizedScreenshotUrl) {
       return NextResponse.json(
         { ok: false, error: "Valid whole-number BDT amount, transaction ID, and screenshot are required" },
         { status: 400 }
       );
+    }
+
+    if (!isSafeHttpUrl(normalizedScreenshotUrl)) {
+      return NextResponse.json({ ok: false, error: "Screenshot URL must be a valid http(s) URL" }, { status: 400 });
     }
 
     const { db } = await getDB();
@@ -52,8 +59,8 @@ export async function POST(req) {
       creditedUsdAmount: convertBdtToUsd(amountBdt, usdToBdtRate),
       currency: "BDT",
       usdToBdtRate,
-      trxId,
-      screenshotUrl,
+      trxId: normalizedTrxId,
+      screenshotUrl: normalizedScreenshotUrl,
       method: "bank_transfer",
       status: "pending",
       createdAt: new Date(),
@@ -65,7 +72,7 @@ export async function POST(req) {
     });
   } catch (error) {
     return NextResponse.json(
-      { ok: false, error: error.message },
+      { ok: false, error: "Server error" },
       { status: 500 }
     );
   }

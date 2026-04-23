@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
-import { verifyToken } from "@/lib/verifyToken";
+import { parseJsonBody, requireAuth } from "@/lib/apiGuard";
 import { ensureWritableUser } from "@/lib/userAccess";
 import { parseWholeNumberAmount } from "@/lib/wholeAmount";
+import { sanitizeText } from "@/lib/security";
+import { notifyUserDashboardActivity } from "@/lib/whatsappActivityNotify";
 
 
 function validateAccount(method, account) {
@@ -29,14 +31,17 @@ function validateAccount(method, account) {
 
 export async function POST(req) {
   try {
-    /* ---------- AUTH ---------- */
-    const decoded = await verifyToken(req);
-    if (!decoded) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireAuth(req);
+    if (!auth.ok) {
+      return auth.response;
     }
 
-    /* ---------- BODY ---------- */
-    const { amount, method, account, saveMethod } = await req.json();
+    const body = await parseJsonBody(req);
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ ok: false, error: "Invalid request body" }, { status: 400 });
+    }
+
+    const { amount, method, account, saveMethod } = body;
     const parsedAmount = parseWholeNumberAmount(amount);
 
     if (parsedAmount === null) {
@@ -55,13 +60,13 @@ export async function POST(req) {
 
     /* ---------- DB ---------- */
     const { db } = await getDB();
-    const access = await ensureWritableUser(db, decoded.uid);
+    const access = await ensureWritableUser(db, auth.decoded.uid);
     if (!access.ok) {
       return access.response;
     }
     const user = await db
       .collection("users")
-      .findOne({ userId: decoded.uid });
+      .findOne({ userId: auth.decoded.uid });
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -89,7 +94,7 @@ export async function POST(req) {
       }
 
       await db.collection("users").updateOne(
-        { userId: decoded.uid },
+        { userId: auth.decoded.uid },
         {
           $set: {
             [`payoutMethods.${method}`]: savePayload,
@@ -101,11 +106,11 @@ export async function POST(req) {
 
     /* ---------- CREATE WITHDRAW REQUEST ---------- */
     await db.collection("referral_withdraw_requests").insertOne({
-      userUid: decoded.uid,
-      userName: user.name,
-      userEmail: user.email,
+      userUid: auth.decoded.uid,
+      userName: sanitizeText(user.name, 80) || "User",
+      userEmail: sanitizeText(user.email, 120),
       amount: parsedAmount,
-      method,
+      method: sanitizeText(method, 20),
       account,
       status: "pending",
       createdAt: new Date(),
@@ -113,7 +118,7 @@ export async function POST(req) {
     });
 
     await db.collection("otherCollection").insertOne({
-      userUid: decoded.uid,
+      userUid: auth.decoded.uid,
       type: "WITHDRAW_REQUEST",
       title: "Referral Withdraw Request",
       description: `Amount: ${parsedAmount} | Method: ${method}`,
@@ -122,7 +127,11 @@ export async function POST(req) {
       createdAt: new Date(),
     });
 
-
+    void notifyUserDashboardActivity(
+      db,
+      auth.decoded.uid,
+      `NeonCode: Withdraw request submitted — ${parsedAmount} BDT via ${method}. Status: pending admin review.`
+    );
 
     return NextResponse.json({
       ok: true,

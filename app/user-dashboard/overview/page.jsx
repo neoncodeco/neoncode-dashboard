@@ -26,7 +26,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { usePathname } from "next/navigation";
 import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import WhatsAppVerifyIntroModal from "@/components/WhatsAppVerifyIntroModal";
 import CurrencyAmount from "@/components/CurrencyAmount";
 import {
   MetaSpendingOverviewPanel,
@@ -99,11 +101,17 @@ function EmptyChartState({ title, message }) {
 }
 
 export default function OverviewPage() {
+  const pathname = usePathname();
   const { userData, token } = useFirebaseAuth();
   const spendingOverview = useMetaSpendingOverviewData();
   const [topupHistory, setTopupHistory] = React.useState([]);
   const [topupCount, setTopupCount] = React.useState(0);
   const [lastTopupDate, setLastTopupDate] = React.useState("");
+  const [suppressWhatsappIntro, setSuppressWhatsappIntro] = React.useState(false);
+
+  React.useEffect(() => {
+    setSuppressWhatsappIntro(false);
+  }, [pathname]);
 
   React.useEffect(() => {
     if (!token) return;
@@ -214,6 +222,9 @@ export default function OverviewPage() {
     },
   ];
 
+  const showWhatsAppIntro =
+    Boolean(userData) && !userData.phoneVerification?.verified && !suppressWhatsappIntro;
+
   const quickLinks = [
     { label: "Billing", href: userDashboardRoutes.billing, icon: CreditCard },
     { label: "Activity", href: userDashboardRoutes.activity, icon: ReceiptText },
@@ -223,6 +234,10 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-6 p-3 sm:p-4 lg:space-y-8 lg:p-6">
+      {showWhatsAppIntro ? (
+        <WhatsAppVerifyIntroModal onClose={() => setSuppressWhatsappIntro(true)} />
+      ) : null}
+
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard
           title="Wallet Balance"

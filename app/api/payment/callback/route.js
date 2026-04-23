@@ -184,7 +184,8 @@ export async function POST(req) {
 
     return NextResponse.json({ ok: true, status: result.status });
   } catch (error) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    console.error("Payment callback error:", error);
+    return NextResponse.json({ ok: false, error: "Server error" }, { status: 500 });
   }
 }
 

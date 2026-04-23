@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
-import { verifyToken } from "@/lib/verifyToken";
+import { parseJsonBody, requireAuth } from "@/lib/apiGuard";
 import { getSupportDepartmentById, supportPriorityOptions } from "@/lib/supportDepartments";
 import { ensureWritableUser } from "@/lib/userAccess";
+import { sanitizeText } from "@/lib/security";
+import { notifyUserDashboardActivity } from "@/lib/whatsappActivityNotify";
 
 const normalizeScreenshots = (screenshots = []) => {
   const isValidImgBb = (url) =>
@@ -18,33 +20,39 @@ const normalizeScreenshots = (screenshots = []) => {
 
 export async function POST(req) {
   try {
-    const decoded = await verifyToken(req);
-    if (!decoded) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireAuth(req);
+    if (!auth.ok) return auth.response;
 
-    const { subject, message, screenshots = [], departmentId = "", priority = "Medium" } = await req.json();
+    const body = await parseJsonBody(req);
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ ok: false, error: "Invalid request body" }, { status: 400 });
+    }
+    const { subject, message, screenshots = [], departmentId = "", priority = "Medium" } = body;
+    const normalizedSubject = sanitizeText(subject, 180);
+    const normalizedMessage = sanitizeText(message, 5000);
     const normalizedScreenshots = normalizeScreenshots(screenshots);
     if (screenshots.length && normalizedScreenshots.length !== screenshots.length) {
       return NextResponse.json({ error: "Only ImgBB image URLs are allowed" }, { status: 400 });
     }
-    if (!String(subject || "").trim() || !String(message || "").trim()) {
+    if (!normalizedSubject || !normalizedMessage) {
       return NextResponse.json({ error: "Subject and message are required" }, { status: 400 });
     }
 
     const selectedDepartment = getSupportDepartmentById(departmentId);
     const normalizedPriority = supportPriorityOptions.includes(priority) ? priority : "Medium";
     const { db } = await getDB();
-    const access = await ensureWritableUser(db, decoded.uid);
+    const access = await ensureWritableUser(db, auth.decoded.uid);
     if (!access.ok) {
       return access.response;
     }
 
-    const user = await db.collection("users").findOne({ userId: decoded.uid });
+    const user = await db.collection("users").findOne({ userId: auth.decoded.uid });
 
     // ১. টিকেটের মূল অবজেক্ট তৈরি
     const ticket = {
       ticketId: "TKT-" + Date.now(),
-      userId: decoded.uid,
-      subject: String(subject).trim(),
+      userId: auth.decoded.uid,
+      subject: normalizedSubject,
       departmentId: selectedDepartment.id,
       departmentName: selectedDepartment.name,
       priority: normalizedPriority,
@@ -52,11 +60,11 @@ export async function POST(req) {
       messages: [
         {
           senderType: "user",
-          senderId: decoded.uid,
+          senderId: auth.decoded.uid,
           senderName: user?.name || "User",
           senderRole: "user",
           senderPhoto: user?.photo || "",
-          text: String(message).trim(),
+          text: normalizedMessage,
           screenshots: normalizedScreenshots,
           createdAt: new Date(),
         },
@@ -69,15 +77,21 @@ export async function POST(req) {
     const res = await db.collection("tickets").insertOne(ticket);
 
     const historyData = {
-      userUid: decoded.uid,
+      userUid: auth.decoded.uid,
       type: "SUPPORT_TICKET", 
-      title: subject,
+      title: normalizedSubject,
       status: "open",
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     await db.collection("otherCollection").insertOne(historyData);
+
+    void notifyUserDashboardActivity(
+      db,
+      auth.decoded.uid,
+      `NeonCode: Support ticket opened — ${ticket.ticketId}. Subject: ${normalizedSubject}`
+    );
 
     return NextResponse.json({ 
       ok: true, 
@@ -88,7 +102,7 @@ export async function POST(req) {
   } catch (err) {
     console.error("Ticket Error:", err);
     return NextResponse.json(
-      { error: "Server error", details: err.message },
+      { error: "Server error" },
       { status: 500 }
     );
   }

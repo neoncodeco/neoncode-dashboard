@@ -102,11 +102,13 @@ function useProvideFirebaseAuth() {
     return null;
   };
 
-  const login = async (email, pass) => {
+  const login = async (email, pass, turnstileToken, deviceFingerprint) => {
     const res = await signIn("credentials", {
       redirect: false,
       email: normalizeTextValue(email).trim(),
       password: normalizeTextValue(pass),
+      turnstileToken: normalizeTextValue(turnstileToken),
+      deviceFingerprint: normalizeTextValue(deviceFingerprint),
     });
 
     if (res?.error) {
@@ -117,7 +119,7 @@ function useProvideFirebaseAuth() {
     return true;
   };
 
-  const signup = async (email, pass, name, referralCode) => {
+  const signup = async (email, pass, name, referralCode, turnstileToken, deviceFingerprint) => {
     const regRes = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -126,6 +128,8 @@ function useProvideFirebaseAuth() {
         password: normalizeTextValue(pass),
         name: normalizeTextValue(name).trim(),
         referralCode: normalizeTextValue(referralCode).trim(),
+        turnstileToken: normalizeTextValue(turnstileToken),
+        deviceFingerprint: normalizeTextValue(deviceFingerprint),
       }),
     });
 
@@ -135,18 +139,7 @@ function useProvideFirebaseAuth() {
       throw new Error(regJson.error || "Registration failed");
     }
 
-    const loginRes = await signIn("credentials", {
-      redirect: false,
-      email: normalizeTextValue(email).trim(),
-      password: normalizeTextValue(pass),
-    });
-
-    if (loginRes?.error) {
-      throw new Error("Sign-in after registration failed");
-    }
-
-    await update();
-    return true;
+    return regJson;
   };
 
   const logout = async (callbackUrl = "/login") => {
