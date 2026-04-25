@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { X, Loader2 } from "lucide-react";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import { blockDecimalInput, isWholeNumberInputValue, parseWholeNumberAmount } from "@/lib/wholeAmount";
 
 export default function IncreaseBudgetModal({
@@ -12,7 +12,7 @@ export default function IncreaseBudgetModal({
   oldLimit,
   onSuccess,
 }) {
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

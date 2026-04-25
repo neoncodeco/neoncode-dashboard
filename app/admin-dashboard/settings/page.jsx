@@ -10,16 +10,16 @@ import {
   Building2, User, Link2, ChevronDown, ChevronRight, LayoutGrid, Users
 } from "lucide-react";
 import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import { expandAdAccountRequests } from "@/lib/adAccountRequests";
 
 export default function TokenSettings() {
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
   const { getCache, setCache } = useAdminDashboardCache();
   // এখানে slots: [] অ্যাড করা হয়েছে যাতে ডাটাবেস থেকে লোড হতে পারে
   const [bmConfigs, setBmConfigs] = useState([{ bmName: "", businessId: "", token: "", slots: [] }]);
   const [clientRequests, setClientRequests] = useState([]); 
-  const [usdToBdtRate, setUsdToBdtRate] = useState("150");
+  const [usdToBdtRate, setUsdToBdtRate] = useState("135");
   const [expandedBM, setExpandedBM] = useState(null); 
   const [loading, setLoading] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -31,7 +31,7 @@ export default function TokenSettings() {
     if (cachedSettings) {
       setBmConfigs(cachedSettings.bmConfigs || [{ bmName: "", businessId: "", token: "", slots: [] }]);
       setClientRequests(cachedSettings.clientRequests || []);
-      setUsdToBdtRate(String(cachedSettings.usdToBdtRate || 150));
+      setUsdToBdtRate(String(cachedSettings.usdToBdtRate || 135));
       setInitialLoading(false);
       return;
     }
@@ -46,7 +46,7 @@ export default function TokenSettings() {
       const nextPayload = {
         bmConfigs: settingsData.bmConfigs || [{ bmName: "", businessId: "", token: "", slots: [] }],
         clientRequests: requestsData.ok ? requestsData.data || [] : [],
-        usdToBdtRate: Number(settingsData.usdToBdtRate || 150),
+        usdToBdtRate: Number(settingsData.usdToBdtRate || 135),
       };
 
       // ডাটাবেস থেকে bmConfigs এবং তাদের slots লোড করা

@@ -24,6 +24,20 @@ export async function POST(req) {
       return access.response;
     }
     const assignedAccounts = normalizeAssignedAccounts(body.assignedAccounts, body);
+    const primary = assignedAccounts[0] || body;
+    const bmId = String(primary?.bmId ?? "").trim();
+    const monthlyBudget = Number(primary?.monthlyBudget);
+    const MIN_MONTHLY_BUDGET_USD = 100;
+
+    if (!bmId) {
+      return NextResponse.json({ ok: false, message: "Business Manager ID is required." }, { status: 400 });
+    }
+    if (!Number.isFinite(monthlyBudget) || monthlyBudget < MIN_MONTHLY_BUDGET_USD) {
+      return NextResponse.json(
+        { ok: false, message: `Monthly budget is required (minimum $${MIN_MONTHLY_BUDGET_USD} USD).` },
+        { status: 400 }
+      );
+    }
     await db.collection("adAccountRequests").insertOne({
       ...body,
       userEmail: decoded.email,

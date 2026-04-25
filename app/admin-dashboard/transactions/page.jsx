@@ -14,12 +14,12 @@ import {
   XCircle
 } from "lucide-react";
 import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import Swal from "sweetalert2";
 
 export default function TransactionsPage() {
 
-  const { token, role, loading: authLoading } = useFirebaseAuth();
+  const { token, role, loading: authLoading } = useAppAuth();
   const { getCache, setCache } = useAdminDashboardCache();
 
   const [payments, setPayments] = useState([]);

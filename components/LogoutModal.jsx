@@ -1,11 +1,11 @@
 
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
-import useFirebaseAuth from '@/hooks/useFirebaseAuth';
+import useAppAuth from '@/hooks/useAppAuth';
 
 const LogoutModal = ({ setShowLogoutModal }) => {
 
-    const { logout } = useFirebaseAuth();
+    const { logout } = useAppAuth();
 
     const handleLogout = async () => {
         setShowLogoutModal(false);

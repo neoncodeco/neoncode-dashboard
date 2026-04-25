@@ -1,6 +1,6 @@
 "use client";
 
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, ClipboardList, Clock3, Filter, History } from "lucide-react";
@@ -118,7 +118,7 @@ const HistoryPage = () => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("all");
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
 
   useEffect(() => {
     const fetchHistory = async () => {

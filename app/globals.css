@@ -400,6 +400,22 @@ textarea {
   --meta-summary-meta-text: rgba(255, 242, 205, 0.96);
 }
 
+.meta-summary-card--rate {
+  --meta-summary-bg:
+    radial-gradient(circle at top right, rgba(167, 139, 250, 0.22), transparent 38%),
+    linear-gradient(180deg, rgba(22, 18, 40, 0.98), rgba(14, 12, 28, 0.96));
+  --meta-summary-border: rgba(167, 139, 250, 0.28);
+  --meta-summary-badge-bg: rgba(167, 139, 250, 0.16);
+  --meta-summary-badge-border: rgba(196, 181, 253, 0.22);
+  --meta-summary-badge-text: #ede9fe;
+  --meta-summary-icon-bg: rgba(167, 139, 250, 0.16);
+  --meta-summary-icon-border: rgba(196, 181, 253, 0.2);
+  --meta-summary-icon-color: #ddd6fe;
+  --meta-summary-meta-bg: rgba(167, 139, 250, 0.12);
+  --meta-summary-meta-border: rgba(196, 181, 253, 0.16);
+  --meta-summary-meta-text: rgba(237, 233, 254, 0.96);
+}
+
 .dashboard-shell[data-theme="light"] .meta-summary-card {
   box-shadow: 0 18px 40px rgba(148, 163, 184, 0.16) !important;
 }
@@ -460,6 +476,24 @@ textarea {
   --meta-summary-meta-bg: rgba(245, 158, 11, 0.08);
   --meta-summary-meta-border: rgba(245, 158, 11, 0.12);
   --meta-summary-meta-text: #b45309;
+}
+
+.dashboard-shell[data-theme="light"] .meta-summary-card--rate {
+  --meta-summary-bg:
+    radial-gradient(circle at top right, rgba(167, 139, 250, 0.2), transparent 38%),
+    linear-gradient(180deg, #faf8ff, #f3efff);
+  --meta-summary-border: rgba(167, 139, 250, 0.38);
+  --meta-summary-badge-bg: rgba(167, 139, 250, 0.12);
+  --meta-summary-badge-border: rgba(139, 92, 246, 0.2);
+  --meta-summary-badge-text: #5b21b6;
+  --meta-summary-value: #1f2937;
+  --meta-summary-helper: #4c4768;
+  --meta-summary-icon-bg: rgba(167, 139, 250, 0.12);
+  --meta-summary-icon-border: rgba(139, 92, 246, 0.18);
+  --meta-summary-icon-color: #7c3aed;
+  --meta-summary-meta-bg: rgba(167, 139, 250, 0.08);
+  --meta-summary-meta-border: rgba(139, 92, 246, 0.14);
+  --meta-summary-meta-text: #5b21b6;
 }
 
 .dashboard-chip {

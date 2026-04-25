@@ -14,7 +14,7 @@ import {
   Send,
   X,
 } from "lucide-react";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import LeadProjectPopup from "@/components/LeadProjectPopup";
 import {
   getSupportDepartmentById,
@@ -23,7 +23,7 @@ import {
 } from "@/lib/supportDepartments";
 
 export default function CreateTicketPage({ onSuccess }) {
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
   const router = useRouter();
   const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
   const [subject, setSubject] = useState("");

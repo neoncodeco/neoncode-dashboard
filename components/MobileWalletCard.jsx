@@ -2,7 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Hash, DollarSign, Banknote, Landmark, Wallet } from 'lucide-react';
-import { formatUsd } from '@/lib/currency';
+import { formatUsd, resolveUsdToBdtRate } from '@/lib/currency';
 
 export default function MobileWalletCard({
   userData,
@@ -11,6 +11,7 @@ export default function MobileWalletCard({
 }) {
   const walletBalance = Number(userData?.walletBalance || 0);
   const topupBalance = Number(userData?.topupBalance || 0);
+  const bdtRate = resolveUsdToBdtRate(usdToBdtRate);
 
   const stats = [
     {
@@ -27,7 +28,7 @@ export default function MobileWalletCard({
     },
     {
       label: 'Buying Dollars',
-      value: `৳${(topupBalance * (usdToBdtRate || 115)).toLocaleString()}`,
+      value: `৳${(topupBalance * bdtRate).toLocaleString()}`,
       icon: <Banknote className="w-5 h-5 text-blue-500" />,
       type: 'bdt'
     },
@@ -80,7 +81,7 @@ export default function MobileWalletCard({
                 {formatUsd(walletBalance)}
             </p>
             <p className="mt-2 text-[10px] font-medium dashboard-text-faint">
-                (Available ৳{(walletBalance * (usdToBdtRate || 115)).toLocaleString()})
+                (Available ৳{(walletBalance * bdtRate).toLocaleString()})
             </p>
         </div>
       </motion.div>

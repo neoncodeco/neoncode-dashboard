@@ -11,9 +11,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Building2, TrendingUp, Wallet } from "lucide-react";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
-import { formatUsd, toSafeNumber } from "@/lib/currency";
+import { Banknote, Building2, TrendingUp, Wallet } from "lucide-react";
+import useAppAuth from "@/hooks/useAppAuth";
+import { formatBdt, formatUsd, resolveUsdToBdtRate, toSafeNumber } from "@/lib/currency";
 
 const normalizeAdAccountId = (value) => String(value || "").replace(/^act_/, "").trim();
 
@@ -34,6 +34,25 @@ const formatChartUsd = (value) => {
 const formatAccountLabel = (value) => {
   const label = String(value || "").trim();
   return label.length > 10 ? `${label.slice(0, 10)}...` : label;
+};
+
+const resolveSummaryUsdToBdtRate = (assignedUsdToBdtRate, profileUsdToBdtRate) => {
+  const assigned = toSafeNumber(assignedUsdToBdtRate);
+  if (assigned > 0) {
+    return {
+      rate: assigned,
+      source: "assigned",
+      meta: "Account rate",
+      helper: "Admin-set conversion for your assigned Meta ad account(s).",
+    };
+  }
+  const rate = resolveUsdToBdtRate(profileUsdToBdtRate);
+  return {
+    rate,
+    source: "profile",
+    meta: "Default rate",
+    helper: "",
+  };
 };
 
 const dedupeAccountsById = (items) => {
@@ -104,7 +123,7 @@ function CustomTooltip({ active, payload, label, metric }) {
   );
 }
 
-function SpendingSummaryCard({ title, value, helper, meta, icon: Icon, tone }) {
+function SpendingSummaryCard({ title, value, helper, meta, icon: Icon, tone, valueClassName = "" }) {
   return (
     <article
       className={`dashboard-subpanel meta-summary-card meta-summary-card--${tone} group relative overflow-hidden rounded-[28px] border p-5 transition hover:-translate-y-0.5`}
@@ -112,11 +131,15 @@ function SpendingSummaryCard({ title, value, helper, meta, icon: Icon, tone }) {
       <div className="meta-summary-card__glow absolute inset-0 opacity-0 transition group-hover:opacity-100" />
       <div className="relative z-10">
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="meta-summary-card__badge inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em]">
               {title}
             </div>
-            <p className="meta-summary-card__value mt-4 text-[2rem] font-black leading-none">{value}</p>
+            <p
+              className={`meta-summary-card__value mt-4 break-words text-[2rem] font-black leading-tight ${valueClassName}`.trim()}
+            >
+              {value}
+            </p>
             <p className="meta-summary-card__helper mt-2 text-sm font-semibold leading-6">{helper}</p>
           </div>
           <div className="meta-summary-card__icon flex h-12 w-12 items-center justify-center rounded-2xl">
@@ -135,7 +158,7 @@ function SpendingSummaryCard({ title, value, helper, meta, icon: Icon, tone }) {
 }
 
 export function useMetaSpendingOverviewData() {
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
   const [performanceData, setPerformanceData] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [activeMetric, setActiveMetric] = React.useState("spend");
@@ -224,54 +247,87 @@ export function useMetaSpendingOverviewData() {
   };
 }
 
-export function MetaSpendingSummaryCardsPanel({ className = "", dataState }) {
+export function MetaSpendingSummaryCardsPanel({
+  className = "",
+  dataState,
+  assignedUsdToBdtRate,
+  profileUsdToBdtRate,
+}) {
   const { loading, chartData, summary, activeMetric } = dataState;
+  const rateInfo = resolveSummaryUsdToBdtRate(assignedUsdToBdtRate, profileUsdToBdtRate);
+  const rateDisplay = `1 USD = ${formatBdt(rateInfo.rate, { round: false })}`;
+
+  const gridClass = "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4";
 
   if (loading) {
     return (
-      <div className={`grid grid-cols-1 gap-4 md:grid-cols-3 ${className}`.trim()}>
-        {[0, 1, 2].map((item) => (
+      <div className={`${gridClass} ${className}`.trim()}>
+        {[0, 1, 2, 3].map((item) => (
           <div key={item} className="dashboard-subpanel h-[176px] animate-pulse rounded-[28px] border border-white/10 bg-[var(--dashboard-panel-soft)]" />
         ))}
       </div>
     );
   }
 
-  if (!chartData.length) return null;
-
   return (
-    <div className={`grid grid-cols-1 gap-4 md:grid-cols-3 ${className}`.trim()}>
+    <div className={`${gridClass} ${className}`.trim()}>
       <SpendingSummaryCard
         title="Total Spent"
-        value={formatUsd(summary.totalSpend)}
+        value={chartData.length ? formatUsd(summary.totalSpend) : formatUsd(0)}
         helper="Live amount spent across synced accounts"
         icon={TrendingUp}
         tone="spend"
       />
       <SpendingSummaryCard
         title="Remaining"
-        value={formatUsd(summary.totalRemaining)}
+        value={chartData.length ? formatUsd(summary.totalRemaining) : formatUsd(0)}
         helper="Available budget still left to spend"
         icon={Wallet}
         tone="remaining"
       />
       <SpendingSummaryCard
         title="Top Account"
-        value={summary.peakAccount?.name || "No data"}
-        helper={summary.peakAccount ? `${formatUsd(summary.peakAccount[activeMetric])} on current metric` : "Waiting for synced balances"}
+        value={chartData.length ? summary.peakAccount?.name || "No data" : "No data"}
+        helper={
+          chartData.length && summary.peakAccount
+            ? `${formatUsd(summary.peakAccount[activeMetric])} on current metric`
+            : "Waiting for synced balances"
+        }
         icon={Building2}
         tone="peak"
+      />
+      <SpendingSummaryCard
+        title="USD → BDT"
+        value={rateDisplay}
+        helper={rateInfo.helper}
+        meta={rateInfo.meta}
+        icon={Banknote}
+        tone="rate"
+        valueClassName="!text-[1.15rem] sm:!text-[1.35rem] xl:!text-[1.55rem]"
       />
     </div>
   );
 }
 
-export function MetaSpendingSummaryCards({ className = "" }) {
+export function MetaSpendingSummaryCards({ className = "", assignedUsdToBdtRate, profileUsdToBdtRate }) {
   const dataState = useMetaSpendingOverviewData();
-  return <MetaSpendingSummaryCardsPanel className={className} dataState={dataState} />;
+  return (
+    <MetaSpendingSummaryCardsPanel
+      className={className}
+      dataState={dataState}
+      assignedUsdToBdtRate={assignedUsdToBdtRate}
+      profileUsdToBdtRate={profileUsdToBdtRate}
+    />
+  );
 }
 
-export function MetaSpendingOverviewPanel({ className = "", showSummaryCards = true, dataState }) {
+export function MetaSpendingOverviewPanel({
+  className = "",
+  showSummaryCards = true,
+  dataState,
+  assignedUsdToBdtRate,
+  profileUsdToBdtRate,
+}) {
   const { loading, chartData, activeMetric, setActiveMetric, highlightedAccountId } = dataState;
   const metricLabel = METRIC_TABS.find((item) => item.key === activeMetric)?.label || "Spent";
   const chartGradientId = React.useId().replace(/:/g, "");
@@ -284,7 +340,14 @@ export function MetaSpendingOverviewPanel({ className = "", showSummaryCards = t
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.68),rgba(241,245,249,0.18))]" />
 
       <div className="relative z-10">
-        {showSummaryCards ? <MetaSpendingSummaryCardsPanel dataState={dataState} className="mb-6" /> : null}
+        {showSummaryCards ? (
+          <MetaSpendingSummaryCardsPanel
+            dataState={dataState}
+            className="mb-6"
+            assignedUsdToBdtRate={assignedUsdToBdtRate}
+            profileUsdToBdtRate={profileUsdToBdtRate}
+          />
+        ) : null}
 
         {loading ? (
           <div className="flex h-[320px] items-center justify-center rounded-[28px] border border-slate-200 bg-white/75 text-sm font-semibold text-slate-500">
@@ -424,6 +487,14 @@ export function MetaSpendingOverviewPanel({ className = "", showSummaryCards = t
 }
 
 export default function MetaSpendingOverview(props) {
+  const { assignedUsdToBdtRate, profileUsdToBdtRate, ...rest } = props;
   const dataState = useMetaSpendingOverviewData();
-  return <MetaSpendingOverviewPanel {...props} dataState={dataState} />;
+  return (
+    <MetaSpendingOverviewPanel
+      {...rest}
+      dataState={dataState}
+      assignedUsdToBdtRate={assignedUsdToBdtRate}
+      profileUsdToBdtRate={profileUsdToBdtRate}
+    />
+  );
 }

@@ -27,7 +27,7 @@ import {
   YAxis,
 } from "recharts";
 import { usePathname } from "next/navigation";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import WhatsAppVerifyIntroModal from "@/components/WhatsAppVerifyIntroModal";
 import CurrencyAmount from "@/components/CurrencyAmount";
 import {
@@ -102,7 +102,7 @@ function EmptyChartState({ title, message }) {
 
 export default function OverviewPage() {
   const pathname = usePathname();
-  const { userData, token } = useFirebaseAuth();
+  const { userData, token } = useAppAuth();
   const spendingOverview = useMetaSpendingOverviewData();
   const [topupHistory, setTopupHistory] = React.useState([]);
   const [topupCount, setTopupCount] = React.useState(0);
@@ -275,7 +275,10 @@ export default function OverviewPage() {
         />
       </section>
 
-      <MetaSpendingSummaryCardsPanel dataState={spendingOverview} />
+      <MetaSpendingSummaryCardsPanel
+        dataState={spendingOverview}
+        profileUsdToBdtRate={userData?.currencyConfig?.usdToBdtRate ?? userData?.metaAdsConfig?.usdRate}
+      />
 
       <section className="grid gap-4 xl:grid-cols-[1.5fr_0.9fr]">
         <div className="dashboard-subpanel rounded-[32px] border border-white/10 p-5 sm:p-6">

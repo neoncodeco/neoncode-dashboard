@@ -5,7 +5,7 @@ import Image from "next/image";
 import Swal from "sweetalert2";
 import { Copy, ImagePlus, Landmark, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import {
   createDefaultBankPaymentDetails,
   createEmptyBankDetail,
@@ -24,7 +24,7 @@ const DETAIL_FIELDS = [
 ];
 
 export default function PaymentDetailsPage() {
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
   const { getCache, setCache } = useAdminDashboardCache();
   const [bankPaymentDetails, setBankPaymentDetails] = useState(createDefaultBankPaymentDetails());
   const [initialLoading, setInitialLoading] = useState(true);

@@ -4,19 +4,19 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import DashboardMouseGlow from "@/components/DashboardMouseGlow";
 import Loader from "@/components/Loader";
-import UserNotificationsBar from "@/components/UserNotificationsBar";
 import { UserNotificationsProvider } from "@/components/UserNotificationsProvider";
 import UserSidebar from "@/components/UserSidebar";
 import UserDashboardTopbar from "@/components/UserDashboardTopbar";
 import ReadOnlyNotice from "@/components/ReadOnlyNotice";
 import LiveChatButton from "@/components/chat/LiveChatButton";
 import useDashboardTheme from "@/hooks/useDashboardTheme";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
+import { getDashboardPathByRole } from "@/lib/roleRouting";
 import { isReadOnlyUserStatus } from "@/lib/userAccess";
 
 export default function MainLayout({ children }) {
   const router = useRouter();
-  const { authReady, loadingRole, role, user, userData } = useFirebaseAuth();
+  const { authReady, loadingRole, role, user, userData } = useAppAuth();
   const { theme, toggleTheme } = useDashboardTheme();
   const readOnly = isReadOnlyUserStatus(userData?.status);
 
@@ -29,15 +29,7 @@ export default function MainLayout({ children }) {
     }
 
     if (role === "user") return;
-
-    if (role === "team_member") {
-      router.replace("/team-member-dashboard");
-      return;
-    }
-
-    if (role === "admin" || role === "manager") {
-      router.replace("/admin-dashboard/overview");
-    }
+    router.replace(getDashboardPathByRole(role));
   }, [authReady, loadingRole, role, router, user]);
 
   if (!authReady || loadingRole || !user || role !== "user") {
@@ -55,7 +47,6 @@ export default function MainLayout({ children }) {
         <UserNotificationsProvider>
           <UserDashboardTopbar theme={theme} toggleTheme={toggleTheme} />
           <div className="user-dashboard-stage px-4 pb-5 sm:px-4 lg:pb-6">
-            <UserNotificationsBar />
             <div className="user-dashboard-page-surface">{children}</div>
           </div>
           {!readOnly ? <LiveChatButton /> : null}

@@ -106,9 +106,9 @@ export default function ServicesPage() {
           <h1 className="mt-5 text-3xl font-black tracking-tight text-[var(--dashboard-text-strong)] md:text-5xl">
             Our Services
           </h1>
-          <p className="dashboard-text-muted mx-auto mt-3 max-w-2xl text-sm leading-7 md:text-base">
-            আমাদের ডিজিটাল সার্ভিস দেখুন এবং WhatsApp-এ যোগাযোগ করুন 
-          </p>
+          {/* <p className="dashboard-text-muted mx-auto mt-3 max-w-2xl text-sm leading-7 md:text-base">
+           Explore our digital services and get in touch with us on WhatsApp.
+          </p> */}
           <div className="mt-5 -mx-1 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex w-max min-w-full items-center gap-2.5 md:w-full md:min-w-0 md:flex-wrap md:justify-center">
               {categoryTabs.map((category) => {

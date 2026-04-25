@@ -5,10 +5,10 @@ import { createPortal } from "react-dom";
 import { Headset, Loader2, ShieldCheck, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import ChatWindow from "./ChatWindow";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 
 export default function LiveChatButton() {
-  const { user } = useFirebaseAuth();
+  const { user } = useAppAuth();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState("");

@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Swal from "sweetalert2";
 // Icons used for better visual clarity
 import { X, Loader2, CheckCircle, Wallet, Banknote, CreditCard, DollarSign } from "lucide-react";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import { blockDecimalInput, isWholeNumberInputValue, parseWholeNumberAmount } from "@/lib/wholeAmount";
 
 /* ================= CONFIG ================= */
@@ -28,7 +28,7 @@ const getMethodIcon = (method) => {
 
 export default function WithdrawModal({ balance, onClose }) {
   // 1. Fetching Auth Data (Hook 1)
-  const { token, userData, refreshUser, loading: isAuthLoading } = useFirebaseAuth();
+  const { token, userData, refreshUser, loading: isAuthLoading } = useAppAuth();
 
   /* ================= 2. STATE (All Hooks defined unconditionally at the top) ================= */
   const [amount, setAmount] = useState("");

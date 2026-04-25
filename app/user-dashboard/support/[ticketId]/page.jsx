@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import { Send, X, Lock, ChevronLeft, ShieldCheck, Image as ImageIcon, Loader2 } from "lucide-react";
 
 export default function UserChatView({ ticketIdFromProps, onBack }) {
-  const { token, user } = useFirebaseAuth();
+  const { token, user } = useAppAuth();
   const params = useParams();
   const messagesEndRef = useRef(null);
 

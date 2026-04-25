@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
+import { DEFAULT_USD_TO_BDT_RATE } from "@/lib/currency";
 
 const DEFAULT_PERMISSIONS = {
   projectsAccess: false,
@@ -52,7 +53,7 @@ function normalizeTimeline(items) {
 }
 
 export default function ManageUserModal({ user, onClose, onUpdated }) {
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
   const [activeTab, setActiveTab] = useState("Overview");
 
   const [role, setRole] = useState(user.role || "user");
@@ -69,7 +70,7 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
     ...DEFAULT_PERMISSIONS,
     ...(user.permissions || {}),
   });
-  const [usdRate, setUsdRate] = useState(safeNum(user.metaAdsConfig?.usdRate, 150));
+  const [usdRate, setUsdRate] = useState(safeNum(user.metaAdsConfig?.usdRate, DEFAULT_USD_TO_BDT_RATE));
   const [allowBudgetIncrease, setAllowBudgetIncrease] = useState(user.metaAdsConfig?.allowBudgetIncrease ?? true);
   const [allowTopupAction, setAllowTopupAction] = useState(user.metaAdsConfig?.allowTopupAction ?? true);
   const [remainingBudgetOverride, setRemainingBudgetOverride] = useState(user.metaAdsConfig?.remainingBudgetOverride ?? "");
@@ -155,7 +156,7 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
           },
           level1DepositCount: safeNum(level1DepositCount),
           metaAdsConfig: {
-            usdRate: safeNum(usdRate, 150),
+            usdRate: safeNum(usdRate, DEFAULT_USD_TO_BDT_RATE),
             allowBudgetIncrease: Boolean(allowBudgetIncrease),
             allowTopupAction: Boolean(allowTopupAction),
             remainingBudgetOverride:

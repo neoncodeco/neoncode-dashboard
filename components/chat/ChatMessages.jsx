@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Bot, Sparkles, User2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 
 export default function ChatMessages({ chatId, currentRole = "user", variant = "dark" }) {
   const [messages, setMessages] = useState([]);
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
   const scrollRef = useRef(null);
   const isLight = variant === "light";
 

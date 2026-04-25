@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import { Crown, Wallet, Image as ImageIcon, Video } from "lucide-react";
 import CurrencyAmount from "@/components/CurrencyAmount";
-import { convertBdtToUsd, formatBdt, resolveUsdToBdtRate } from "@/lib/currency";
+import { convertBdtToUsd, DEFAULT_USD_TO_BDT_RATE, formatBdt, resolveUsdToBdtRate } from "@/lib/currency";
 
 const formatDate = (value) => {
   if (!value) return "N/A";
@@ -15,7 +15,7 @@ const formatDate = (value) => {
 };
 
 export default function FreepikPremiumPage() {
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
   const [loading, setLoading] = useState(true);
   const [buyingPlan, setBuyingPlan] = useState("");
   const [downloading, setDownloading] = useState(false);
@@ -24,7 +24,7 @@ export default function FreepikPremiumPage() {
   const [walletBalance, setWalletBalance] = useState(0);
   const [credits, setCredits] = useState(0);
   const [subscription, setSubscription] = useState(null);
-  const [usdToBdtRate, setUsdToBdtRate] = useState(150);
+  const [usdToBdtRate, setUsdToBdtRate] = useState(DEFAULT_USD_TO_BDT_RATE);
 
   const [assetUrl, setAssetUrl] = useState("");
   const [assetType, setAssetType] = useState("image");

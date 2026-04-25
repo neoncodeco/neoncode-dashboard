@@ -10,6 +10,7 @@ import {
   findTeamMemberByUsername,
   upsertTeamMemberDoc,
 } from "@/lib/teamMembers";
+import { DEFAULT_USD_TO_BDT_RATE } from "@/lib/currency";
 
 const ALLOWED_ROLES = ["user", "manager", "admin", "team_member"];
 const ALLOWED_STATUS = ["active", "pending", "inactive"];
@@ -33,7 +34,7 @@ const sanitizeMetaAdsConfig = (metaAdsConfig, fallback) => {
   const base = fallback && typeof fallback === "object" ? fallback : {};
   if (!metaAdsConfig || typeof metaAdsConfig !== "object") {
     return {
-      usdRate: toSafeNumber(base.usdRate, 150),
+      usdRate: toSafeNumber(base.usdRate, DEFAULT_USD_TO_BDT_RATE),
       allowBudgetIncrease: base.allowBudgetIncrease !== false,
       allowTopupAction: base.allowTopupAction !== false,
       remainingBudgetOverride:
@@ -53,7 +54,7 @@ const sanitizeMetaAdsConfig = (metaAdsConfig, fallback) => {
       : toSafeNumber(incomingRemaining, 0);
 
   return {
-    usdRate: toSafeNumber(metaAdsConfig.usdRate, toSafeNumber(base.usdRate, 150)),
+    usdRate: toSafeNumber(metaAdsConfig.usdRate, toSafeNumber(base.usdRate, DEFAULT_USD_TO_BDT_RATE)),
     allowBudgetIncrease:
       metaAdsConfig.allowBudgetIncrease === undefined
         ? base.allowBudgetIncrease !== false

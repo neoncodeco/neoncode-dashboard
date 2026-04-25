@@ -18,9 +18,16 @@ import {
   Trash2
 } from "lucide-react";
 import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import { normalizeAssignedAccounts } from "@/lib/adAccountRequests";
+import { serializeMongoId } from "@/lib/serializeMongoId";
 import Swal from "sweetalert2";
+
+const normalizeAdRequestRows = (rows) =>
+  (Array.isArray(rows) ? rows : []).map((doc) => ({
+    ...doc,
+    _id: serializeMongoId(doc?._id),
+  }));
 
 /* -------- STATUS UI CONFIG (Original Design Intact) -------- */
 const getStatusClasses = (status) => {
@@ -59,7 +66,7 @@ const getStatusClasses = (status) => {
 };
 
 export default function AdminAdAccountApprove() {
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
   const { getCache, setCache } = useAdminDashboardCache();
   const [data, setData] = useState([]);
   const [bmConfigs, setBmConfigs] = useState([]); 
@@ -72,6 +79,7 @@ export default function AdminAdAccountApprove() {
     accountName: "",
     bmId: "",
     monthlyBudget: 0,
+    usdToBdtRate: "135",
     userUid: "",
     userEmail: "",
     MetaAccountID: "",
@@ -83,7 +91,7 @@ export default function AdminAdAccountApprove() {
     if (!options.force) {
       const cachedPayload = getCache("admin-meta-ads:data");
       if (cachedPayload) {
-        setData(cachedPayload.data || []);
+        setData(normalizeAdRequestRows(cachedPayload.data || []));
         setBmConfigs(cachedPayload.bmConfigs || []);
         setInitialLoading(false);
         return;
@@ -91,14 +99,15 @@ export default function AdminAdAccountApprove() {
     }
 
     try {
+      const fetchOpts = { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" };
       const [listRes, settingsRes] = await Promise.all([
-        fetch("/api/admin/ads-request/list", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("/api/admin/settings", { headers: { Authorization: `Bearer ${token}` } })
+        fetch("/api/admin/ads-request/list", fetchOpts),
+        fetch("/api/admin/settings", fetchOpts),
       ]);
       const listJson = await listRes.json();
       const settingsJson = await settingsRes.json();
       const nextPayload = {
-        data: listRes.ok ? listJson.data || [] : [],
+        data: listRes.ok ? normalizeAdRequestRows(listJson.data || []) : [],
         bmConfigs: settingsJson.bmConfigs || [],
       };
 
@@ -127,13 +136,22 @@ export default function AdminAdAccountApprove() {
   };
 
   const getRowValue = (row, key) => {
-    const override = editMap[row._id];
+    const rowKey = serializeMongoId(row?._id);
+    const override = editMap[rowKey];
     if (override && override[key] !== undefined) return override[key];
+    if (key === "usdToBdtRate") {
+      const direct = row[key];
+      if (direct !== undefined && direct !== null && direct !== "") return direct;
+      const slots = normalizeAssignedAccounts(row?.assignedAccounts, row);
+      const fromSlot = slots[0]?.usdToBdtRate;
+      if (fromSlot !== undefined && fromSlot !== null && fromSlot !== "") return fromSlot;
+    }
     return row[key];
   };
 
   const handleAction = async (id, newStatus) => {
-    const row = data.find(item => item._id === id);
+    const rid = serializeMongoId(id);
+    const row = data.find((item) => serializeMongoId(item._id) === rid);
     const MetaAccountID = getRowValue(row || {}, "MetaAccountID");
 
     if (newStatus === "active" && (!MetaAccountID)) {
@@ -155,20 +173,26 @@ export default function AdminAdAccountApprove() {
       const res = await fetch("/api/admin/ads-request/approve", {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ id, status: newStatus, MetaAccountID: MetaAccountID?.toString().trim() || "" }),
+        body: JSON.stringify({
+          id: rid,
+          status: newStatus,
+          MetaAccountID: MetaAccountID?.toString().trim() || "",
+        }),
       });
       if (res.ok) { load({ force: true }); Swal.fire('Success', '', 'success'); }
     } finally { setLoading(false); }
   };
 
   const onRowFieldChange = (id, key, value) => {
-    setEditMap((prev) => ({ ...prev, [id]: { ...(prev[id] || {}), [key]: value } }));
+    const rid = serializeMongoId(id);
+    setEditMap((prev) => ({ ...prev, [rid]: { ...(prev[rid] || {}), [key]: value } }));
   };
 
   const createEmptyManualAccount = () => ({
     accountName: "",
     bmId: "",
     monthlyBudget: 0,
+    usdToBdtRate: "135",
     userUid: "",
     userEmail: "",
     MetaAccountID: "",
@@ -192,11 +216,17 @@ export default function AdminAdAccountApprove() {
   };
 
   const saveRow = async (row) => {
+    const rowKey = serializeMongoId(row?._id);
+    const rawRate = getRowValue(row, "usdToBdtRate");
+    const parsedRate = parseFloat(String(rawRate ?? "").replace(/,/g, "").trim(), 10);
+    const usdToBdtRate = Number.isFinite(parsedRate) && parsedRate >= 0 ? parsedRate : 0;
+
     const payload = {
-      id: row._id,
+      id: rowKey,
       accountName: getRowValue(row, "accountName") || "",
       bmId: getRowValue(row, "bmId") || "",
       monthlyBudget: Number(getRowValue(row, "monthlyBudget") || 0),
+      usdToBdtRate,
       userUid: getRowValue(row, "userUid") || "",
       userEmail: getRowValue(row, "userEmail") || "",
       MetaAccountID: getRowValue(row, "MetaAccountID") || "",
@@ -207,14 +237,25 @@ export default function AdminAdAccountApprove() {
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (res.ok) { load({ force: true }); Swal.fire("Saved", "", "success"); }
+    if (res.ok) {
+      setEditMap((prev) => {
+        const next = { ...prev };
+        delete next[rowKey];
+        return next;
+      });
+      await load({ force: true });
+      Swal.fire("Saved", "", "success");
+    } else {
+      const json = await res.json().catch(() => ({}));
+      Swal.fire("Save failed", json?.message || `HTTP ${res.status}`, "error");
+    }
   };
 
   const cancelRow = async (row) => {
     const res = await fetch("/api/admin/ads-request/approve", {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ id: row._id }),
+      body: JSON.stringify({ id: serializeMongoId(row?._id) }),
     });
     if (res.ok) { load({ force: true }); }
   };
@@ -229,6 +270,7 @@ export default function AdminAdAccountApprove() {
         ...assignedAccounts[0],
         assignedAccounts,
         monthlyBudget: Number(assignedAccounts[0]?.monthlyBudget || 0),
+        usdToBdtRate: Number(assignedAccounts[0]?.usdToBdtRate || 0),
         accountName: assignedAccounts[0]?.accountName || "Manual Account",
         bmId: assignedAccounts[0]?.bmId || "",
         userUid: assignedAccounts[0]?.userUid || "",
@@ -287,10 +329,11 @@ export default function AdminAdAccountApprove() {
           {showManualAdd && (
             <div className="space-y-3">
               {newAccounts.map((account, index) => (
-                <div key={index} className="grid grid-cols-1 gap-2 rounded-2xl border border-gray-100 bg-gray-50 p-3 md:grid-cols-2 xl:grid-cols-7">
+                <div key={index} className="grid grid-cols-1 gap-2 rounded-2xl border border-gray-100 bg-gray-50 p-3 md:grid-cols-2 xl:grid-cols-8">
                   <input placeholder="Account Name" value={account.accountName} onChange={(e) => updateManualRow(index, "accountName", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
                   <input placeholder="BM ID" value={account.bmId} onChange={(e) => updateManualRow(index, "bmId", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
                   <input placeholder="Budget" type="number" value={account.monthlyBudget} onChange={(e) => updateManualRow(index, "monthlyBudget", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
+                  <input title="1 USD = how many BDT for this user" placeholder="1 USD = Tk" type="number" value={account.usdToBdtRate} onChange={(e) => updateManualRow(index, "usdToBdtRate", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
                   <input placeholder="User UID" value={account.userUid} onChange={(e) => updateManualRow(index, "userUid", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
                   <input placeholder="User Email" value={account.userEmail} onChange={(e) => updateManualRow(index, "userEmail", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
                   <input placeholder="Meta ID" value={account.MetaAccountID} onChange={(e) => updateManualRow(index, "MetaAccountID", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
@@ -320,6 +363,10 @@ export default function AdminAdAccountApprove() {
                     <input className="w-full truncate border-b text-base font-bold text-gray-900 outline-none focus:border-blue-500" value={getRowValue(r, "accountName")} onChange={(e) => onRowFieldChange(r._id, "accountName", e.target.value)} />
                     <p className="mt-1 text-xs font-bold text-gray-400">{getRowValue(r, "userEmail")}</p>
                   </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[9px] font-black uppercase text-gray-400">1 USD = Tk</label>
+                  <input className="w-full border rounded-lg p-2 text-sm font-bold" type="number" placeholder="135" value={getRowValue(r, "usdToBdtRate") ?? ""} onChange={(e) => onRowFieldChange(r._id, "usdToBdtRate", e.target.value)} />
                 </div>
                 <div className="relative">
                   <input className="w-full border rounded-lg p-2 text-xs font-mono" placeholder="Meta ID" value={getRowValue(r, "MetaAccountID") || ""} onChange={(e) => onRowFieldChange(r._id, "MetaAccountID", e.target.value)} />
@@ -351,6 +398,7 @@ export default function AdminAdAccountApprove() {
                 <th className="px-6 py-5 text-center">BM Assignment</th>
                 <th className="px-6 py-5 text-center">Meta ID & Smart Link</th>
                 <th className="px-6 py-5 text-center">Budget</th>
+                <th className="px-6 py-5 text-center">1 USD → Tk</th>
                 <th className="px-6 py-5 text-center">Status</th>
                 <th className="px-6 py-5 text-right">Actions</th>
               </tr>
@@ -397,6 +445,16 @@ export default function AdminAdAccountApprove() {
                          <span className="text-sm text-gray-400">$</span>
                          <input type="number" className="w-20 bg-transparent py-2 text-center text-sm font-black outline-none" value={getRowValue(r, "monthlyBudget")} onChange={(e) => onRowFieldChange(r._id, "monthlyBudget", e.target.value)} />
                        </div>
+                    </td>
+
+                    <td className="px-6 py-4 text-center">
+                      <input
+                        type="number"
+                        className="w-24 rounded-lg border border-gray-200 bg-white px-2 py-2 text-center text-sm font-black outline-none shadow-inner focus:border-blue-500"
+                        placeholder="135"
+                        value={getRowValue(r, "usdToBdtRate") ?? ""}
+                        onChange={(e) => onRowFieldChange(r._id, "usdToBdtRate", e.target.value)}
+                      />
                     </td>
 
                     <td className="px-6 py-4 text-center">

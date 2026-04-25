@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search, Shield, Trash2, Download, UserCheck, UserX, Clock, Users } from "lucide-react";
 import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import ManageUserModal from "@/components/ManageUserModal";
 import Swal from "sweetalert2";
 
@@ -31,7 +31,7 @@ const roleColor = (role) => {
 };
 
 export default function AllUsersPage() {
-  const { token, user } = useFirebaseAuth();
+  const { token, user } = useAppAuth();
   const { getCache, setCache } = useAdminDashboardCache();
 
   const [users, setUsers] = useState([]);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import { AlertTriangle, CheckCircle2, ChevronRight, CreditCard, Landmark, ShieldCheck } from "lucide-react";
 import UddoktaPayForm from "@/components/PaymentsSection/UddoktaPay";
 import BankPayForm from "@/components/PaymentsSection/BankPay";
@@ -87,7 +87,7 @@ function PaymentOptionCard({
 export default function PaymentPageClient() {
   const [method, setMethod] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState(null);
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
 
   useEffect(() => {
     const showPaymentState = async () => {

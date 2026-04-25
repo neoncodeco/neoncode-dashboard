@@ -11,7 +11,7 @@ import { Bell, CreditCard, Search, X } from "lucide-react";
 // import DashboardThemeToggle from "@/components/DashboardThemeToggle";
 import UserNotificationsPanel from "@/components/UserNotificationsPanel";
 import { useUserNotifications } from "@/components/UserNotificationsProvider";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import { userDashboardMenuItems } from "@/lib/userDashboardNav";
 import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
 
@@ -23,7 +23,7 @@ const brandFont = Sora({
 export default function UserDashboardTopbar({ theme, toggleTheme }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, userData } = useFirebaseAuth();
+  const { user, userData } = useAppAuth();
   const {
     notifications,
     unseenCount,

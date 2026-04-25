@@ -8,10 +8,10 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 
 export default function BudgetLogsPage() {
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
   const { getCache, setCache } = useAdminDashboardCache();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -1,5 +1,5 @@
 "use client";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import { useState } from "react";
 import { Send, Loader2, Command } from "lucide-react";
 import Swal from "sweetalert2";
@@ -7,7 +7,7 @@ import Swal from "sweetalert2";
 export default function AdminReplyInput({ chatId }) {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
 
   const sendReply = async () => {
     if (!text.trim() || loading) return;

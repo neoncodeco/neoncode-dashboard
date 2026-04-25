@@ -15,7 +15,7 @@ import {
   Loader2
 } from "lucide-react";
 import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import Swal from "sweetalert2";
 
 // --- STATUS UI HELPER ---
@@ -33,7 +33,7 @@ const getStatusClasses = (status) => {
 };
 
 export default function AffiliatePayoutsPage() {
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
   const { getCache, setCache } = useAdminDashboardCache();
 
   const [requests, setRequests] = useState([]);

@@ -3,6 +3,7 @@ import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import { ObjectId } from "mongodb";
 import { normalizeAssignedAccounts } from "@/lib/adAccountRequests";
+import { serializeMongoId } from "@/lib/serializeMongoId";
 import { notifyUserDashboardActivity } from "@/lib/whatsappActivityNotify";
 
 const assertAdmin = async (req) => {
@@ -30,6 +31,7 @@ const buildUpdateData = (payload) => {
     "facebookPage",
     "email",
     "monthlyBudget",
+    "usdToBdtRate",
     "startDate",
     "userUid",
     "userEmail",
@@ -37,8 +39,13 @@ const buildUpdateData = (payload) => {
 
   fields.forEach((k) => {
     if (payload[k] !== undefined) {
-      if (k === "monthlyBudget") {
-        updateData[k] = Number(payload[k] || 0);
+      if (k === "monthlyBudget" || k === "usdToBdtRate") {
+        const raw = payload[k];
+        const n =
+          typeof raw === "string"
+            ? parseFloat(String(raw).replace(/,/g, "").trim(), 10)
+            : Number(raw);
+        updateData[k] = Number.isFinite(n) && n >= 0 ? n : 0;
       } else if (k === "assignedAccounts") {
         updateData[k] = normalizeAssignedAccounts(payload[k], payload);
         if (!updateData.MetaAccountID && updateData[k][0]?.MetaAccountID) {
@@ -66,15 +73,37 @@ export async function PUT(req) {
     const { db } = auth;
 
     const payload = await req.json();
-    const { id } = payload;
+    const id = serializeMongoId(payload.id ?? payload._id);
     if (!id || !ObjectId.isValid(id)) {
       return NextResponse.json({ message: "Invalid or missing ID" }, { status: 400 });
     }
 
-    const updateData = buildUpdateData(payload);
     const existing = await db.collection("adAccountRequests").findOne({ _id: new ObjectId(id) });
     if (!existing) {
       return NextResponse.json({ message: "Request not found in database" }, { status: 404 });
+    }
+
+    const updateData = buildUpdateData(payload);
+    const mergedForSlots = { ...existing, ...updateData };
+
+    const pendingActivationStatus = String(updateData.status ?? payload.status ?? existing.status ?? "").toLowerCase();
+    const metaClean = String(updateData.MetaAccountID ?? payload.MetaAccountID ?? existing.MetaAccountID ?? "").trim();
+
+    const sourceSlots =
+      Array.isArray(updateData.assignedAccounts) && updateData.assignedAccounts.length > 0
+        ? updateData.assignedAccounts
+        : Array.isArray(existing.assignedAccounts) && existing.assignedAccounts.length > 0
+          ? existing.assignedAccounts
+          : null;
+
+    if (sourceSlots?.length) {
+      const slotFallback = {
+        ...mergedForSlots,
+        ...(pendingActivationStatus === "active" && metaClean
+          ? { status: "active", MetaAccountID: metaClean }
+          : {}),
+      };
+      updateData.assignedAccounts = normalizeAssignedAccounts(sourceSlots, slotFallback);
     }
 
     const result = await db.collection("adAccountRequests").findOneAndUpdate(
@@ -137,6 +166,7 @@ export async function POST(req) {
       facebookPage: body.facebookPage || primaryAccount.facebookPage || "",
       email: body.email || primaryAccount.email || "",
       monthlyBudget: Number(body.monthlyBudget || primaryAccount.monthlyBudget || 0),
+      usdToBdtRate: Number(body.usdToBdtRate || primaryAccount.usdToBdtRate || 0),
       startDate: body.startDate || primaryAccount.startDate || "",
       userEmail: body.userEmail || primaryAccount.userEmail || "",
       userUid: body.userUid || primaryAccount.userUid || "",
@@ -171,7 +201,8 @@ export async function DELETE(req) {
     }
     const { db } = auth;
 
-    const { id } = await req.json();
+    const body = await req.json();
+    const id = serializeMongoId(body.id ?? body._id);
     if (!id || !ObjectId.isValid(id)) {
       return NextResponse.json({ message: "Invalid or missing ID" }, { status: 400 });
     }

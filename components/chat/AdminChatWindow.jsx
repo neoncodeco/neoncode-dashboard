@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import ChatMessages from "./ChatMessages";
 import AdminReplyInput from "./AdminReplyInput";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import { User, Circle, ShieldCheck, Loader2 } from "lucide-react";
 
 export default function AdminChatWindow({ chatId, userId }) {
-  const { token, role } = useFirebaseAuth();
+  const { token, role } = useAppAuth();
   const [userInfo, setUserInfo] = useState({ name: "", image: "" });
   const [loading, setLoading] = useState(false);
 

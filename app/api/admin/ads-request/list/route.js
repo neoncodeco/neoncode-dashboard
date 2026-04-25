@@ -35,10 +35,17 @@ export async function GET(req) {
       .sort({ createdAt: -1 }) // newest first
       .toArray();
 
-    return NextResponse.json({
-      ok: true,
-      data: requests,
-    });
+    return NextResponse.json(
+      {
+        ok: true,
+        data: requests,
+      },
+      {
+        headers: {
+          "Cache-Control": "private, no-store, max-age=0, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     return NextResponse.json(
       {

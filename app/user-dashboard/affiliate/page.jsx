@@ -14,7 +14,7 @@ import {
   MessageCircle,
   Facebook,
 } from "lucide-react";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import WithdrawModal from "@/components/WithdrawModal";
 
 /* ================= CONFIG ================= */
@@ -28,7 +28,7 @@ const panelClass =
   "dashboard-subpanel overflow-hidden rounded-[28px] border border-sky-300/35 bg-[linear-gradient(135deg,rgba(115,200,255,0.24),rgba(183,223,105,0.12)_52%,rgba(255,255,255,0.94))] p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:p-8";
 
 export default function AffiliatePage() {
-  const { userData } = useFirebaseAuth();
+  const { userData } = useAppAuth();
   const [copied, setCopied] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
 

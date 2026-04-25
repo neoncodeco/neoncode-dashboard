@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { FcGoogle } from "react-icons/fc";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import AuthTurnstile from "@/components/AuthTurnstile";
 import useFingerprint from "@/hooks/useFingerprint";
 import { ArrowRight, Check, Eye, EyeOff, Loader2, LockKeyhole, Mail, MoveRight, Ticket, UserRound } from "lucide-react";
@@ -15,7 +15,7 @@ const REGISTER_STEPS = ["Create profile", "Set access", "Start workspace"];
 const normalizeTextValue = (value) => (typeof value === "string" ? value : "");
 
 export default function RegisterClient() {
-  const { signup, googleLogin } = useFirebaseAuth();
+  const { signup, googleLogin } = useAppAuth();
   const { getFingerprint, loadingFingerprint } = useFingerprint();
   const router = useRouter();
   const searchParams = useSearchParams();

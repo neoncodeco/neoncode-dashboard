@@ -42,11 +42,18 @@ export async function GET(req) {
       );
     });
 
-    return NextResponse.json({
-      ok: true,
-      count: requests.length,
-      data: requests,
-    });
+    return NextResponse.json(
+      {
+        ok: true,
+        count: requests.length,
+        data: requests,
+      },
+      {
+        headers: {
+          "Cache-Control": "private, no-store, max-age=0, must-revalidate",
+        },
+      }
+    );
   } catch (err) {
     return NextResponse.json(
       { message: "Server error", error: err.message },

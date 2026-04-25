@@ -1,14 +1,14 @@
-﻿"use client";
+"use client";
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import Loader from "@/components/Loader";
-import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
+import { getDashboardPathByRole } from "@/lib/roleRouting";
 
 export default function Home() {
   const router = useRouter();
-  const { user, role, authReady, loadingRole } = useFirebaseAuth();
+  const { user, role, authReady, loadingRole } = useAppAuth();
 
   useEffect(() => {
     if (!authReady) return;
@@ -20,17 +20,9 @@ export default function Home() {
 
     if (loadingRole || !role) return;
 
-    if (role === "admin" || role === "manager") {
-      router.replace("/admin-dashboard/overview");
-      return;
-    }
-
-    if (role === "team_member") {
-      router.replace("/team-member-dashboard");
-      return;
-    }
-
-    router.replace(userDashboardRoutes.dashboard);
+    const destination = getDashboardPathByRole(role);
+    router.prefetch(destination);
+    router.replace(destination);
   }, [authReady, user, role, loadingRole, router]);
 
   return <Loader />;

@@ -6,12 +6,12 @@ import DashboardMouseGlow from "@/components/DashboardMouseGlow";
 import Loader from "@/components/Loader";
 import TeamMemberSidebar from "@/components/TeamMemberSidebar";
 import useDashboardTheme from "@/hooks/useDashboardTheme";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
-import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
+import useAppAuth from "@/hooks/useAppAuth";
+import { getDashboardPathByRole } from "@/lib/roleRouting";
 
 export default function TeamMemberLayout({ children }) {
   const router = useRouter();
-  const { authReady, loadingRole, user, role } = useFirebaseAuth();
+  const { authReady, loadingRole, user, role } = useAppAuth();
   const { theme, toggleTheme } = useDashboardTheme();
 
   useEffect(() => {
@@ -23,13 +23,7 @@ export default function TeamMemberLayout({ children }) {
     }
 
     if (role === "team_member") return;
-
-    if (role === "admin" || role === "manager") {
-      router.replace("/admin-dashboard/overview");
-      return;
-    }
-
-    router.replace(userDashboardRoutes.dashboard);
+    router.replace(getDashboardPathByRole(role));
   }, [authReady, loadingRole, role, router, user]);
 
   if (!authReady || loadingRole || !user || role !== "team_member") {

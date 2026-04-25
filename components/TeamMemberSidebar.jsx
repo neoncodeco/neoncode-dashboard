@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ExternalLink, LogOut, Menu, QrCode, UserCircle2, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import DashboardThemeToggle from "@/components/DashboardThemeToggle";
 
 const menuItems = [
@@ -20,7 +20,7 @@ export default function TeamMemberSidebar({ theme, toggleTheme }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const { logout, userData } = useFirebaseAuth();
+  const { logout, userData } = useAppAuth();
 
   useEffect(() => {
     if (!isOpen) return;

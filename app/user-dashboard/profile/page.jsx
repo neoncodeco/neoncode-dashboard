@@ -4,14 +4,14 @@ import Link from "next/link";
 import {
   Camera, User, Mail, Phone, Save, Loader2,
   CheckCircle, Shield, BadgeCheck,
-  ArrowRight, Globe, CreditCard, History, LogOut, MessageSquareText, Sparkles,
+  ArrowRight, Globe, History, LogOut, MessageSquareText, Sparkles,
 } from "lucide-react";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import Swal from "sweetalert2";
 import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
 
 export default function FullProfilePage() {
-  const { userData, token, refreshUser, logout } = useFirebaseAuth();
+  const { userData, token, refreshUser, logout } = useAppAuth();
   const [loading, setLoading] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -493,66 +493,78 @@ const handleVerifyOtp = async () => {
 
             <section
               id="whatsapp-verify"
-              className="dashboard-subpanel scroll-mt-24 overflow-hidden rounded-[28px] border p-0"
+              className="scroll-mt-24 overflow-hidden rounded-[28px] border border-emerald-300/35 bg-[linear-gradient(135deg,rgba(183,223,105,0.18),rgba(115,200,255,0.12)_55%,rgba(255,255,255,0.95))] shadow-[0_18px_50px_rgba(15,23,42,0.09)]"
             >
-              <div className="flex flex-col gap-6 p-5 sm:p-6 md:p-7">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div className="max-w-2xl">
-                    <span className="dashboard-chip inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em]">
-                      <Sparkles size={13} />
-                      Secure Verification
-                    </span>
-                    <h3 className="dashboard-text-strong mt-3 flex items-center gap-2 text-xl font-black">
-                      <Phone size={20} className="text-green-600" /> Verify Your Account Number
-                    </h3>
-                    <p className="dashboard-text-muted mt-2 text-sm leading-6">
-                      To ensure the security of your account and enable seamless transactions, please verify your WhatsApp number by receiving a one-time password (OTP). This verification step helps us confirm your identity and protect your account from unauthorized access. After verification, important dashboard activity (such as payments and support updates) can be sent to this WhatsApp number.
-                    </p>
+              {/* Header */}
+              <div className="relative overflow-hidden border-b border-emerald-200/40 px-4 py-4 sm:px-6 sm:py-5">
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[radial-gradient(ellipse_at_top_left,rgba(183,223,105,0.28),transparent_60%)]" />
+                <div className="relative flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                  <div className="flex items-start gap-2.5 sm:gap-3.5">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] border border-emerald-200/70 bg-[linear-gradient(135deg,rgba(183,223,105,0.5),rgba(255,255,255,0.9))] shadow-[0_8px_20px_rgba(155,196,79,0.2)]">
+                      <Shield size={20} className="text-emerald-700" />
+                    </div>
+                    <div>
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white">
+                        <Sparkles size={10} />
+                        Secure Verification
+                      </span>
+                      <h3 className="dashboard-text-strong mt-1 text-xl font-black tracking-tight sm:mt-1.5 sm:text-2xl">
+                        Verify Your Account Number
+                      </h3>
+                      <p className="dashboard-text-muted mt-0.5 max-w-xl text-sm leading-snug sm:mt-1 sm:leading-6">
+                        Verify your WhatsApp number via OTP to confirm your identity and receive important dashboard notifications.
+                      </p>
+                    </div>
                   </div>
-                  <span className={`inline-flex items-center gap-2 self-start rounded-full px-4 py-2 text-xs font-bold ${isPhoneVerified ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
-                    <CheckCircle size={14} />
+                  <span className={`inline-flex shrink-0 items-center gap-2 self-start rounded-full border px-3.5 py-1.5 text-xs font-black uppercase tracking-[0.12em] ${
+                    isPhoneVerified
+                      ? "border-emerald-300/60 bg-emerald-100/80 text-emerald-700"
+                      : "border-amber-300/60 bg-amber-100/80 text-amber-700"
+                  }`}>
+                    <CheckCircle size={13} />
                     {isPhoneVerified ? "Verified" : "Not Verified"}
                   </span>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,0.9fr)]">
-                  <div className="dashboard-panel min-w-0 rounded-[24px] border p-4 sm:p-5">
-                    <div className="mb-4 flex items-center gap-3">
-                      <span className="dashboard-accent-surface flex h-11 w-11 items-center justify-center rounded-2xl">
-                        <MessageSquareText size={18} />
-                      </span>
+              {/* Body */}
+              <div className="flex flex-col gap-3 p-4 sm:gap-4 sm:p-6">
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,0.9fr)] xl:gap-4">
+                  {/* WhatsApp number card */}
+                  <div className="rounded-[20px] border border-emerald-200/50 bg-white/80 p-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:p-5">
+                    <div className="mb-3 flex items-center gap-2.5 sm:mb-4 sm:gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-200 bg-[linear-gradient(135deg,rgba(183,223,105,0.4),rgba(255,255,255,0.95))] shadow-sm">
+                        <MessageSquareText size={17} className="text-emerald-700" />
+                      </div>
                       <div>
-                        <p className="dashboard-text-strong text-sm font-black uppercase tracking-[0.16em]">WhatsApp Number</p>
-                        <p className="dashboard-text-muted text-xs">Use format `8801XXXXXXXXX`</p>
+                        <p className="dashboard-text-strong text-sm font-black tracking-tight">WhatsApp Number</p>
+                        <p className="dashboard-text-muted text-[11px]">Format: 8801XXXXXXXXX</p>
                       </div>
                     </div>
 
-                    <label className="dashboard-text-faint ml-1 text-[11px] font-black uppercase tracking-[0.14em]">Phone Number</label>
-                    <div className="dashboard-search mt-2 flex items-center gap-2 rounded-[18px] px-3 py-2.5">
-                      <span className="dashboard-chip rounded-xl px-3 py-1.5 text-xs font-black">+880</span>
+                    <label className="dashboard-text-faint ml-1 text-[10px] font-black uppercase tracking-[0.16em]">Phone Number</label>
+                    <div className="mt-1.5 flex items-center gap-1.5 rounded-[16px] border border-emerald-200/60 bg-[rgba(183,223,105,0.08)] px-3 py-2 sm:mt-2 sm:gap-2 sm:py-2.5 focus-within:border-emerald-400/70 focus-within:ring-2 focus-within:ring-emerald-200/40 transition">
+                      <span className="inline-flex items-center rounded-xl border border-emerald-200/60 bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">+880</span>
                       <input
                         type="text"
                         placeholder="1XXXXXXXXX"
                         value={displayedWhatsappNumber}
                         disabled={isPhoneVerified || isOtpSent}
                         onChange={(e) => {
-                              const rawValue = e.target.value.replace(/\D/g, "").slice(0, 10);
-
-                              setHasPendingOtp(false);
-                              setIsLocallyPhoneVerified(false);
-                              setVerificationForm((prev) => ({
-                                ...prev,
-                                whatsappNumber: rawValue ? `880${rawValue}` : "",
-                                code: "", 
-                              }));
-
-                              if (otpStatus.message) {
-                                setOtpStatus({ type: "", message: "" });
-                              }
-                            }}
-                        className="h-9 w-full border-0 bg-transparent p-0 text-sm font-semibold outline-none ring-0 focus:border-0 focus:outline-none focus:ring-0"
+                          const rawValue = e.target.value.replace(/\D/g, "").slice(0, 10);
+                          setHasPendingOtp(false);
+                          setIsLocallyPhoneVerified(false);
+                          setVerificationForm((prev) => ({
+                            ...prev,
+                            whatsappNumber: rawValue ? `880${rawValue}` : "",
+                            code: "",
+                          }));
+                          if (otpStatus.message) setOtpStatus({ type: "", message: "" });
+                        }}
+                        className="h-9 w-full border-0 bg-transparent p-0 text-sm font-semibold outline-none ring-0 focus:border-0 focus:outline-none focus:ring-0 disabled:opacity-60"
                       />
                     </div>
+
                     {hasVerifiedPhone && !isEditingVerifiedPhone ? (
                       <button
                         type="button"
@@ -561,31 +573,29 @@ const handleVerifyOtp = async () => {
                           setHasPendingOtp(false);
                           setIsLocallyPhoneVerified(false);
                           setOtpStatus({ type: "", message: "" });
-                          setVerificationForm((prev) => ({
-                            ...prev,
-                            code: "",
-                          }));
+                          setVerificationForm((prev) => ({ ...prev, code: "" }));
                         }}
-                        className="dashboard-muted-button mt-3 inline-flex min-h-11 items-center justify-center rounded-2xl border px-4 py-2 text-sm font-bold transition"
+                        className="dashboard-muted-button mt-2 inline-flex min-h-10 items-center justify-center rounded-2xl border px-4 py-2 text-sm font-bold transition sm:mt-3"
                       >
                         Edit Number
                       </button>
                     ) : null}
                   </div>
 
+                  {/* OTP card */}
                   {!isPhoneVerified ? (
-                    <div className="dashboard-panel min-w-0 rounded-[24px] border p-4 sm:p-5">
-                      <div className="mb-4 flex items-center gap-3">
-                        <span className="dashboard-muted-button flex h-11 w-11 items-center justify-center rounded-2xl">
-                          <CheckCircle size={18} />
-                        </span>
+                    <div className="rounded-[20px] border border-sky-200/50 bg-white/80 p-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:p-5">
+                      <div className="mb-3 flex items-center gap-2.5 sm:mb-4 sm:gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-sky-200 bg-[linear-gradient(135deg,rgba(115,200,255,0.3),rgba(255,255,255,0.95))] shadow-sm">
+                          <BadgeCheck size={17} className="text-sky-600" />
+                        </div>
                         <div>
-                          <p className="dashboard-text-strong text-sm font-black uppercase tracking-[0.16em]">One-Time Password</p>
-                          <p className="dashboard-text-muted text-xs">Enter the 6-digit security code</p>
+                          <p className="dashboard-text-strong text-sm font-black tracking-tight">One-Time Password</p>
+                          <p className="dashboard-text-muted text-[11px]">6-digit security code</p>
                         </div>
                       </div>
 
-                      <label className="dashboard-text-faint ml-1 text-[11px] font-black uppercase tracking-[0.14em]">OTP Code</label>
+                      <label className="dashboard-text-faint ml-1 text-[10px] font-black uppercase tracking-[0.16em]">OTP Code</label>
                       <input
                         type="text"
                         inputMode="numeric"
@@ -596,38 +606,46 @@ const handleVerifyOtp = async () => {
                           ...prev,
                           code: e.target.value.replace(/\D/g, "").slice(0, 6),
                         }))}
-                        className="dashboard-text-strong mt-2 w-full rounded-[22px] border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] px-5 py-4 text-center text-base font-black tracking-[0.24em] outline-none transition focus:border-[var(--dashboard-accent)] sm:text-lg sm:tracking-[0.35em]"
+                        className="mt-1.5 w-full rounded-[16px] border border-sky-200/60 bg-[rgba(115,200,255,0.07)] px-4 py-3 text-center text-base font-black tracking-[0.3em] text-slate-900 outline-none transition focus:border-sky-400/60 focus:ring-2 focus:ring-sky-200/40 sm:mt-2 sm:px-5 sm:py-3.5 sm:text-lg sm:tracking-[0.4em]"
                       />
                     </div>
                   ) : null}
                 </div>
 
+                {/* Action buttons */}
                 {!isPhoneVerified ? (
-                  <div className="flex flex-col gap-3 md:flex-row">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                     <button
                       type="button"
                       onClick={handleSendOtp}
-                    disabled={otpLoading || verifyingOtp || isOtpSent || isPhoneVerified}
-                      className="dashboard-accent-surface flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl px-6 py-3 font-bold transition disabled:opacity-60"
+                      disabled={otpLoading || verifyingOtp || isOtpSent || isPhoneVerified}
+                      className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-emerald-300/60 bg-[linear-gradient(135deg,rgba(183,223,105,0.55),rgba(183,223,105,0.35))] px-6 py-3 text-sm font-black text-emerald-800 shadow-[0_8px_20px_rgba(155,196,79,0.22)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {otpLoading ? <Loader2 size={18} className="animate-spin" /> : <Phone size={18} />}
-                      
+                      {otpLoading ? <Loader2 size={17} className="animate-spin" /> : <Phone size={17} />}
                       Send Code
                     </button>
                     <button
                       type="button"
                       onClick={handleVerifyOtp}
-                 disabled={otpLoading || verifyingOtp || !isOtpSent || isPhoneVerified}
-                      className="dashboard-muted-button flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl px-6 py-3 font-bold transition disabled:opacity-60"
+                      disabled={otpLoading || verifyingOtp || !isOtpSent || isPhoneVerified}
+                      className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-sky-500/70 bg-[linear-gradient(135deg,rgba(14,116,144,0.95),rgba(56,189,248,0.92))] px-6 py-3 text-sm font-black text-white shadow-[0_10px_24px_rgba(14,116,144,0.35)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none"
                     >
-                      {verifyingOtp ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
+                      {verifyingOtp ? <Loader2 size={17} className="animate-spin" /> : <CheckCircle size={17} />}
                       Verify Code
                     </button>
                   </div>
                 ) : null}
 
+                {/* Status message */}
                 {otpStatus.message ? (
-                  <div className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${otpStatus.type === "success" ? "border-green-200 bg-green-50 text-green-700" : "border-red-200 bg-red-50 text-red-600"}`}>
+                  <div className={`flex items-start gap-2.5 rounded-2xl border px-4 py-3 text-sm font-semibold ${
+                    otpStatus.type === "success"
+                      ? "border-emerald-200/60 bg-emerald-50/80 text-emerald-700"
+                      : "border-red-200/60 bg-red-50/80 text-red-600"
+                  }`}>
+                    {otpStatus.type === "success"
+                      ? <CheckCircle size={16} className="mt-0.5 shrink-0" />
+                      : <Shield size={16} className="mt-0.5 shrink-0" />}
                     {otpStatus.message}
                   </div>
                 ) : null}
@@ -712,33 +730,6 @@ const handleVerifyOtp = async () => {
                   {otpStatus.message}
                 </p>
               ) : null}
-            </section>
-
-            <section>
-              <h3 className="dashboard-text-strong mb-6 flex items-center gap-2 text-lg font-bold">
-                <CreditCard size={20} className="text-pink-600" /> Payout Methods
-              </h3>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {Object.keys(paymentMethods).length > 0 ? (
-                  Object.keys(paymentMethods).map((key) => (
-                    <div key={key} className="space-y-2">
-                      <label className="dashboard-text-faint ml-1 text-xs font-bold uppercase">{key} Number</label>
-                      <div className="relative">
-                        <span className="absolute left-5 top-1/2 -translate-y-1/2 text-xs font-bold uppercase text-pink-500">{key}</span>
-                        <input
-                          type="text"
-                          placeholder={`Enter ${key} number`}
-                          value={paymentMethods[key]?.number || ""}
-                          onChange={(e) => handlePaymentChange(key, e.target.value)}
-                          className="dashboard-text-strong w-full rounded-2xl border border-[var(--dashboard-input-border)] bg-[var(--dashboard-input-bg)] py-3.5 pl-20 pr-5 outline-none transition focus:border-[var(--dashboard-accent)]"
-                        />
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm italic text-gray-400">No payment methods found in database.</p>
-                )}
-              </div>
             </section>
 
             <div className="flex flex-col items-center justify-between gap-4 border-t pt-8 md:flex-row">

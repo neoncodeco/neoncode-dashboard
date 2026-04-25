@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { signIn } from "next-auth/react";
 import { ArrowRight, Eye, EyeOff, Github, Loader2, LockKeyhole, Mail, MoveRight } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import AuthTurnstile from "@/components/AuthTurnstile";
 import useFingerprint from "@/hooks/useFingerprint";
 
@@ -16,7 +16,7 @@ const LOGIN_STEPS = ["Enter credentials", "Verify access", "Open dashboard"];
 const normalizeTextValue = (value) => (typeof value === "string" ? value : "");
 
 export default function LoginPageContent() {
-  const { login, googleLogin } = useFirebaseAuth();
+  const { login, googleLogin } = useAppAuth();
   const { getFingerprint, loadingFingerprint } = useFingerprint();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -92,7 +92,7 @@ export default function LoginPageContent() {
     } catch {
       setTurnstileToken("");
       turnstileRef.current?.reset();
-      setError("Email or password matched hoyni. Please try again.");
+      setError("Email or password does not match. Please try again.");
     } finally {
       setLoading(false);
     }

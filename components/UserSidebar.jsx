@@ -8,7 +8,7 @@ import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { Ellipsis, LogOut } from "lucide-react";
 // import DashboardThemeToggle from "@/components/DashboardThemeToggle";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import {
   userDashboardAccountNavItems,
   userDashboardMainNavItems,
@@ -66,7 +66,7 @@ const UserSidebar = ({ theme, toggleTheme }) => {
   const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const { user, logout } = useFirebaseAuth();
+  const { user, logout } = useAppAuth();
   const portalRoot = typeof document !== "undefined" ? document.body : null;
   useEffect(() => {
     if (!profileMenuOpen) return undefined;

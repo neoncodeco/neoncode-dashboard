@@ -1,6 +1,6 @@
 "use client";
 
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import { useCallback, useEffect, useState } from "react";
 import { Search, MessageSquare, User as UserIcon, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -9,7 +9,7 @@ export default function AdminChatInbox({ onSelect, selectedChatId }) {
   const [chats, setChats] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
 
   // ১. চ্যাট লিস্ট ফেচ করা (যেখানে এখন userName এবং userImage আসবে)
   const fetchChats = useCallback(async () => {

@@ -3,10 +3,10 @@
 import { useState } from "react";
 import ImageUploader from "../ImageUploader";
 import { ImagePlus, Loader2, Paperclip, SendHorizontal, X } from "lucide-react";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 
 export default function ChatInput({ chatId, preferredLanguage = "auto", variant = "dark" }) {
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
   const [text, setText] = useState("");
   const [image, setImage] = useState(null);
   const [sending, setSending] = useState(false);

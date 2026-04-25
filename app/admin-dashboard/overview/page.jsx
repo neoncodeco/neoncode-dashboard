@@ -22,11 +22,11 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import Link from "next/link";
 
 export default function AdminDashboard() {
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
   const { getCache, setCache } = useAdminDashboardCache();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);

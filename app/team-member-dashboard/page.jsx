@@ -30,7 +30,7 @@ import {
   FaWhatsapp,
   FaYoutube,
 } from "react-icons/fa";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 
 const SOCIAL_FIELDS = [
   { key: "website", label: "Website", placeholder: "https://yourwebsite.com", icon: FaGlobe },
@@ -93,7 +93,7 @@ function normalizeTimeline(items) {
 }
 
 export default function TeamMemberDashboardPage() {
-  const { token, userData, refreshUser } = useFirebaseAuth();
+  const { token, userData, refreshUser } = useAppAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);

@@ -3,17 +3,18 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
 
-const FirebaseAuthContext = createContext(null);
+const AppAuthContext = createContext(null);
 const normalizeTextValue = (value) => (typeof value === "string" ? value : "");
 
-function useProvideFirebaseAuth() {
+function useProvideAppAuth() {
   const { data: session, status, update } = useSession();
 
   const [token, setToken] = useState("");
-  const [role, setRole] = useState(null);
+  /** Role from DB only; merged with JWT below for instant routing */
+  const [roleFromApi, setRoleFromApi] = useState(null);
   const [userData, setUserData] = useState(null);
-  const [loadingRole, setLoadingRole] = useState(true);
   const userRequestRef = useRef(null);
+  const latestUidRef = useRef(null);
 
   const authReady = status !== "loading";
   const loading = status === "loading";
@@ -29,11 +30,26 @@ function useProvideFirebaseAuth() {
     };
   }, [session?.user]);
 
+  latestUidRef.current = user?.uid ?? null;
+
+  const jwtRole = useMemo(() => {
+    const r = session?.user?.role;
+    if (r == null || r === "") return null;
+    return typeof r === "string" ? r : String(r);
+  }, [session?.user?.role]);
+
+  const role = useMemo(() => roleFromApi ?? jwtRole ?? null, [roleFromApi, jwtRole]);
+
+  const loadingRole = useMemo(
+    () => status === "loading" || (!!user && role == null),
+    [status, user, role]
+  );
+
   const refreshUser = useCallback(async () => {
     if (!user?.uid) {
       userRequestRef.current = null;
       setUserData(null);
-      setLoadingRole(false);
+      setRoleFromApi(null);
       return null;
     }
 
@@ -41,28 +57,34 @@ function useProvideFirebaseAuth() {
       return userRequestRef.current;
     }
 
-    setLoadingRole(true);
+    const requestUid = user.uid;
 
     const request = (async () => {
       try {
-        const res = await fetch(`/api/users/${user.uid}`, { cache: "no-store" });
+        const res = await fetch(`/api/users/${requestUid}`, { cache: "no-store" });
 
         if (!res.ok) {
           throw new Error("Failed to fetch user");
         }
 
         const data = await res.json();
+        if (latestUidRef.current !== requestUid) {
+          return;
+        }
+
         setUserData(data.data);
-        setRole(data?.data?.role || session?.user?.role || "user");
+        setRoleFromApi(data?.data?.role || session?.user?.role || "user");
         setToken("session-auth");
       } catch (e) {
         console.error("AUTH ERROR:", e);
-        setRole(null);
+        if (latestUidRef.current !== requestUid) {
+          return;
+        }
         setUserData(null);
         setToken("");
+        setRoleFromApi(null);
       } finally {
         userRequestRef.current = null;
-        setLoadingRole(false);
       }
     })();
 
@@ -76,14 +98,13 @@ function useProvideFirebaseAuth() {
     if (!user) {
       userRequestRef.current = null;
       setToken("");
-      setRole(null);
+      setRoleFromApi(null);
       setUserData(null);
-      setLoadingRole(false);
       return;
     }
 
     refreshUser();
-  }, [authReady, refreshUser, user]);
+  }, [authReady, refreshUser, user?.uid]);
 
   const googleLogin = async () => {
     const res = await signIn("google", {
@@ -145,7 +166,7 @@ function useProvideFirebaseAuth() {
   const logout = async (callbackUrl = "/login") => {
     userRequestRef.current = null;
     setToken("");
-    setRole(null);
+    setRoleFromApi(null);
     setUserData(null);
     try {
       await signOut({ redirect: true, callbackUrl });
@@ -174,18 +195,20 @@ function useProvideFirebaseAuth() {
   };
 }
 
-export function FirebaseAuthProvider({ children }) {
-  const value = useProvideFirebaseAuth();
+export function AppAuthProvider({ children }) {
+  const value = useProvideAppAuth();
 
-  return <FirebaseAuthContext.Provider value={value}>{children}</FirebaseAuthContext.Provider>;
+  return <AppAuthContext.Provider value={value}>{children}</AppAuthContext.Provider>;
 }
 
-export default function useFirebaseAuth() {
-  const context = useContext(FirebaseAuthContext);
+export function useAppAuth() {
+  const context = useContext(AppAuthContext);
 
   if (!context) {
-    throw new Error("useFirebaseAuth must be used within FirebaseAuthProvider");
+    throw new Error("useAppAuth must be used within AppAuthProvider");
   }
 
   return context;
 }
+
+export default useAppAuth;

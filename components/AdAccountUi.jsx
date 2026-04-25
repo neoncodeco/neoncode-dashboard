@@ -10,11 +10,10 @@ import {
   ChevronDown,
   Building2,
   AlertCircle,
-  Sparkles,
   ArrowUpRight,
   ShieldCheck,
 } from "lucide-react";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import IncreaseBudgetModal from "./IncreaseBudgetModal";
 import TopupModal from "./TopupModal";
 import CurrencyAmount from "./CurrencyAmount";
@@ -50,24 +49,57 @@ const getCardTone = (stateMeta, hasError, canFetchBalance) => {
   };
 };
 
+const activeAdMeta = {
+  label: "Active",
+  className: "bg-[var(--dashboard-success-soft)] text-[var(--dashboard-accent)] ring-1 ring-[var(--dashboard-frame-border)]",
+};
+
+const disabledAdMeta = {
+  label: "Disabled",
+  className: "bg-[var(--dashboard-danger-soft)] text-[#ff8b8b] ring-1 ring-[var(--dashboard-frame-border)]",
+};
+
+const mutedAdMeta = (label) => ({
+  label,
+  className: "bg-[var(--dashboard-panel-soft)] dashboard-text-muted ring-1 ring-[var(--dashboard-frame-border)]",
+});
+
+/** Meta Ad Account `account_status` (numeric or string); Graph sometimes returns strings. */
 const getAdStatusMeta = (status) => {
-  switch (status) {
-    case 1:
-      return {
-        label: "Active",
-        className: "bg-[var(--dashboard-success-soft)] text-[var(--dashboard-accent)] ring-1 ring-[var(--dashboard-frame-border)]",
-      };
-    case 2:
-      return {
-        label: "Disabled",
-        className: "bg-[var(--dashboard-danger-soft)] text-[#ff8b8b] ring-1 ring-[var(--dashboard-frame-border)]",
-      };
-    default:
-      return {
-        label: "Unknown",
-        className: "bg-[var(--dashboard-panel-soft)] dashboard-text-muted ring-1 ring-[var(--dashboard-frame-border)]",
-      };
+  if (status === null || status === undefined || status === "") {
+    return activeAdMeta;
   }
+
+  const n = Number(typeof status === "string" ? String(status).trim() : status);
+  if (Number.isFinite(n)) {
+    switch (n) {
+      case 1:
+        return activeAdMeta;
+      case 2:
+        return disabledAdMeta;
+      case 3:
+        // Meta "UNSETTLED" often appears while billing syncs; balance still loads — avoid confusing second badge.
+        return activeAdMeta;
+      case 7:
+        return mutedAdMeta("Risk review");
+      case 8:
+        return mutedAdMeta("Pending settlement");
+      case 9:
+        return mutedAdMeta("Grace period");
+      case 100:
+        return mutedAdMeta("Pending closure");
+      case 101:
+        return mutedAdMeta("Closed");
+      default:
+        return activeAdMeta;
+    }
+  }
+
+  const s = String(status).trim().toUpperCase();
+  if (s === "ACTIVE" || s === "1") return activeAdMeta;
+  if (s === "DISABLED" || s === "2") return disabledAdMeta;
+
+  return activeAdMeta;
 };
 
 const normalizeAdAccountId = (value) => String(value || "").replace(/^act_/, "").trim();
@@ -144,8 +176,51 @@ const getAccountState = (account, balance) => {
   };
 };
 
+function AdAccountTableMetricCell({ label, value, valueTone, balance, canFetchBalance, hasError, usdRate }) {
+  const showUnavailable = hasError || !canFetchBalance;
+  const showLoading = canFetchBalance && balance?.loading;
+
+  return (
+    <td className="align-top border-b border-white/5 px-3 py-3 sm:px-4">
+      <p className="dashboard-text-faint mb-1 text-[9px] font-bold uppercase tracking-[0.14em]">{label}</p>
+      {showLoading ? (
+        <div className="space-y-2 pt-0.5">
+          <div className="h-4 w-20 animate-pulse rounded bg-[var(--dashboard-frame-border)]" />
+          <div className="h-3 w-16 animate-pulse rounded bg-[var(--dashboard-panel-soft)]" />
+        </div>
+      ) : showUnavailable ? (
+        <div>
+          <p className="dashboard-text-strong text-sm font-black">Unavailable</p>
+          <p className="dashboard-text-muted mt-0.5 max-w-[10rem] text-[10px] leading-snug">
+            {!canFetchBalance
+              ? "Awaiting valid Meta setup"
+              : balance?.readableError || balance?.error || "Live Meta balance unavailable"}
+          </p>
+        </div>
+      ) : (
+        <div>
+          <p
+            className={`text-sm font-black leading-tight sm:text-base ${
+              valueTone === "rose" ? "text-rose-400" : valueTone === "emerald" ? "text-emerald-400" : "dashboard-text-strong"
+            }`}
+          >
+            {formatUsd(value)}
+          </p>
+          <CurrencyAmount
+            value={value}
+            usdToBdtRate={usdRate}
+            primaryClassName="hidden"
+            secondaryClassName="dashboard-text-muted mt-0.5 text-[10px] font-semibold sm:text-[11px]"
+            secondaryPrefix=""
+          />
+        </div>
+      )}
+    </td>
+  );
+}
+
 export default function AdAccountUi({ onRequestNewAccount }) {
-  const { token, userData, user } = useFirebaseAuth();
+  const { token, userData, user } = useAppAuth();
   const metaAdsConfig = userData?.metaAdsConfig || {};
   const usdRate = resolveUsdToBdtRate(userData?.currencyConfig?.usdToBdtRate ?? metaAdsConfig.usdRate);
   const cacheKey = user?.uid || "anonymous";
@@ -173,6 +248,21 @@ export default function AdAccountUi({ onRequestNewAccount }) {
     oldLimit: null,
   });
   const [topupModal, setTopupModal] = useState(false);
+
+  const assignedUsdToBdtRate = useMemo(() => {
+    for (const acc of adAccounts) {
+      if (!isFetchableMetaAccount(acc)) continue;
+      const n = Number(acc?.usdToBdtRate);
+      if (Number.isFinite(n) && n > 0) return n;
+    }
+    for (const acc of adAccounts) {
+      const n = Number(acc?.usdToBdtRate);
+      if (Number.isFinite(n) && n > 0) return n;
+    }
+    return 0;
+  }, [adAccounts]);
+
+  const displayBdtConversionRate = assignedUsdToBdtRate > 0 ? assignedUsdToBdtRate : usdRate;
 
   const handleRequestNewAccount = useCallback(() => {
     if (typeof onRequestNewAccount === "function") {
@@ -222,6 +312,7 @@ export default function AdAccountUi({ onRequestNewAccount }) {
       setListError("");
       const res = await fetch("/api/ads-request/list", {
         headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
       });
       const json = await res.json();
       if (!res.ok || !json.ok) {
@@ -305,6 +396,7 @@ export default function AdAccountUi({ onRequestNewAccount }) {
     try {
       const res = await fetch("/api/ads-request/list", {
         headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
       });
       const json = await res.json();
       if (!res.ok || !json.ok) {
@@ -478,7 +570,11 @@ export default function AdAccountUi({ onRequestNewAccount }) {
         )}
 
         <div className="space-y-6">
-          <MetaSpendingOverview className="p-4 sm:p-6" />
+          <MetaSpendingOverview
+            className="p-4 sm:p-6"
+            assignedUsdToBdtRate={assignedUsdToBdtRate}
+            profileUsdToBdtRate={userData?.currencyConfig?.usdToBdtRate ?? metaAdsConfig.usdRate}
+          />
 
           <section className="rounded-[2rem]">
             <div className="px-1 py-1">
@@ -538,187 +634,188 @@ export default function AdAccountUi({ onRequestNewAccount }) {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
-                  {filteredAccounts.map((account, i) => {
-                    const balance = balances[account.MetaAccountID];
-                    const canFetchBalance = isFetchableMetaAccount(account);
-                    const hasError = Boolean(balance?.error);
-                    const stateMeta = getAccountState(account, balance);
-                    const showIncrease = allowBudgetIncrease && (userData?.walletBalance || 0) > 0;
-                    const showTopup = allowTopupAction && (userData?.walletBalance || 0) === 0;
+                <div className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.06),rgba(232,250,218,0.08)_40%,rgba(226,245,255,0.08))] shadow-[0_12px_32px_rgba(0,0,0,0.06)]">
+                  <p className="dashboard-text-muted border-b border-white/10 px-3 py-2 text-[11px] sm:hidden">
+                    Swipe horizontally to see all columns.
+                  </p>
+                  <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+                    <table className="w-full min-w-[56rem] border-collapse text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-white/10 bg-[rgba(255,255,255,0.07)]">
+                          <th
+                            scope="col"
+                            className="sticky left-0 z-[1] whitespace-nowrap bg-[rgba(248,252,246,0.96)] px-3 py-3 text-[10px] font-black uppercase tracking-[0.14em] dashboard-text-faint backdrop-blur-sm sm:px-4 lg:static lg:z-auto lg:bg-transparent lg:backdrop-blur-none"
+                          >
+                            Account
+                          </th>
+                          <th scope="col" className="whitespace-nowrap px-3 py-3 text-[10px] font-black uppercase tracking-[0.14em] dashboard-text-faint sm:px-4">
+                            Status
+                          </th>
+                          <th scope="col" className="whitespace-nowrap px-3 py-3 text-[10px] font-black uppercase tracking-[0.14em] dashboard-text-faint sm:px-4">
+                            Spend cap
+                          </th>
+                          <th scope="col" className="whitespace-nowrap px-3 py-3 text-[10px] font-black uppercase tracking-[0.14em] dashboard-text-faint sm:px-4">
+                            Spent
+                          </th>
+                          <th scope="col" className="whitespace-nowrap px-3 py-3 text-[10px] font-black uppercase tracking-[0.14em] dashboard-text-faint sm:px-4">
+                            Remaining
+                          </th>
+                          <th scope="col" className="min-w-[8rem] px-3 py-3 text-[10px] font-black uppercase tracking-[0.14em] dashboard-text-faint sm:px-4">
+                            Note
+                          </th>
+                          <th scope="col" className="whitespace-nowrap px-3 py-3 text-right text-[10px] font-black uppercase tracking-[0.14em] dashboard-text-faint sm:px-4">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredAccounts.map((account, i) => {
+                          const balance = balances[account.MetaAccountID];
+                          const canFetchBalance = isFetchableMetaAccount(account);
+                          const hasError = Boolean(balance?.error);
+                          const stateMeta = getAccountState(account, balance);
+                          const showIncrease = allowBudgetIncrease && (userData?.walletBalance || 0) > 0;
+                          const showTopup = allowTopupAction && (userData?.walletBalance || 0) === 0;
+                          const rowKey = `${account.MetaAccountID || account._id || i}-${i}`;
 
-                    return (
-                      <article
-                        key={`${account.MetaAccountID || account._id || i}-${i}`}
-                        className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-[linear-gradient(145deg,rgba(255,255,255,0.98),rgba(232,250,218,0.72)_42%,rgba(226,245,255,0.7))] p-5 shadow-[0_18px_36px_rgba(0,0,0,0.08)] ring-1 ring-black/5"
-                      >
-                        <div className={`pointer-events-none absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${getCardTone(stateMeta, hasError, canFetchBalance).accent}`} />
-                        <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-white/70 blur-3xl" />
-                        <div className="pointer-events-none absolute -left-12 bottom-0 h-28 w-28 rounded-full bg-cyan-100/80 blur-3xl" />
-
-                        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                          <div className="min-w-0">
-                            <div className="mb-4 flex items-center gap-3">
-                              <div
-                                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border shadow-[0_12px_24px_rgba(15,23,42,0.08)] ${getCardTone(stateMeta, hasError, canFetchBalance).icon}`}
-                              >
-                                <Building2 size={18} />
-                              </div>
-                              <div className="min-w-0">
-                                <div className="dashboard-chip inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em]">
-                                  {account.status || "pending"}
-                                </div>
-                                {account.bundleLead && account.bundleSize > 1 && (
-                                  <p className="dashboard-text-faint mt-2 text-[10px] font-black uppercase tracking-[0.18em]">
-                                    Bundle of {account.bundleSize} accounts
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            <h4 className="dashboard-text-strong truncate text-lg font-black">
-                              {account.accountName || "Unnamed Ad Account"}
-                            </h4>
-                            <p className="dashboard-text-muted mt-1 truncate font-mono text-xs">
-                              {account.MetaAccountID || "Meta ID not assigned yet"}
-                            </p>
-                          </div>
-
-                          <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] ring-1 ${stateMeta.tone}`}>
-                            {stateMeta.label}
-                          </span>
-                        </div>
-
-                        <div className="relative mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
-                          {[
-                            {
-                              label: "Spend Cap",
-                              tone: "text-white",
-                              value: balance?.spendCap,
-                            },
-                            {
-                              label: "Spent",
-                              tone: "text-rose-300",
-                              value: balance?.amountSpent,
-                            },
-                            {
-                              label: "Remaining",
-                              tone: "text-emerald-300",
-                              value: balance?.remaining,
-                            },
-                          ].map((item) => {
-                            const showUnavailable = hasError || !canFetchBalance;
-                            const showLoading = canFetchBalance && balance?.loading;
-
-                            return (
-                              <div
-                                key={item.label}
-                                className={`rounded-[1.45rem] border p-4 shadow-[0_10px_20px_rgba(15,23,42,0.05)] ${getCardTone(stateMeta, hasError, canFetchBalance).stat}`}
-                              >
-                                <p className="dashboard-text-faint text-[9px] font-bold uppercase tracking-[0.18em]">
-                                  {item.label}
-                                </p>
-
-                                {showLoading ? (
-                                  <div className="mt-3 space-y-2">
-                                    <div className="h-5 w-24 animate-pulse rounded bg-[var(--dashboard-frame-border)]" />
-                                    <div className="h-4 w-20 animate-pulse rounded bg-[var(--dashboard-panel-soft)]" />
-                                  </div>
-                                ) : showUnavailable ? (
-                                  <div className="mt-3">
-                                    <p className="dashboard-text-strong text-[1rem] font-black">Unavailable</p>
-                                    <p className="dashboard-text-muted mt-1 text-[11px] leading-5">
-                                      {!canFetchBalance
-                                        ? "Awaiting valid Meta setup"
-                                        : balance?.readableError || balance?.error || "Live Meta balance unavailable"}
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <div className="mt-3">
-                                    <p className={`text-[1.2rem] font-black leading-none ${item.tone === "text-white" ? "dashboard-text-strong" : item.tone}`}>
-                                      {formatUsd(item.value)}
-                                    </p>
-                                    <div className="mt-1">
-                                      <CurrencyAmount
-                                        value={item.value}
-                                        usdToBdtRate={usdRate}
-                                        primaryClassName="hidden"
-                                        secondaryClassName="dashboard-text-muted text-[11px] font-semibold"
-                                        secondaryPrefix=""
-                                      />
+                          return (
+                            <React.Fragment key={rowKey}>
+                              <tr className="border-b border-white/5 transition-colors hover:bg-white/[0.04]">
+                                <td className="sticky left-0 z-[1] border-b border-white/5 bg-[rgba(255,255,255,0.92)] px-3 py-3 align-top backdrop-blur-sm sm:px-4 lg:static lg:z-auto lg:bg-transparent lg:backdrop-blur-none">
+                                  <div className="flex items-start gap-2.5">
+                                    <div
+                                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-sm ${getCardTone(stateMeta, hasError, canFetchBalance).icon}`}
+                                    >
+                                      <Building2 size={16} />
                                     </div>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        {account.bundleLead && account.bundleSize > 1 && (
-                          <div className="relative mt-4 space-y-3">
-                            <p className="dashboard-text-faint text-[10px] font-black uppercase tracking-[0.18em]">
-                              Included Accounts
-                            </p>
-                            <div className="grid grid-cols-1 gap-3">
-                              {account.assignedAccounts.map((child, childIndex) => (
-                                <div
-                                  key={`${account.parentRequestId || account._id}-${child.MetaAccountID || childIndex}`}
-                                  className="rounded-[1.25rem] border border-slate-200/70 bg-[rgba(255,255,255,0.94)] p-4 shadow-[0_10px_20px_rgba(15,23,42,0.06)]"
-                                >
-                                  <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0">
-                                      <p className="dashboard-text-strong truncate text-sm font-black">
-                                        {child.accountName || `Account ${childIndex + 1}`}
+                                      <p className="dashboard-text-strong truncate text-sm font-black sm:text-base">
+                                        {account.accountName || "Unnamed Ad Account"}
                                       </p>
-                                      <p className="dashboard-text-muted mt-1 truncate font-mono text-[11px]">
-                                        {child.MetaAccountID || "Meta ID pending"}
+                                      <p className="dashboard-text-muted truncate font-mono text-[11px]">
+                                        {account.MetaAccountID || "Meta ID not assigned yet"}
                                       </p>
+                                      {account.bundleLead && account.bundleSize > 1 ? (
+                                        <p className="dashboard-text-faint mt-1 text-[9px] font-black uppercase tracking-[0.12em]">
+                                          Bundle · {account.bundleSize} accounts
+                                        </p>
+                                      ) : null}
                                     </div>
-                                    <span className="rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em] ring-1 dashboard-chip">
-                                      {child.status || "pending"}
-                                    </span>
                                   </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="relative mt-4 rounded-2xl border border-slate-200/70 bg-[rgba(255,255,255,0.94)] px-4 py-3 shadow-[0_10px_20px_rgba(15,23,42,0.06)]">
-                          <div className="flex items-start gap-2">
-                            <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-200/80 bg-white">
-                              <ArrowUpRight size={15} className="dashboard-text-muted" />
-                            </div>
-                            <p className="dashboard-text-muted text-sm">{stateMeta.helper}</p>
-                          </div>
-                        </div>
-
-                        <div className="relative mt-5 flex flex-wrap justify-start gap-2 sm:justify-end">
-                          {showIncrease && canFetchBalance && !hasError && (
-                            <button
-                              onClick={() =>
-                                setIncreaseModal({
-                                  open: true,
-                                  adAccountId: account?.MetaAccountID,
-                                  oldLimit: balance?.spendCap,
-                                })
-                              }
-                              className="dashboard-accent-surface w-full rounded-2xl px-4 py-2.5 text-[11px] font-black transition-all hover:-translate-y-0.5 sm:w-auto"
-                            >
-                              Increase Budget
-                            </button>
-                          )}
-                          {showTopup && canFetchBalance && !hasError && (
-                            <button
-                              onClick={() => setTopupModal(true)}
-                              className="dashboard-accent-surface w-full rounded-2xl px-4 py-2.5 text-[11px] font-black transition-all hover:-translate-y-0.5 sm:w-auto"
-                            >
-                              Add Funds
-                            </button>
-                          )}
-                        </div>
-                      </article>
-                    );
-                  })}
+                                </td>
+                                <td className="border-b border-white/5 px-3 py-3 align-top sm:px-4">
+                                  <div className="flex flex-col gap-1.5">
+                                    <span className="dashboard-chip inline-flex w-fit items-center px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em]">
+                                      {account.status || "pending"}
+                                    </span>
+                                    {String(stateMeta.label || "").toLowerCase() !==
+                                    String(account.status || "pending").toLowerCase() ? (
+                                      <span
+                                        className={`inline-flex w-fit rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] ring-1 ${stateMeta.tone}`}
+                                      >
+                                        {stateMeta.label}
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                </td>
+                                <AdAccountTableMetricCell
+                                  label="Spend cap"
+                                  value={balance?.spendCap}
+                                  valueTone="strong"
+                                  balance={balance}
+                                  canFetchBalance={canFetchBalance}
+                                  hasError={hasError}
+                                  usdRate={displayBdtConversionRate}
+                                />
+                                <AdAccountTableMetricCell
+                                  label="Spent"
+                                  value={balance?.amountSpent}
+                                  valueTone="rose"
+                                  balance={balance}
+                                  canFetchBalance={canFetchBalance}
+                                  hasError={hasError}
+                                  usdRate={displayBdtConversionRate}
+                                />
+                                <AdAccountTableMetricCell
+                                  label="Remaining"
+                                  value={balance?.remaining}
+                                  valueTone="emerald"
+                                  balance={balance}
+                                  canFetchBalance={canFetchBalance}
+                                  hasError={hasError}
+                                  usdRate={displayBdtConversionRate}
+                                />
+                                <td className="border-b border-white/5 px-3 py-3 align-top sm:px-4">
+                                  <div className="flex items-start gap-1.5">
+                                    <ArrowUpRight size={14} className="mt-0.5 shrink-0 dashboard-text-muted" />
+                                    <p className="dashboard-text-muted max-w-[14rem] text-xs leading-snug">{stateMeta.helper}</p>
+                                  </div>
+                                </td>
+                                <td className="border-b border-white/5 px-3 py-3 align-top text-right sm:px-4">
+                                  <div className="flex flex-col items-stretch justify-end gap-2 sm:items-end">
+                                    {showIncrease && canFetchBalance && !hasError ? (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setIncreaseModal({
+                                            open: true,
+                                            adAccountId: account?.MetaAccountID,
+                                            oldLimit: balance?.spendCap,
+                                          })
+                                        }
+                                        className="dashboard-accent-surface whitespace-nowrap rounded-xl px-3 py-2 text-[10px] font-black transition hover:brightness-105 sm:text-[11px]"
+                                      >
+                                        Increase Budget
+                                      </button>
+                                    ) : null}
+                                    {showTopup && canFetchBalance && !hasError ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => setTopupModal(true)}
+                                        className="dashboard-accent-surface whitespace-nowrap rounded-xl px-3 py-2 text-[10px] font-black transition hover:brightness-105 sm:text-[11px]"
+                                      >
+                                        Add Funds
+                                      </button>
+                                    ) : null}
+                                    {!showIncrease && !showTopup ? (
+                                      <span className="dashboard-text-faint text-[10px] font-semibold">—</span>
+                                    ) : null}
+                                  </div>
+                                </td>
+                              </tr>
+                              {account.bundleLead && account.bundleSize > 1 ? (
+                                <tr className="border-b border-white/5 bg-white/[0.03]">
+                                  <td colSpan={7} className="px-3 py-2 sm:px-4">
+                                    <p className="dashboard-text-faint mb-2 text-[9px] font-black uppercase tracking-[0.14em]">
+                                      Included accounts
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {account.assignedAccounts.map((child, childIndex) => (
+                                        <div
+                                          key={`${account.parentRequestId || account._id}-${child.MetaAccountID || childIndex}`}
+                                          className="inline-flex max-w-full items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-2.5 py-1.5"
+                                        >
+                                          <span className="dashboard-text-strong truncate text-xs font-bold">
+                                            {child.accountName || `Account ${childIndex + 1}`}
+                                          </span>
+                                          <span className="dashboard-text-muted truncate font-mono text-[10px]">
+                                            {child.MetaAccountID || "—"}
+                                          </span>
+                                          <span className="dashboard-chip shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase">
+                                            {child.status || "pending"}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ) : null}
+                            </React.Fragment>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>

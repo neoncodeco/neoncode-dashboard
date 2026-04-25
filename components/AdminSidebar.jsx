@@ -24,7 +24,7 @@ import {
   Sun,
   Moon,
 } from "lucide-react";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import Swal from "sweetalert2";
 import DashboardThemeToggle from "@/components/DashboardThemeToggle";
 
@@ -35,7 +35,7 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
   const [mobilePanel, setMobilePanel] = useState("");
   const portalRoot = typeof document !== "undefined" ? document.body : null;
 
-  const { role, userData, logout } = useFirebaseAuth();
+  const { role, userData, logout } = useAppAuth();
 
   useEffect(() => {
     if (!isMobileOpen && !mobilePanel) return;

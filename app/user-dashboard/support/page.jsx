@@ -1,14 +1,13 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import CreateTicketPage from "./create/page";
 import LeadProjectPopup from "@/components/LeadProjectPopup";
-import { BadgeCheck, CalendarDays, Clock3, History, Loader2, MessagesSquare, Paperclip, Plus, Send, X } from "lucide-react";
+import { BadgeCheck, CalendarDays, Clock3, Loader2, MessagesSquare, Paperclip, Send, X } from "lucide-react";
 
 export default function MyTicketsPage() {
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
   const [tickets, setTickets] = useState([]);
-  const [activeTab, setActiveTab] = useState("create");
   const [expandedTicketIds, setExpandedTicketIds] = useState({});
   const [ticketDetailsById, setTicketDetailsById] = useState({});
   const [isLoadingTickets, setIsLoadingTickets] = useState(true);
@@ -129,7 +128,7 @@ export default function MyTicketsPage() {
     const normalizedId = normalizeTicketId(ticketId);
     if (!normalizedId) return;
 
-    const defaultExpanded = isTicketOpen(status);
+    const defaultExpanded = false;
     const currentExpanded = expandedTicketIds[normalizedId] ?? defaultExpanded;
     const nextExpanded = !currentExpanded;
 
@@ -142,20 +141,6 @@ export default function MyTicketsPage() {
       await loadTicketDetails(normalizedId);
     }
   };
-
-  useEffect(() => {
-    if (activeTab !== "history") return;
-    const openTicketIds = historyTickets
-      .filter((ticket) => isTicketOpen(ticket.status))
-      .map((ticket) => normalizeTicketId(ticket._id))
-      .filter(Boolean);
-
-    openTicketIds.forEach((ticketId) => {
-      if (!ticketDetailsById[ticketId]) {
-        void loadTicketDetails(ticketId);
-      }
-    });
-  }, [activeTab, historyTickets, ticketDetailsById, loadTicketDetails]);
 
   const setReplyText = (ticketId, text) => {
     setReplyDraftsByTicket((prev) => ({
@@ -255,78 +240,51 @@ export default function MyTicketsPage() {
         <div className="grid grid-cols-1 gap-2 sm:ml-auto sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-end">
           <button
             type="button"
-            onClick={() => setActiveTab("create")}
-            className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-black transition sm:w-auto ${
-              activeTab === "create" ? "dashboard-accent-surface" : "dashboard-muted-button border"
-            }`}
+            onClick={() => setMeetingOpen(true)}
+            className="dashboard-muted-button inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-black transition sm:w-auto"
           >
-            <Plus size={16} />
-            New Ticket
+            <CalendarDays size={16} />
+            Discovery Call
           </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("history")}
-            className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-black transition sm:w-auto ${
-              activeTab === "history" ? "dashboard-accent-surface" : "dashboard-muted-button border"
-            }`}
-          >
-            <History size={16} />
-            History
-          </button>
-
-          {activeTab === "create" ? (
-            <button
-              type="button"
-              onClick={() => setMeetingOpen(true)}
-              className="dashboard-muted-button inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-black transition sm:w-auto"
-            >
-              <CalendarDays size={16} />
-              Discovery Call
-            </button>
-          ) : null}
         </div>
       </div>
 
-      {activeTab === "create" ? (
-        <div className="dashboard-panel min-h-[calc(100svh-12rem)] overflow-hidden rounded-[22px] border border-emerald-300/30 bg-[linear-gradient(135deg,rgba(183,223,105,0.16),rgba(115,200,255,0.1)_55%,rgba(255,255,255,0.9))] sm:rounded-[28px]">
-          <CreateTicketPage
-            onSuccess={async (newId) => {
-              await fetchTickets();
-              const normalizedId = normalizeTicketId(newId);
-              setActiveTab("history");
-              setExpandedTicketIds((prev) => ({
-                ...prev,
-                [normalizedId]: true,
-              }));
-              if (normalizedId) {
-                await loadTicketDetails(normalizedId);
-              }
-            }}
-          />
+      <div className="dashboard-panel min-h-[calc(100svh-20rem)] overflow-hidden rounded-[22px] border border-emerald-300/30 bg-[linear-gradient(135deg,rgba(183,223,105,0.16),rgba(115,200,255,0.1)_55%,rgba(255,255,255,0.9))] sm:rounded-[28px]">
+        <CreateTicketPage
+          onSuccess={async (newId) => {
+            await fetchTickets();
+            const normalizedId = normalizeTicketId(newId);
+            if (normalizedId) {
+              await loadTicketDetails(normalizedId);
+            }
+          }}
+        />
+      </div>
+
+      <div className="space-y-4 pt-1">
+        <div className="px-1">
+          <h2 className="dashboard-text-strong text-lg font-black tracking-tight sm:text-xl">Ticket History</h2>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {isLoadingTickets ? (
-            <div className="dashboard-subpanel flex min-h-[220px] items-center justify-center rounded-[24px] border border-sky-300/35 bg-[linear-gradient(135deg,rgba(115,200,255,0.22),rgba(255,255,255,0.92)_58%)] p-6 shadow-[0_14px_36px_rgba(15,23,42,0.08)]">
-              <div className="flex items-center gap-3">
-                <Loader2 size={18} className="animate-spin dashboard-text-muted" />
-                <span className="dashboard-text-muted text-sm font-semibold">Loading ticket history...</span>
-              </div>
+        {isLoadingTickets ? (
+          <div className="dashboard-subpanel flex min-h-[220px] items-center justify-center rounded-[24px] border border-sky-300/35 bg-[linear-gradient(135deg,rgba(115,200,255,0.22),rgba(255,255,255,0.92)_58%)] p-6 shadow-[0_14px_36px_rgba(15,23,42,0.08)]">
+            <div className="flex items-center gap-3">
+              <Loader2 size={18} className="animate-spin dashboard-text-muted" />
+              <span className="dashboard-text-muted text-sm font-semibold">Loading ticket history...</span>
             </div>
-          ) : historyTickets.length === 0 ? (
-            <div className="dashboard-subpanel flex min-h-[220px] flex-col items-center justify-center rounded-[24px] border border-emerald-300/35 bg-[linear-gradient(135deg,rgba(183,223,105,0.24),rgba(255,255,255,0.92)_58%)] p-6 text-center shadow-[0_14px_36px_rgba(15,23,42,0.08)]">
-              <MessagesSquare size={28} className="dashboard-text-faint" />
-              <p className="dashboard-text-strong mt-4 text-base font-bold">No support history found</p>
-              <p className="dashboard-text-muted mt-1 text-sm">আপনার created ticket history এখানে comment-style এ দেখাবে।</p>
-            </div>
-          ) : (
-            historyTickets.map((ticket) => {
+          </div>
+        ) : historyTickets.length === 0 ? (
+          <div className="dashboard-subpanel flex min-h-[220px] flex-col items-center justify-center rounded-[24px] border border-emerald-300/35 bg-[linear-gradient(135deg,rgba(183,223,105,0.24),rgba(255,255,255,0.92)_58%)] p-6 text-center shadow-[0_14px_36px_rgba(15,23,42,0.08)]">
+            <MessagesSquare size={28} className="dashboard-text-faint" />
+            <p className="dashboard-text-strong mt-4 text-base font-bold">No support history found</p>
+            <p className="dashboard-text-muted mt-1 text-sm">আপনার created ticket history এখানে comment-style এ দেখাবে।</p>
+          </div>
+        ) : (
+          historyTickets.map((ticket) => {
               const ticketId = normalizeTicketId(ticket._id);
               const details = ticketDetailsById[ticketId];
               const messages = details?.messages || [];
               const isOpenStatus = isTicketOpen(ticket.status);
-              const isExpanded = expandedTicketIds[ticketId] ?? isOpenStatus;
+              const isExpanded = expandedTicketIds[ticketId] ?? false;
               const isLoadingDetail = loadingDetailId === ticketId;
               const replyDraft = replyDraftsByTicket[ticketId] || { text: "", files: [] };
               const isSendingReply = Boolean(isSendingReplyByTicket[ticketId]);
@@ -513,10 +471,9 @@ export default function MyTicketsPage() {
                   ) : null}
                 </div>
               );
-            })
-          )}
-        </div>
-      )}
+          })
+        )}
+      </div>
 
       {meetingOpen ? (
         <LeadProjectPopup

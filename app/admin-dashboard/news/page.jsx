@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import { BellRing, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 
 function formatDate(value) {
   if (!value) return "Just now";
@@ -21,7 +21,7 @@ function formatDate(value) {
 const emptyForm = { title: "", message: "" };
 
 export default function AdminNewsPage() {
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
   const { getCache, setCache } = useAdminDashboardCache();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

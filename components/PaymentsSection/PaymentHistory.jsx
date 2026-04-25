@@ -10,14 +10,14 @@ import {
   Download,
   ChevronDown, 
 } from "lucide-react";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 
 const ROWS_PER_PAGE = 10;
 // এখানে 'All' সহ সমস্ত সম্ভাব্য স্ট্যাটাস অন্তর্ভুক্ত করা হয়েছে।
 const STATUS_OPTIONS = ["All", "approved", "pending", "failed", "cancelled", "rejected"];
 
 const PaymentHistory = () => {
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
 
   const [payments, setPayments] = useState([]); // Original fetched data
   const [filterStatus, setFilterStatus] = useState("All"); // State for status filter

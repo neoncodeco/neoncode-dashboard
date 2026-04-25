@@ -1,13 +1,13 @@
 "use client";
 import { useCallback, useEffect, useState, useRef } from "react";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useAppAuth from "@/hooks/useAppAuth";
 import { 
   Send, X, Lock, ShieldCheck, Image as ImageIcon, 
   Loader2, Search, MessageSquare, Clock, ChevronLeft 
 } from "lucide-react";
 
 export default function AdminSupportLayout() {
-  const { token } = useFirebaseAuth();
+  const { token } = useAppAuth();
   const [tickets, setTickets] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [loadingList, setLoadingList] = useState(true);
