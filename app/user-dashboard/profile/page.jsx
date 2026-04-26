@@ -192,65 +192,100 @@ export default function FullProfilePage() {
   // };
 
 //  send otp
+  const normalizeWhatsappInput = (value) => {
+    const digits = String(value || "").replace(/\D/g, "");
+    if (!digits) return "";
+    if (digits.startsWith("880")) return digits;
+    if (digits.startsWith("0")) return `88${digits}`;
+    if (digits.startsWith("1") && digits.length === 10) return `880${digits}`;
+    return digits;
+  };
+
+  const isValidBdWhatsapp = (value) => /^8801\d{9}$/.test(value);
+
+  const handleCancelChangeWhatsapp = () => {
+    setIsEditingVerifiedPhone(false);
+    setHasPendingOtp(false);
+    setIsLocallyPhoneVerified(false);
+    setVerificationForm((prev) => ({
+      ...prev,
+      whatsappNumber: userData?.whatsappNumber || userData?.phone || "",
+      code: "",
+    }));
+    setOtpStatus({ type: "", message: "" });
+  };
+
   const handleSendOtp = async () => {
-  if (!token) return;
+    if (!token) return;
 
-  if (!verificationForm.whatsappNumber) {
-    Swal.fire({
-      icon: "warning",
-      title: "Oops...",
-      text: "Enter phone number first",
-    });
-    return;
-  }
-
-  setOtpLoading(true);
-
-  try {
-    const res = await fetch("/api/otp/send-otp", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        phone: verificationForm.whatsappNumber,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok || !data?.ok) {
+    const normalized = normalizeWhatsappInput(verificationForm.whatsappNumber);
+    if (!normalized) {
       Swal.fire({
-        icon: "error",
-        title: "Failed",
-        text: data?.error || "Failed to send OTP",
+        icon: "warning",
+        title: "Oops...",
+        text: "Enter your WhatsApp number first.",
       });
       return;
     }
 
-    Swal.fire({
-      icon: "success",
-      title: "OTP Sent 🚀",
-      text: "Check your WhatsApp",
-      timer: 2000,
-      showConfirmButton: false,
-    });
+    if (!isValidBdWhatsapp(normalized)) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid format",
+        text: "Use Bangladesh WhatsApp format: 8801XXXXXXXXX (11 digits after 880).",
+      });
+      return;
+    }
 
-    setHasPendingOtp(true);
-    setIsLocallyPhoneVerified(false);
-    setOtpStatus({ type: "success", message: data?.message || "OTP sent successfully." });
+    setVerificationForm((prev) => ({ ...prev, whatsappNumber: normalized }));
 
-  } catch (err) {
-    Swal.fire({
-      icon: "error",
-      title: "Network Error",
-      text: "Try again later",
-    });
-  } finally {
-    setOtpLoading(false);
-  }
-};
+    setOtpLoading(true);
+
+    try {
+      const res = await fetch("/api/account/send-whatsapp-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          whatsappNumber: normalized,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data?.ok) {
+        Swal.fire({
+          icon: "error",
+          title: "Failed",
+          text: data?.error || "Failed to send verification code",
+        });
+        return;
+      }
+
+      Swal.fire({
+        icon: "success",
+        title: "Code sent",
+        text: data?.message || "Check your WhatsApp for the verification code.",
+        timer: 2200,
+        showConfirmButton: false,
+      });
+
+      setHasPendingOtp(true);
+      setIsLocallyPhoneVerified(false);
+      setOtpStatus({ type: "success", message: data?.message || "OTP sent successfully." });
+      await refreshUser();
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Network Error",
+        text: "Try again later",
+      });
+    } finally {
+      setOtpLoading(false);
+    }
+  };
 const handleVerifyOtp = async () => {
   if (verifyingOtp) return;
   if (!token) return;
@@ -267,7 +302,7 @@ const handleVerifyOtp = async () => {
   setVerifyingOtp(true);
 
   try {
-    const res = await fetch("/api/otp/verify-otp", {
+    const res = await fetch("/api/account/verify-whatsapp-otp", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -573,11 +608,31 @@ const handleVerifyOtp = async () => {
                           setHasPendingOtp(false);
                           setIsLocallyPhoneVerified(false);
                           setOtpStatus({ type: "", message: "" });
-                          setVerificationForm((prev) => ({ ...prev, code: "" }));
+                          setVerificationForm((prev) => ({
+                            ...prev,
+                            code: "",
+                            whatsappNumber:
+                              userData?.whatsappNumber || userData?.phone || prev.whatsappNumber || "",
+                          }));
                         }}
                         className="dashboard-muted-button mt-2 inline-flex min-h-10 items-center justify-center rounded-2xl border px-4 py-2 text-sm font-bold transition sm:mt-3"
                       >
-                        Edit Number
+                        Change WhatsApp number
+                      </button>
+                    ) : null}
+                    {isEditingVerifiedPhone ? (
+                      <p className="dashboard-text-muted mt-2 text-xs leading-relaxed sm:mt-3">
+                        Enter your new number, tap <span className="font-bold">Send Code</span>, then verify with the OTP.
+                        Your account stays unverified until the new number is confirmed.
+                      </p>
+                    ) : null}
+                    {isEditingVerifiedPhone && !isPhoneVerified ? (
+                      <button
+                        type="button"
+                        onClick={handleCancelChangeWhatsapp}
+                        className="dashboard-muted-button mt-2 inline-flex min-h-10 items-center justify-center rounded-2xl border px-4 py-2 text-sm font-semibold transition sm:mt-3"
+                      >
+                        Cancel
                       </button>
                     ) : null}
                   </div>
