@@ -24,9 +24,6 @@ import { expandAdAccountRequests } from "@/lib/adAccountRequests";
 const FILTERS = ["All Accounts", "Ready Accounts", "Pending Setup", "Needs Attention"];
 const statCardBaseClass = "dashboard-subpanel overflow-hidden rounded-[28px] border p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)]";
 const adAccountPageCache = new Map();
-const AD_ACCOUNTS_CACHE_TTL_MS = 5 * 60 * 1000;
-
-const getStorageCacheKey = (cacheKey) => `ad-account-ui-cache:${cacheKey}`;
 
 const getCardTone = (stateMeta, hasError, canFetchBalance) => {
   if (hasError) {
@@ -222,6 +219,147 @@ function AdAccountTableMetricCell({ label, value, valueTone, balance, canFetchBa
   );
 }
 
+function AdAccountMetricRow({ label, value, valueTone, balance, canFetchBalance, hasError, usdRate }) {
+  const showUnavailable = hasError || !canFetchBalance;
+  const showLoading = canFetchBalance && balance?.loading;
+
+  return (
+    <div className="flex items-start justify-between gap-2 border-b border-[var(--dashboard-frame-border)]/80 py-1.5 last:border-b-0">
+      <span className="dashboard-text-faint shrink-0 pt-0.5 text-[9px] font-bold uppercase tracking-[0.1em]">{label}</span>
+      <div className="min-w-0 flex-1 text-right">
+        {showLoading ? (
+          <div className="ml-auto flex max-w-[9rem] flex-col items-end gap-1 pt-0.5">
+            <div className="h-3 w-16 animate-pulse rounded bg-[var(--dashboard-frame-border)]" />
+            <div className="h-2.5 w-12 animate-pulse rounded bg-[var(--dashboard-panel-soft)]" />
+          </div>
+        ) : showUnavailable ? (
+          <div>
+            <p className="dashboard-text-strong text-xs font-black">Unavailable</p>
+            <p className="dashboard-text-muted mt-0.5 text-[9px] leading-snug">
+              {!canFetchBalance
+                ? "Awaiting valid Meta setup"
+                : balance?.readableError || balance?.error || "Live Meta balance unavailable"}
+            </p>
+          </div>
+        ) : (
+          <div>
+            <p
+              className={`text-xs font-black leading-tight ${
+                valueTone === "rose" ? "text-rose-400" : valueTone === "emerald" ? "text-emerald-400" : "dashboard-text-strong"
+              }`}
+            >
+              {formatUsd(value)}
+            </p>
+            <CurrencyAmount
+              value={value}
+              usdToBdtRate={usdRate}
+              primaryClassName="hidden"
+              secondaryClassName="dashboard-text-muted mt-0.5 text-[9px] font-semibold"
+              secondaryPrefix=""
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AdAccountMobileCard({
+  account,
+  balance,
+  canFetchBalance,
+  hasError,
+  stateMeta,
+  iconClass,
+  showIncrease,
+  showTopup,
+  displayBdtConversionRate,
+  onIncreaseBudget,
+  onTopup,
+}) {
+  return (
+    <article className="rounded-xl border-2 border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)]/90 p-3 shadow-sm">
+      <div className="flex items-start gap-2 border-b border-[var(--dashboard-frame-border)]/90 pb-2">
+        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border shadow-sm ${iconClass}`}>
+          <Building2 size={15} strokeWidth={2.2} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="dashboard-text-strong truncate text-sm font-black leading-tight">{account.accountName || "Unnamed Ad Account"}</p>
+          <p className="dashboard-text-muted truncate font-mono text-[10px] leading-tight">{account.MetaAccountID || "Meta ID not assigned yet"}</p>
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            <span className="dashboard-chip inline-flex w-fit items-center px-1.5 py-px text-[8px] font-black uppercase tracking-[0.1em]">
+              {account.status || "pending"}
+            </span>
+            {String(stateMeta.label || "").toLowerCase() !== String(account.status || "pending").toLowerCase() ? (
+              <span className={`inline-flex w-fit rounded-full px-1.5 py-px text-[8px] font-black uppercase tracking-[0.1em] ring-1 ${stateMeta.tone}`}>
+                {stateMeta.label}
+              </span>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-0.5 px-0">
+        <AdAccountMetricRow
+          label="Spend cap"
+          value={balance?.spendCap}
+          valueTone="strong"
+          balance={balance}
+          canFetchBalance={canFetchBalance}
+          hasError={hasError}
+          usdRate={displayBdtConversionRate}
+        />
+        <AdAccountMetricRow
+          label="Spent"
+          value={balance?.amountSpent}
+          valueTone="rose"
+          balance={balance}
+          canFetchBalance={canFetchBalance}
+          hasError={hasError}
+          usdRate={displayBdtConversionRate}
+        />
+        <AdAccountMetricRow
+          label="Remaining"
+          value={balance?.remaining}
+          valueTone="emerald"
+          balance={balance}
+          canFetchBalance={canFetchBalance}
+          hasError={hasError}
+          usdRate={displayBdtConversionRate}
+        />
+      </div>
+
+      <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-[var(--dashboard-frame-border)]/60 bg-[var(--dashboard-input-bg)]/50 p-2">
+        <ArrowUpRight size={12} className="mt-0.5 shrink-0 dashboard-text-muted" />
+        <p className="dashboard-text-muted text-[11px] leading-snug">{stateMeta.helper}</p>
+      </div>
+
+      {(showIncrease && canFetchBalance && !hasError) || (showTopup && canFetchBalance && !hasError) ? (
+        <div className="mt-2 flex flex-col gap-1.5 sm:flex-row">
+          {showIncrease && canFetchBalance && !hasError ? (
+            <button
+              type="button"
+              onClick={onIncreaseBudget}
+              className="dashboard-accent-surface w-full rounded-lg px-2.5 py-2 text-center text-[11px] font-black transition hover:brightness-105"
+            >
+              Increase Budget
+            </button>
+          ) : null}
+          {showTopup && canFetchBalance && !hasError ? (
+            <button
+              type="button"
+              onClick={onTopup}
+              className="dashboard-accent-surface w-full rounded-lg px-2.5 py-2 text-center text-[11px] font-black transition hover:brightness-105"
+            >
+              Add Funds
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
 export default function AdAccountUi({ onRequestNewAccount }) {
   const { token, userData, user } = useAppAuth();
   const metaAdsConfig = userData?.metaAdsConfig || {};
@@ -281,78 +419,31 @@ export default function AdAccountUi({ onRequestNewAccount }) {
     if (didRestoreCacheRef.current) return;
 
     const cachedState = adAccountPageCache.get(cacheKey);
-    if (cachedState) {
-      setAdAccounts(expandAdAccountRequests(Array.isArray(cachedState.adAccounts) ? cachedState.adAccounts : []));
-      setBalances(cachedState.balances && typeof cachedState.balances === "object" ? cachedState.balances : {});
-      setFilter(cachedState.filter || "All Accounts");
-      setSearchTerm(cachedState.searchTerm || "");
-      setListError(cachedState.listError || "");
-      setLoading(false);
+    if (!cachedState) {
       didRestoreCacheRef.current = true;
       return;
     }
 
-    if (typeof window !== "undefined") {
-      try {
-        const raw = window.sessionStorage.getItem(getStorageCacheKey(cacheKey));
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          const isFresh =
-            parsed &&
-            typeof parsed === "object" &&
-            Number.isFinite(parsed.savedAt) &&
-            Date.now() - parsed.savedAt < AD_ACCOUNTS_CACHE_TTL_MS;
-
-          if (isFresh) {
-            const restored = {
-              hydrated: true,
-              adAccounts: Array.isArray(parsed.adAccounts) ? parsed.adAccounts : [],
-              balances: parsed.balances && typeof parsed.balances === "object" ? parsed.balances : {},
-              filter: parsed.filter || "All Accounts",
-              searchTerm: parsed.searchTerm || "",
-              listError: parsed.listError || "",
-            };
-            adAccountPageCache.set(cacheKey, restored);
-            setAdAccounts(expandAdAccountRequests(restored.adAccounts));
-            setBalances(restored.balances);
-            setFilter(restored.filter);
-            setSearchTerm(restored.searchTerm);
-            setListError(restored.listError);
-            setLoading(false);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to restore ad account cache:", error);
-      }
-    }
-
+    setAdAccounts(expandAdAccountRequests(Array.isArray(cachedState.adAccounts) ? cachedState.adAccounts : []));
+    setBalances(cachedState.balances && typeof cachedState.balances === "object" ? cachedState.balances : {});
+    setFilter(cachedState.filter || "All Accounts");
+    setSearchTerm(cachedState.searchTerm || "");
+    setListError(cachedState.listError || "");
+    setLoading(false);
     didRestoreCacheRef.current = true;
   }, [cacheKey]);
 
   useEffect(() => {
     if (!didRestoreCacheRef.current || loading) return;
 
-    const nextCache = {
+    adAccountPageCache.set(cacheKey, {
       hydrated: true,
       adAccounts,
       balances,
       filter,
       searchTerm,
       listError,
-      savedAt: Date.now(),
-    };
-    adAccountPageCache.set(cacheKey, nextCache);
-
-    if (typeof window !== "undefined") {
-      try {
-        window.sessionStorage.setItem(
-          getStorageCacheKey(cacheKey),
-          JSON.stringify(nextCache)
-        );
-      } catch (error) {
-        console.error("Failed to persist ad account cache:", error);
-      }
-    }
+    });
   }, [adAccounts, balances, cacheKey, filter, listError, loading, searchTerm]);
 
   const loadAccounts = useCallback(async () => {
@@ -459,9 +550,6 @@ export default function AdAccountUi({ onRequestNewAccount }) {
       setBalances({});
       balancesRef.current = {};
       adAccountPageCache.delete(cacheKey);
-      if (typeof window !== "undefined") {
-        window.sessionStorage.removeItem(getStorageCacheKey(cacheKey));
-      }
 
       await Promise.all(
         freshAccounts
@@ -623,11 +711,13 @@ export default function AdAccountUi({ onRequestNewAccount }) {
         )}
 
         <div className="space-y-6">
-          <MetaSpendingOverview
-            className="p-4 sm:p-6"
-            assignedUsdToBdtRate={assignedUsdToBdtRate}
-            profileUsdToBdtRate={userData?.currencyConfig?.usdToBdtRate ?? metaAdsConfig.usdRate}
-          />
+          <div className="hidden lg:block">
+            <MetaSpendingOverview
+              className="p-4 sm:p-6"
+              assignedUsdToBdtRate={assignedUsdToBdtRate}
+              profileUsdToBdtRate={userData?.currencyConfig?.usdToBdtRate ?? metaAdsConfig.usdRate}
+            />
+          </div>
 
           <section className="rounded-[2rem]">
             <div className="px-1 py-1">
@@ -687,10 +777,70 @@ export default function AdAccountUi({ onRequestNewAccount }) {
                   </p>
                 </div>
               ) : (
-                <div className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.06),rgba(232,250,218,0.08)_40%,rgba(226,245,255,0.08))] shadow-[0_12px_32px_rgba(0,0,0,0.06)]">
-                  <p className="dashboard-text-muted border-b border-white/10 px-3 py-2 text-[11px] sm:hidden">
-                    Swipe horizontally to see all columns.
-                  </p>
+                <>
+                  <div className="space-y-2 lg:hidden">
+                    {filteredAccounts.map((account, i) => {
+                      const balance = balances[account.MetaAccountID];
+                      const canFetchBalance = isFetchableMetaAccount(account);
+                      const hasError = Boolean(balance?.error);
+                      const stateMeta = getAccountState(account, balance);
+                      const showIncrease = allowBudgetIncrease && (userData?.walletBalance || 0) > 0;
+                      const showTopup = allowTopupAction && (userData?.walletBalance || 0) === 0;
+                      const rowKey = `${account.MetaAccountID || account._id || i}-m-${i}`;
+                      const iconClass = getCardTone(stateMeta, hasError, canFetchBalance).icon;
+
+                      return (
+                        <React.Fragment key={rowKey}>
+                          <AdAccountMobileCard
+                            account={account}
+                            balance={balance}
+                            canFetchBalance={canFetchBalance}
+                            hasError={hasError}
+                            stateMeta={stateMeta}
+                            iconClass={iconClass}
+                            showIncrease={showIncrease}
+                            showTopup={showTopup}
+                            displayBdtConversionRate={displayBdtConversionRate}
+                            onIncreaseBudget={() =>
+                              setIncreaseModal({
+                                open: true,
+                                adAccountId: account?.MetaAccountID,
+                                oldLimit: balance?.spendCap,
+                              })
+                            }
+                            onTopup={() => setTopupModal(true)}
+                          />
+                          {account.bundleLead && account.bundleSize > 1 ? (
+                            <div className="rounded-lg border-2 border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)]/80 p-2 shadow-sm">
+                              <p className="dashboard-text-faint mb-1.5 text-[8px] font-black uppercase tracking-[0.12em]">
+                                Included accounts
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {account.assignedAccounts.map((child, childIndex) => (
+                                  <div
+                                    key={`${account.parentRequestId || account._id}-m-${child.MetaAccountID || childIndex}`}
+                                    className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-[var(--dashboard-frame-border)]/80 bg-[var(--dashboard-input-bg)]/40 px-2 py-1"
+                                  >
+                                    <span className="dashboard-text-strong truncate text-[11px] font-bold">
+                                      {child.accountName || `Account ${childIndex + 1}`}
+                                    </span>
+                                    <span className="dashboard-text-muted truncate font-mono text-[9px]">
+                                      {child.MetaAccountID || "—"}
+                                    </span>
+                                    <span className="dashboard-chip shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase">
+                                      {child.status || "pending"}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ) : null}
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+
+                  <div className="hidden rounded-[1.35rem] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.06),rgba(232,250,218,0.08)_40%,rgba(226,245,255,0.08))] shadow-[0_12px_32px_rgba(0,0,0,0.06)] lg:block">
                   <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
                     <table className="w-full min-w-[56rem] border-collapse text-left text-sm">
                       <thead>
@@ -869,7 +1019,8 @@ export default function AdAccountUi({ onRequestNewAccount }) {
                       </tbody>
                     </table>
                   </div>
-                </div>
+                  </div>
+                </>
               )}
             </div>
           </section>
@@ -883,9 +1034,6 @@ export default function AdAccountUi({ onRequestNewAccount }) {
         onClose={() => setIncreaseModal({ open: false, adAccountId: null, oldLimit: null })}
         onSuccess={() => {
           adAccountPageCache.delete(cacheKey);
-          if (typeof window !== "undefined") {
-            window.sessionStorage.removeItem(getStorageCacheKey(cacheKey));
-          }
           setBalances({});
           balancesRef.current = {};
           refreshBalances();
