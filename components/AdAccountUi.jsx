@@ -24,6 +24,9 @@ import { expandAdAccountRequests } from "@/lib/adAccountRequests";
 const FILTERS = ["All Accounts", "Ready Accounts", "Pending Setup", "Needs Attention"];
 const statCardBaseClass = "dashboard-subpanel overflow-hidden rounded-[28px] border p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)]";
 const adAccountPageCache = new Map();
+const AD_ACCOUNTS_CACHE_TTL_MS = 5 * 60 * 1000;
+
+const getStorageCacheKey = (cacheKey) => `ad-account-ui-cache:${cacheKey}`;
 
 const getCardTone = (stateMeta, hasError, canFetchBalance) => {
   if (hasError) {
@@ -278,31 +281,78 @@ export default function AdAccountUi({ onRequestNewAccount }) {
     if (didRestoreCacheRef.current) return;
 
     const cachedState = adAccountPageCache.get(cacheKey);
-    if (!cachedState) {
+    if (cachedState) {
+      setAdAccounts(expandAdAccountRequests(Array.isArray(cachedState.adAccounts) ? cachedState.adAccounts : []));
+      setBalances(cachedState.balances && typeof cachedState.balances === "object" ? cachedState.balances : {});
+      setFilter(cachedState.filter || "All Accounts");
+      setSearchTerm(cachedState.searchTerm || "");
+      setListError(cachedState.listError || "");
+      setLoading(false);
       didRestoreCacheRef.current = true;
       return;
     }
 
-    setAdAccounts(expandAdAccountRequests(Array.isArray(cachedState.adAccounts) ? cachedState.adAccounts : []));
-    setBalances(cachedState.balances && typeof cachedState.balances === "object" ? cachedState.balances : {});
-    setFilter(cachedState.filter || "All Accounts");
-    setSearchTerm(cachedState.searchTerm || "");
-    setListError(cachedState.listError || "");
-    setLoading(false);
+    if (typeof window !== "undefined") {
+      try {
+        const raw = window.sessionStorage.getItem(getStorageCacheKey(cacheKey));
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const isFresh =
+            parsed &&
+            typeof parsed === "object" &&
+            Number.isFinite(parsed.savedAt) &&
+            Date.now() - parsed.savedAt < AD_ACCOUNTS_CACHE_TTL_MS;
+
+          if (isFresh) {
+            const restored = {
+              hydrated: true,
+              adAccounts: Array.isArray(parsed.adAccounts) ? parsed.adAccounts : [],
+              balances: parsed.balances && typeof parsed.balances === "object" ? parsed.balances : {},
+              filter: parsed.filter || "All Accounts",
+              searchTerm: parsed.searchTerm || "",
+              listError: parsed.listError || "",
+            };
+            adAccountPageCache.set(cacheKey, restored);
+            setAdAccounts(expandAdAccountRequests(restored.adAccounts));
+            setBalances(restored.balances);
+            setFilter(restored.filter);
+            setSearchTerm(restored.searchTerm);
+            setListError(restored.listError);
+            setLoading(false);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to restore ad account cache:", error);
+      }
+    }
+
     didRestoreCacheRef.current = true;
   }, [cacheKey]);
 
   useEffect(() => {
     if (!didRestoreCacheRef.current || loading) return;
 
-    adAccountPageCache.set(cacheKey, {
+    const nextCache = {
       hydrated: true,
       adAccounts,
       balances,
       filter,
       searchTerm,
       listError,
-    });
+      savedAt: Date.now(),
+    };
+    adAccountPageCache.set(cacheKey, nextCache);
+
+    if (typeof window !== "undefined") {
+      try {
+        window.sessionStorage.setItem(
+          getStorageCacheKey(cacheKey),
+          JSON.stringify(nextCache)
+        );
+      } catch (error) {
+        console.error("Failed to persist ad account cache:", error);
+      }
+    }
   }, [adAccounts, balances, cacheKey, filter, listError, loading, searchTerm]);
 
   const loadAccounts = useCallback(async () => {
@@ -409,6 +459,9 @@ export default function AdAccountUi({ onRequestNewAccount }) {
       setBalances({});
       balancesRef.current = {};
       adAccountPageCache.delete(cacheKey);
+      if (typeof window !== "undefined") {
+        window.sessionStorage.removeItem(getStorageCacheKey(cacheKey));
+      }
 
       await Promise.all(
         freshAccounts
@@ -830,6 +883,9 @@ export default function AdAccountUi({ onRequestNewAccount }) {
         onClose={() => setIncreaseModal({ open: false, adAccountId: null, oldLimit: null })}
         onSuccess={() => {
           adAccountPageCache.delete(cacheKey);
+          if (typeof window !== "undefined") {
+            window.sessionStorage.removeItem(getStorageCacheKey(cacheKey));
+          }
           setBalances({});
           balancesRef.current = {};
           refreshBalances();

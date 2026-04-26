@@ -92,7 +92,7 @@ export default function AdminChatWindow({ chatId, userId }) {
 
       {/* --- Messages Area --- */}
       <div className="relative flex-1 overflow-y-auto bg-slate-50 dark:bg-[#0c1830]">
-        <ChatMessages chatId={chatId} currentRole={role} />
+        <ChatMessages chatId={chatId} currentRole={role} variant="light" />
       </div>
 
       {/* --- Admin Reply Section --- */}

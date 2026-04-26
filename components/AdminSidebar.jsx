@@ -21,6 +21,7 @@ import {
   MessageCircle,
   ClipboardList,
   Newspaper,
+  Activity,
   Sun,
   Moon,
 } from "lucide-react";
@@ -61,6 +62,12 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
       name: "Overview",
       icon: LayoutDashboard,
       href: "/admin-dashboard/overview",
+      public: true,
+    },
+    {
+      name: "Activity",
+      icon: Activity,
+      href: "/admin-dashboard/activity",
       public: true,
     },
     {
@@ -168,6 +175,7 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
       label: "Manage",
       icon: Users,
       items: [
+        findMenuItem("/admin-dashboard/activity"),
         findMenuItem("/admin-dashboard/users"),
         findMenuItem("/admin-dashboard/transactions"),
       ].filter(Boolean),

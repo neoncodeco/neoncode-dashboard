@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState, useRef } from "react";
 import useAppAuth from "@/hooks/useAppAuth";
+import Swal from "sweetalert2";
 import { 
   Send, X, Lock, ShieldCheck, Image as ImageIcon, 
   Loader2, Search, MessageSquare, Clock, ChevronLeft 
@@ -16,6 +17,7 @@ export default function AdminSupportLayout() {
   const [screenshot, setScreenshot] = useState(null);
   const [isSending, setIsSending] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isMutatingTicket, setIsMutatingTicket] = useState(false);
   
   const messagesEndRef = useRef(null);
 
@@ -87,6 +89,98 @@ export default function AdminSupportLayout() {
         loadAllTickets();
       }
     } finally { setIsSending(false); }
+  };
+
+  const closeSelectedTicket = async () => {
+    if (!selectedTicket?._id || isMutatingTicket) return;
+
+    const confirmResult = await Swal.fire({
+      title: "Close ticket?",
+      text: "The user will no longer be able to send messages on this ticket.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes, close ticket",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#d97706",
+      cancelButtonColor: "#64748b",
+    });
+    if (!confirmResult.isConfirmed) return;
+
+    setIsMutatingTicket(true);
+    try {
+      const res = await fetch(`/api/admin/support/ticket/${selectedTicket._id}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || "Failed to close ticket");
+      await selectTicket(selectedTicket._id);
+      await loadAllTickets();
+      await Swal.fire({
+        title: "Ticket closed",
+        text: "This conversation is now closed for the user.",
+        icon: "success",
+        confirmButtonColor: "#2563eb",
+        timer: 2000,
+        showConfirmButton: true,
+      });
+    } catch (err) {
+      console.error("Close ticket error:", err);
+      await Swal.fire({
+        title: "Close failed",
+        text: err?.message || "Could not close this ticket.",
+        icon: "error",
+        confirmButtonColor: "#dc2626",
+      });
+    } finally {
+      setIsMutatingTicket(false);
+    }
+  };
+
+  const deleteSelectedTicket = async () => {
+    if (!selectedTicket?._id || isMutatingTicket) return;
+
+    const confirmResult = await Swal.fire({
+      title: "Delete ticket?",
+      text: "This will permanently remove the ticket and all messages. This cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete permanently",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#64748b",
+    });
+    if (!confirmResult.isConfirmed) return;
+
+    setIsMutatingTicket(true);
+    try {
+      const res = await fetch(`/api/admin/support/ticket/${selectedTicket._id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || "Failed to delete ticket");
+      setSelectedTicket(null);
+      await loadAllTickets();
+      await Swal.fire({
+        title: "Ticket deleted",
+        text: "The ticket has been removed.",
+        icon: "success",
+        confirmButtonColor: "#2563eb",
+        timer: 2000,
+        showConfirmButton: true,
+      });
+    } catch (err) {
+      console.error("Delete ticket error:", err);
+      await Swal.fire({
+        title: "Delete failed",
+        text: err?.message || "Could not delete this ticket.",
+        icon: "error",
+        confirmButtonColor: "#dc2626",
+      });
+    } finally {
+      setIsMutatingTicket(false);
+    }
   };
 
   return (
@@ -185,6 +279,24 @@ export default function AdminSupportLayout() {
                   </div>
                 </div>
               </div>
+              <div className="ml-3 flex items-center gap-2">
+                {selectedTicket.status !== "closed" ? (
+                  <button
+                    onClick={closeSelectedTicket}
+                    disabled={isMutatingTicket}
+                    className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-amber-300/20 dark:bg-amber-400/10 dark:text-amber-200"
+                  >
+                    Close
+                  </button>
+                ) : null}
+                <button
+                  onClick={deleteSelectedTicket}
+                  disabled={isMutatingTicket}
+                  className="rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-300/20 dark:bg-red-400/10 dark:text-red-200"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
 
             {/* Chat Messages Area */}
@@ -257,7 +369,7 @@ export default function AdminSupportLayout() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center gap-3 rounded-[28px] border-2 border-dashed border-red-400/20 bg-red-400/10 py-6 text-center text-xs font-black uppercase tracking-[3px] text-red-200">
+                  <div className="flex items-center justify-center gap-3 rounded-[28px] border-2 border-dashed border-red-400/20 bg-red-400/10 py-6 text-center text-xs font-black uppercase tracking-[3px] text-red-700 dark:text-red-200">
                     <Lock size={18} /> Ticket Closed for Responses
                   </div>
                 )}

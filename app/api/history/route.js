@@ -2,6 +2,25 @@ import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 
+const normalizeText = (value) => (typeof value === "string" ? value.toLowerCase() : "");
+
+const resolveCategory = (item) => {
+  const type = normalizeText(item?.type);
+  const title = normalizeText(item?.title);
+  const fullText = `${type} ${title}`;
+
+  if (fullText.includes("budget") || fullText.includes("limit")) return "budget";
+  if (fullText.includes("payment") || fullText.includes("wallet") || fullText.includes("topup")) return "payment";
+  if (fullText.includes("support") || fullText.includes("ticket") || fullText.includes("chat")) return "support";
+  if (fullText.includes("affiliate") || fullText.includes("referral")) return "affiliate";
+  if (fullText.includes("project") || fullText.includes("task")) return "project";
+  if (fullText.includes("account") || fullText.includes("profile")) return "account";
+  return "other";
+};
+
+const PENDING_STATUSES = new Set(["pending", "open"]);
+const COMPLETED_STATUSES = new Set(["approved", "active", "success", "completed"]);
+
 export async function GET(req) {
   try {
     const decoded = await verifyToken(req);
@@ -11,6 +30,10 @@ export async function GET(req) {
 
     const { db } = await getDB();
     const userUid = decoded.uid || decoded.userId;
+    const { searchParams } = new URL(req.url);
+    const page = Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10) || 1);
+    const limit = Math.min(50, Math.max(1, Number.parseInt(searchParams.get("limit") || "12", 10) || 12));
+    const category = (searchParams.get("category") || "all").toLowerCase();
 
     const [activityHistory, adsLogs, payments] = await Promise.all([
       db
@@ -88,7 +111,49 @@ export async function GET(req) {
         new Date(a.createdAt || a.updatedAt || 0).getTime()
     );
 
-    return NextResponse.json({ ok: true, data: history });
+    const categoryCounts = {
+      all: history.length,
+      budget: 0,
+      payment: 0,
+      support: 0,
+      affiliate: 0,
+      project: 0,
+      account: 0,
+      other: 0,
+    };
+
+    history.forEach((item) => {
+      const itemCategory = resolveCategory(item);
+      if (Object.prototype.hasOwnProperty.call(categoryCounts, itemCategory)) {
+        categoryCounts[itemCategory] += 1;
+      }
+    });
+
+    const filteredHistory = category === "all" ? history : history.filter((item) => resolveCategory(item) === category);
+    const totalItems = filteredHistory.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / limit));
+    const safePage = Math.min(page, totalPages);
+    const start = (safePage - 1) * limit;
+    const paginatedHistory = filteredHistory.slice(start, start + limit);
+    const statusCounts = {
+      pending: filteredHistory.filter((item) => PENDING_STATUSES.has(normalizeText(item.status))).length,
+      completed: filteredHistory.filter((item) => COMPLETED_STATUSES.has(normalizeText(item.status))).length,
+    };
+
+    return NextResponse.json({
+      ok: true,
+      data: paginatedHistory,
+      categoryCounts,
+      pagination: {
+        page: safePage,
+        limit,
+        totalItems,
+        totalPages,
+        hasPrev: safePage > 1,
+        hasNext: safePage < totalPages,
+      },
+      statusCounts,
+    });
   } catch (err) {
     console.error("History Fetch Error:", err);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });

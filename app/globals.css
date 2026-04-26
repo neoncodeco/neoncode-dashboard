@@ -650,9 +650,38 @@ textarea {
 }
 
 .sidebar-shell {
+  --dashboard-sidebar-bg: linear-gradient(180deg, #c0df5b 0%, #a9ce43 52%, #88b224 100%);
+  --dashboard-sidebar-border: rgba(70, 88, 14, 0.3);
+  --dashboard-sidebar-inset: rgba(255, 255, 255, 0.32);
+  --sidebar-link-hover-bg: rgba(255, 255, 255, 0.22);
+  --sidebar-active-bg: rgba(255, 255, 255, 0.5);
+  --sidebar-active-border: rgba(70, 88, 14, 0.35);
+  --dashboard-frame-border: rgba(70, 88, 14, 0.24);
+  --dashboard-text-strong: #0c1202;
+  --dashboard-text-muted: #2c3a0c;
+  --dashboard-text-faint: #4c6118;
+  --theme-toggle-bg: rgba(255, 255, 255, 0.32);
+  --theme-toggle-border: rgba(70, 88, 14, 0.2);
+  --theme-toggle-icon-bg: rgba(255, 255, 255, 0.42);
+  --theme-toggle-meta: #33440d;
   background: var(--dashboard-sidebar-bg);
   border-color: transparent;
   box-shadow: none;
+}
+
+.sidebar-shell .sidebar-link {
+  color: #2c3a0c;
+}
+
+.sidebar-shell .sidebar-link:hover {
+  color: #0c1202;
+}
+
+.sidebar-shell .sidebar-active {
+  color: #0c1202;
+  box-shadow:
+    0 10px 24px rgba(70, 88, 14, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.44);
 }
 
 .user-sidebar-shell {

@@ -118,6 +118,26 @@ const HistoryPage = () => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [categoryCounts, setCategoryCounts] = useState({
+    all: 0,
+    budget: 0,
+    payment: 0,
+    support: 0,
+    affiliate: 0,
+    project: 0,
+    account: 0,
+    other: 0,
+  });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 12,
+    totalItems: 0,
+    totalPages: 1,
+    hasPrev: false,
+    hasNext: false,
+  });
+  const [statusCounts, setStatusCounts] = useState({ pending: 0, completed: 0 });
   const { token } = useAppAuth();
 
   useEffect(() => {
@@ -125,13 +145,24 @@ const HistoryPage = () => {
       if (!token) return;
 
       try {
-        const res = await fetch("/api/history", {
+        setLoading(true);
+        const params = new URLSearchParams({
+          page: String(currentPage),
+          limit: "12",
+          category: activeCategory,
+        });
+        const res = await fetch(`/api/history?${params.toString()}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
         const data = await res.json();
-        if (data.ok) setHistory(Array.isArray(data.data) ? data.data : []);
+        if (data.ok) {
+          setHistory(Array.isArray(data.data) ? data.data : []);
+          if (data.categoryCounts) setCategoryCounts(data.categoryCounts);
+          if (data.pagination) setPagination(data.pagination);
+          if (data.statusCounts) setStatusCounts(data.statusCounts);
+        }
       } catch {
         console.error("Failed to load history");
       } finally {
@@ -140,36 +171,13 @@ const HistoryPage = () => {
     };
 
     fetchHistory();
-  }, [token]);
+  }, [token, currentPage, activeCategory]);
 
-  const categoryCounts = useMemo(() => {
-    const counts = {
-      all: history.length,
-      budget: 0,
-      payment: 0,
-      support: 0,
-      affiliate: 0,
-      project: 0,
-      account: 0,
-      other: 0,
-    };
-
-    history.forEach((item) => {
-      const category = resolveCategory(item);
-      counts[category] += 1;
-    });
-
-    return counts;
-  }, [history]);
-
-  const filteredHistory = useMemo(() => {
-    if (activeCategory === "all") return history;
-    return history.filter((item) => resolveCategory(item) === activeCategory);
-  }, [activeCategory, history]);
-
-  const totalItems = filteredHistory.length;
-  const pendingItems = filteredHistory.filter((item) => PENDING_STATUSES.has(normalizeText(item.status))).length;
-  const completedItems = filteredHistory.filter((item) => COMPLETED_STATUSES.has(normalizeText(item.status))).length;
+  const totalItems = pagination.totalItems;
+  const pendingItems = statusCounts.pending;
+  const completedItems = statusCounts.completed;
+  const pageStart = totalItems === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
+  const pageEnd = totalItems === 0 ? 0 : Math.min(totalItems, pagination.page * pagination.limit);
 
   if (loading) {
     return (
@@ -215,7 +223,10 @@ const HistoryPage = () => {
                 <button
                   key={category.key}
                   type="button"
-                  onClick={() => setActiveCategory(category.key)}
+                  onClick={() => {
+                    setActiveCategory(category.key);
+                    setCurrentPage(1);
+                  }}
                   className={`shrink-0 whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] transition ${
                     isActive
                       ? "dashboard-accent-surface border-transparent text-white"
@@ -300,8 +311,8 @@ const HistoryPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--dashboard-frame-border)]">
-              {filteredHistory.length > 0 ? (
-                filteredHistory.map((item) => {
+              {history.length > 0 ? (
+                history.map((item) => {
                   const formattedDateTime = formatHistoryDateTime(item.createdAt || item.updatedAt);
 
                   return (
@@ -345,6 +356,38 @@ const HistoryPage = () => {
               )}
             </tbody>
           </table>
+        </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.22, ease: "easeOut" }}
+        className="dashboard-subpanel flex flex-col gap-3 rounded-[20px] border p-3 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <p className="dashboard-text-muted text-xs font-semibold uppercase tracking-[0.12em]">
+          Showing {pageStart}-{pageEnd} of {totalItems}
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            disabled={!pagination.hasPrev || loading}
+            className="dashboard-subpanel rounded-lg border border-[var(--dashboard-frame-border)] px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Prev
+          </button>
+          <span className="dashboard-text-strong px-2 text-xs font-black uppercase tracking-[0.12em]">
+            Page {pagination.page} / {pagination.totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => setCurrentPage((prev) => prev + 1)}
+            disabled={!pagination.hasNext || loading}
+            className="dashboard-subpanel rounded-lg border border-[var(--dashboard-frame-border)] px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
       </motion.div>
     </div>

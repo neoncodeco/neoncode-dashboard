@@ -276,7 +276,7 @@ export default function MyTicketsPage() {
           <div className="dashboard-subpanel flex min-h-[220px] flex-col items-center justify-center rounded-[24px] border border-emerald-300/35 bg-[linear-gradient(135deg,rgba(183,223,105,0.24),rgba(255,255,255,0.92)_58%)] p-6 text-center shadow-[0_14px_36px_rgba(15,23,42,0.08)]">
             <MessagesSquare size={28} className="dashboard-text-faint" />
             <p className="dashboard-text-strong mt-4 text-base font-bold">No support history found</p>
-            <p className="dashboard-text-muted mt-1 text-sm">আপনার created ticket history এখানে comment-style এ দেখাবে।</p>
+            <p className="dashboard-text-muted mt-1 text-sm">no support history found try again later or create a new ticket</p>
           </div>
         ) : (
           historyTickets.map((ticket) => {
