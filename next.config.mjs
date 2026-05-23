@@ -12,6 +12,7 @@ const isProduction = process.env.NODE_ENV === "production";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",
   turbopack: {
     root: __dirname,
   },
