@@ -25,3 +25,5 @@ copyFresh(
   path.join(root, ".next", "static"),
   path.join(standaloneDir, ".next", "static"),
 );
+
+copyFresh(path.join(root, ".env.local"), path.join(standaloneDir, ".env.local"));
