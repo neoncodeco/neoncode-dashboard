@@ -1,5 +1,6 @@
 import path from "path";
 import { fileURLToPath } from "url";
+import { affiliateDashboardRedirects } from "./lib/featureFlags.js";
 import {
   userDashboardCanonicalRewrites,
   userDashboardLegacyRedirects,
@@ -28,6 +29,7 @@ const nextConfig = {
         destination,
         permanent: true,
       })),
+      ...affiliateDashboardRedirects,
     ];
   },
   async rewrites() {

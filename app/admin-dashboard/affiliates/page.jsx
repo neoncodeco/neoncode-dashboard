@@ -158,59 +158,58 @@ export default function AffiliatePayoutsPage() {
   }
 
   return (
-    <div className="min-h-screen space-y-6 bg-[#fcfcfc] p-4  sm:p-6 md:space-y-8 md:p-8 md:pt-8">
+    <div className="space-y-5 md:space-y-6">
 
       {/* HEADER */}
-      <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">Affiliate Payouts</h1>
-          <p className="text-gray-500 mt-1">Review and process affiliate withdrawal requests in real-time.</p>
+          <h1 className="text-2xl font-black tracking-tight text-gray-900">Affiliate Payouts</h1>
+          <p className="mt-0.5 text-sm text-gray-500">Review and process affiliate withdrawal requests in real-time.</p>
         </div>
-
         <button
           onClick={handleExportCSV}
           disabled={filteredRequests.length === 0}
-          className="admin-accent-button flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+          className="admin-accent-button flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Download size={18} /> Export Data (CSV)
+          <Download size={15} /> Export CSV
         </button>
       </div>
 
       {/* SUMMARY CARDS */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex items-center gap-5">
-            <div className="p-4 bg-emerald-50 text-emerald-600 rounded-2xl">
-                <TrendingUp size={24} />
-            </div>
-            <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Paid Out</p>
-                <h3 className="text-2xl font-black text-gray-900">${totalPaid.toLocaleString()}</h3>
-            </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+        <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-4" style={{ borderLeft: "3px solid #10b981" }}>
+          <div className="rounded-xl p-2.5" style={{ background: "#10b98118" }}>
+            <TrendingUp size={18} style={{ color: "#10b981" }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Total Paid Out</p>
+            <p className="mt-0.5 text-xl font-black text-gray-900">${totalPaid.toLocaleString()}</p>
+          </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex items-center gap-5">
-            <div className="p-4 bg-amber-50 text-amber-600 rounded-2xl">
-                <History size={24} />
-            </div>
-            <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pending Requests</p>
-                <h3 className="text-2xl font-black text-gray-900">{pendingCount}</h3>
-            </div>
+        <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-4" style={{ borderLeft: "3px solid #f59e0b" }}>
+          <div className="rounded-xl p-2.5" style={{ background: "#f59e0b18" }}>
+            <History size={18} style={{ color: "#f59e0b" }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Pending Requests</p>
+            <p className="mt-0.5 text-xl font-black text-gray-900">{pendingCount}</p>
+          </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex items-center gap-5">
-            <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl">
-                <CreditCard size={24} />
-            </div>
-            <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Requests</p>
-                <h3 className="text-2xl font-black text-gray-900">{requests.length}</h3>
-            </div>
+        <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-4" style={{ borderLeft: "3px solid #3b82f6" }}>
+          <div className="rounded-xl p-2.5" style={{ background: "#3b82f618" }}>
+            <CreditCard size={18} style={{ color: "#3b82f6" }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Total Requests</p>
+            <p className="mt-0.5 text-xl font-black text-gray-900">{requests.length}</p>
+          </div>
         </div>
       </div>
 
       {/* TABLE */}
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl shadow-black/5">
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
         {/* FILTERS */}
         <div className="flex flex-col items-stretch justify-between gap-4 border-b border-gray-50 p-5 md:flex-row md:items-center">
             <div className="group relative w-full md:max-w-md">
@@ -289,14 +288,14 @@ export default function AffiliatePayoutsPage() {
                         <button
                           onClick={() => handleAction(req._id, "approve")}
                           disabled={loading}
-                          className="rounded-lg border border-emerald-400/20 bg-emerald-400/10 p-2 text-emerald-200 transition-all hover:bg-emerald-500 hover:text-white"
+                          className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100"
                         >
                           <CheckCircle size={16} />
                         </button>
                         <button
                           onClick={() => handleAction(req._id, "reject")}
                           disabled={loading}
-                          className="rounded-lg border border-red-400/20 bg-red-400/10 p-2 text-red-200 transition-all hover:bg-red-500 hover:text-white"
+                          className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-100"
                         >
                           <XCircle size={16} />
                         </button>

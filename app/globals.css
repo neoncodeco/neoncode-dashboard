@@ -1123,6 +1123,20 @@ textarea {
   background: var(--dashboard-page-bg) !important;
 }
 
+/* Admin skeleton loader */
+.admin-skeleton {
+  background: var(--admin-border);
+  border-radius: 8px;
+  animation: admin-skeleton-pulse 1.6s ease-in-out infinite;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+@keyframes admin-skeleton-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1;   }
+}
+
 .admin-dashboard-theme-scope > * {
   background: transparent;
 }

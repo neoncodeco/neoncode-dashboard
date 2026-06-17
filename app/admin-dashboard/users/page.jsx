@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Search, Shield, Trash2, Download, UserCheck, UserX, Clock, Users } from "lucide-react";
 import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
 import useAppAuth from "@/hooks/useAppAuth";
-import ManageUserModal from "@/components/ManageUserModal";
 import Swal from "sweetalert2";
 
 /* ================= STATUS COLOR ================= */
@@ -32,13 +32,18 @@ const roleColor = (role) => {
 
 export default function AllUsersPage() {
   const { token, user } = useAppAuth();
+  const router = useRouter();
   const { getCache, setCache } = useAdminDashboardCache();
 
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState(null);
   const [deletingUserId, setDeletingUserId] = useState("");
+
+  const openUser = (targetUser) => {
+    if (!targetUser?.userId) return;
+    router.push(`/admin-dashboard/users/${encodeURIComponent(targetUser.userId)}`);
+  };
 
   /* ================= LOAD USERS ================= */
   const loadUsers = useCallback(async (options = {}) => {
@@ -140,10 +145,6 @@ export default function AllUsersPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "Failed to delete user");
 
-      if (selectedUser?.userId === targetUser.userId) {
-        setSelectedUser(null);
-      }
-
       await loadUsers({ force: true });
       await Swal.fire({
         title: "User deleted",
@@ -164,13 +165,13 @@ export default function AllUsersPage() {
   };
 
   return (
-    <div className="min-h-screen space-y-6 bg-[#fcfcfc] p-4  sm:p-6  md:space-y-8 md:p-8 md:pt-8">
+    <div className="space-y-5 md:space-y-6">
       
       {/* HEADER SECTION */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">User Management</h1>
-          <p className="text-gray-500 mt-1">Manage, monitor and export your system users.</p>
+          <h1 className="text-2xl font-black tracking-tight text-gray-900">User Management</h1>
+          <p className="mt-0.5 text-sm text-gray-500">Manage, monitor and export your system users.</p>
         </div>
 
         <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
@@ -195,7 +196,7 @@ export default function AllUsersPage() {
       </div>
 
       {/* TABLE SECTION */}
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl shadow-black/5">
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
         <div className="space-y-3 p-3 md:hidden">
           {loading ? (
             <div className="flex flex-col items-center gap-2 rounded-2xl px-4 py-10 text-center">
@@ -212,7 +213,7 @@ export default function AllUsersPage() {
               <div
                 key={u.userId}
                 className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
-                onClick={() => setSelectedUser(u)}
+                onClick={() => openUser(u)}
               >
                 <div className="flex items-start gap-3">
                   <img
@@ -239,11 +240,11 @@ export default function AllUsersPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      setSelectedUser(u);
+                      openUser(u);
                     }}
                     className="admin-secondary-button flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all"
                   >
-                    <Shield size={14} /> Open
+                    <Shield size={14} /> View profile
                   </button>
                   <button
                     onClick={(e) => {
@@ -296,8 +297,8 @@ export default function AllUsersPage() {
                 filteredUsers.map((u) => (
                   <tr
                     key={u.userId}
-                    className="group hover:bg-gray-50/80 transition-all cursor-pointer"
-                    onClick={() => setSelectedUser(u)}
+                    className="group cursor-pointer transition hover:bg-gray-50/80"
+                    onClick={() => openUser(u)}
                   >
                     {/* USER DETAILS */}
                     <td className="px-6 py-4">
@@ -347,11 +348,11 @@ export default function AllUsersPage() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedUser(u);
+                            openUser(u);
                           }}
                           className="admin-secondary-button flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold transition-all"
                         >
-                          <Shield size={14} /> Open Profile
+                          <Shield size={14} /> View profile
                         </button>
 
                         <button
@@ -374,15 +375,6 @@ export default function AllUsersPage() {
           </table>
         </div>
       </div>
-
-      {/* MODAL */}
-      {selectedUser && (
-        <ManageUserModal
-          user={selectedUser}
-          onClose={() => setSelectedUser(null)}
-          onUpdated={loadUsers}
-        />
-      )}
     </div>
   );
 }

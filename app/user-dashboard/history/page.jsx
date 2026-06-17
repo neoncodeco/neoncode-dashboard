@@ -1,6 +1,7 @@
 "use client";
 
 import useAppAuth from "@/hooks/useAppAuth";
+import { AFFILIATE_UI_ENABLED } from "@/lib/featureFlags";
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, ClipboardList, Clock3, Filter, History } from "lucide-react";
@@ -10,7 +11,7 @@ const CATEGORY_CONFIG = [
   { key: "budget", label: "Budget" },
   { key: "payment", label: "Payment" },
   { key: "support", label: "Support" },
-  { key: "affiliate", label: "Affiliate" },
+  ...(AFFILIATE_UI_ENABLED ? [{ key: "affiliate", label: "Affiliate" }] : []),
   { key: "project", label: "Project" },
   { key: "account", label: "Account" },
   { key: "other", label: "Other" },
@@ -139,6 +140,13 @@ const HistoryPage = () => {
   });
   const [statusCounts, setStatusCounts] = useState({ pending: 0, completed: 0 });
   const { token } = useAppAuth();
+
+  useEffect(() => {
+    if (!AFFILIATE_UI_ENABLED && activeCategory === "affiliate") {
+      setActiveCategory("all");
+      setCurrentPage(1);
+    }
+  }, [activeCategory]);
 
   useEffect(() => {
     const fetchHistory = async () => {

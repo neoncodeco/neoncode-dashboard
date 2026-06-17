@@ -36,6 +36,7 @@ import {
   useMetaSpendingOverviewData,
 } from "@/components/MetaSpendingOverview";
 import { formatUsd, resolveUsdToBdtRate } from "@/lib/currency";
+import { AFFILIATE_UI_ENABLED } from "@/lib/featureFlags";
 import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
 const FUND_COLORS = ["#B7DF69", "#8ED868", "#73C8FF", "#67A3FF", "#A4E05F"];
 const TOPUP_CHART_COLOR = "#9BC44F";
@@ -176,9 +177,9 @@ export default function OverviewPage() {
   const stats = userData.referralStats || {};
   const usdToBdtRate = resolveUsdToBdtRate(userData?.currencyConfig?.usdToBdtRate);
 
-  const totalPayout = Number(stats.totalPayout || 0);
-  const totalReferrers = Number(stats.totalReferrers || 0);
-  const totalReferIncome = Number(stats.totalReferIncome || 0);
+  const totalPayout = AFFILIATE_UI_ENABLED ? Number(stats.totalPayout || 0) : 0;
+  const totalReferrers = AFFILIATE_UI_ENABLED ? Number(stats.totalReferrers || 0) : 0;
+  const totalReferIncome = AFFILIATE_UI_ENABLED ? Number(stats.totalReferIncome || 0) : 0;
   const totalTopup = Number(userData.topupBalance || 0);
   const totalWallet = Number(userData.walletBalance || 0);
   const totalFunds = totalWallet + totalTopup + totalReferIncome + totalPayout;
@@ -199,8 +200,7 @@ export default function OverviewPage() {
   const pieData = [
     { name: "Wallet", value: totalWallet },
     { name: "Topup", value: totalTopup },
-    { name: "Referral", value: totalReferIncome },
-    { name: "Payout", value: totalPayout },
+    ...(AFFILIATE_UI_ENABLED ? [{ name: "Referral", value: totalReferIncome }, { name: "Payout", value: totalPayout }] : []),
   ].filter((item) => item.value > 0);
 
   const accountHealth = [
@@ -212,10 +212,14 @@ export default function OverviewPage() {
       label: "Role",
       value: userData.role || "user",
     },
-    {
-      label: "Referral Code",
-      value: userData.referralCode || "Not set",
-    },
+    ...(AFFILIATE_UI_ENABLED
+      ? [
+          {
+            label: "Referral Code",
+            value: userData.referralCode || "Not set",
+          },
+        ]
+      : []),
     {
       label: "Member Since",
       value: userData.createdAt ? formatLongDate(userData.createdAt) : "Unknown",
@@ -238,7 +242,7 @@ export default function OverviewPage() {
         <WhatsAppVerifyIntroModal onClose={() => setSuppressWhatsappIntro(true)} />
       ) : null}
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <section className={`grid gap-4 sm:grid-cols-2 ${AFFILIATE_UI_ENABLED ? "xl:grid-cols-5" : "xl:grid-cols-3"}`}>
         <MetricCard
           title="Wallet Balance"
           value={<CurrencyAmount value={userData.walletBalance} usdToBdtRate={usdToBdtRate} showSecondary={false} primaryClassName="text-[1.65rem] font-black leading-none dashboard-text-strong" />}
@@ -253,23 +257,27 @@ export default function OverviewPage() {
           icon={BadgeDollarSign}
           tone="soft"
         />
-        <MetricCard
-          title="Referral Income"
-          value={formatUsd(totalReferIncome)}
-          subtext={`${totalReferrers} active referrals`}
-          icon={Users}
-          tone="soft"
-        />
-        <MetricCard
-          title="Payout Total"
-          value={formatUsd(totalPayout)}
-          subtext="Completed payout value"
-          icon={CreditCard}
-        />
+        {AFFILIATE_UI_ENABLED ? (
+          <>
+            <MetricCard
+              title="Referral Income"
+              value={formatUsd(totalReferIncome)}
+              subtext={`${totalReferrers} active referrals`}
+              icon={Users}
+              tone="soft"
+            />
+            <MetricCard
+              title="Payout Total"
+              value={formatUsd(totalPayout)}
+              subtext="Completed payout value"
+              icon={CreditCard}
+            />
+          </>
+        ) : null}
         <MetricCard
           title="Total Funds"
           value={formatUsd(totalFunds)}
-          subtext="Wallet + topup + referral + payout"
+          subtext={AFFILIATE_UI_ENABLED ? "Wallet + topup + referral + payout" : "Wallet + topup"}
           icon={TrendingUp}
           tone="accent"
         />

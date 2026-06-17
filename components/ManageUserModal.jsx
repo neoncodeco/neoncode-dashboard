@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import useAppAuth from "@/hooks/useAppAuth";
+import { AFFILIATE_UI_ENABLED } from "@/lib/featureFlags";
 import { DEFAULT_USD_TO_BDT_RATE } from "@/lib/currency";
 
 const DEFAULT_PERMISSIONS = {
@@ -27,7 +28,9 @@ const SOCIAL_KEYS = [
   "facebook",
 ];
 
-const BASE_TABS = ["Overview", "Affiliate", "Meta Ads", "Profile"];
+const BASE_TABS = AFFILIATE_UI_ENABLED
+  ? ["Overview", "Affiliate", "Meta Ads", "Profile"]
+  : ["Overview", "Meta Ads", "Profile"];
 
 const safeNum = (v, fallback = 0) => {
   const n = Number(v);
@@ -52,9 +55,21 @@ function normalizeTimeline(items) {
   }));
 }
 
-export default function ManageUserModal({ user, onClose, onUpdated }) {
+export function ManageUserPanel({
+  user,
+  onClose,
+  onUpdated,
+  variant = "modal",
+  formId = "manage-user-panel",
+  showFooter = true,
+  onLiveChange,
+  initialTab = "Overview",
+  visibleTabs = null,
+  showTabNav = true,
+}) {
   const { token } = useAppAuth();
-  const [activeTab, setActiveTab] = useState("Overview");
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const isPage = variant === "page";
 
   const [role, setRole] = useState(user.role || "user");
   const [status, setStatus] = useState(user.status || "active");
@@ -98,13 +113,31 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
-  const tabs = role === "team_member" ? [...BASE_TABS, "Team Card"] : BASE_TABS;
+  const allTabs = role === "team_member" ? [...BASE_TABS, "Team Card"] : BASE_TABS;
+  const tabs = visibleTabs ? allTabs.filter((tab) => visibleTabs.includes(tab)) : allTabs;
+
+  useEffect(() => {
+    if (tabs.length > 0 && !tabs.includes(activeTab)) {
+      setActiveTab(tabs[0]);
+    }
+  }, [activeTab, tabs]);
 
   useEffect(() => {
     if (role !== "team_member" && activeTab === "Team Card") {
-      setActiveTab("Profile");
+      setActiveTab(tabs.includes("Profile") ? "Profile" : tabs[0] || "Profile");
     }
-  }, [activeTab, role]);
+  }, [activeTab, role, tabs]);
+
+  useEffect(() => {
+    onLiveChange?.({
+      name,
+      email,
+      role,
+      status,
+      walletBalance: safeNum(walletBalance),
+      topupBalance: safeNum(topupBalance),
+    });
+  }, [name, email, role, status, walletBalance, topupBalance, onLiveChange]);
 
   const togglePermission = (key) => {
     setPermissions((p) => ({ ...p, [key]: !p[key] }));
@@ -191,8 +224,8 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "Update failed");
 
-      onUpdated();
-      onClose();
+      onUpdated?.();
+      if (!isPage) onClose?.();
     } catch (error) {
       setMessage({ type: "error", text: error.message || "Update failed" });
     } finally {
@@ -200,51 +233,78 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-3 backdrop-blur-sm sm:p-4">
-      <div className="max-h-[92vh] w-full max-w-6xl space-y-5 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.22)] sm:p-5 md:p-6 dark:border-slate-800 dark:bg-slate-950 dark:shadow-[0_30px_80px_-30px_rgba(2,6,23,0.7)]">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h2 className="text-xl font-black text-slate-900 dark:text-slate-50">User Dashboard Mirror Editor</h2>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">UID: {user.userId}</p>
-          </div>
-          <button onClick={onClose} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
-            Close
-          </button>
-        </div>
+  const tabButtonClass = (tab) => {
+    const active = activeTab === tab;
+    if (isPage) {
+      return active
+        ? "border-b-2 border-sky-600 pb-3 text-sm font-semibold text-sky-600"
+        : "border-b-2 border-transparent pb-3 text-sm font-medium text-gray-500 transition hover:text-gray-800";
+    }
+    return active
+      ? "rounded-xl border border-sky-600 bg-sky-600 px-4 py-2 text-sm font-bold text-white"
+      : "rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100";
+  };
 
-        <div className="flex flex-wrap gap-2">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`rounded-xl border px-4 py-2 text-sm font-bold transition ${
-                activeTab === tab
-                  ? "border-sky-600 bg-sky-600 text-white dark:border-sky-500 dark:bg-sky-500"
-                  : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-              }`}
-            >
-              {tab}
+  const sectionClass = isPage
+    ? "rounded-2xl border border-gray-200 bg-white p-5 sm:p-6"
+    : "space-y-4";
+
+  const panel = (
+    <form
+      id={formId}
+      onSubmit={(e) => {
+        e.preventDefault();
+        void submit();
+      }}
+      className={isPage ? "space-y-6" : "space-y-5"}
+    >
+        {!isPage ? (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-xl font-black text-slate-900">User Dashboard Mirror Editor</h2>
+              <p className="mt-1 text-xs text-slate-500">UID: {user.userId}</p>
+            </div>
+            <button type="button" onClick={onClose} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+              Close
             </button>
-          ))}
-        </div>
+          </div>
+        ) : null}
+
+        {showTabNav && tabs.length > 1 ? (
+          <div className={isPage ? "flex gap-6 overflow-x-auto border-b border-gray-200" : "flex flex-wrap gap-2"}>
+            {tabs.map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={tabButtonClass(tab)}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         {activeTab === "Overview" && (
-          <div className="space-y-4">
-            <h3 className="font-bold text-slate-800 dark:text-slate-100">Overview Tab Values</h3>
+          <div className={sectionClass}>
+            <h3 className="mb-4 text-sm font-bold text-gray-900">Wallet & balances</h3>
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               <Field label="Wallet Balance (USD)" value={walletBalance} onChange={setWalletBalance} type="number" />
               <Field label="Topup Balance (USD)" value={topupBalance} onChange={setTopupBalance} type="number" />
-              <Field label="Total Referrers" value={totalReferrers} onChange={setTotalReferrers} type="number" />
-              <Field label="Refer Income (USD)" value={totalReferIncome} onChange={setTotalReferIncome} type="number" />
-              <Field label="Total Payout (USD)" value={totalPayout} onChange={setTotalPayout} type="number" />
+              {AFFILIATE_UI_ENABLED ? (
+                <>
+                  <Field label="Total Referrers" value={totalReferrers} onChange={setTotalReferrers} type="number" />
+                  <Field label="Refer Income (USD)" value={totalReferIncome} onChange={setTotalReferIncome} type="number" />
+                  <Field label="Total Payout (USD)" value={totalPayout} onChange={setTotalPayout} type="number" />
+                </>
+              ) : null}
             </div>
           </div>
         )}
 
-        {activeTab === "Affiliate" && (
-          <div className="space-y-4">
-            <h3 className="font-bold text-slate-800 dark:text-slate-100">Affiliate Tab Values</h3>
+        {AFFILIATE_UI_ENABLED && activeTab === "Affiliate" && (
+          <div className={sectionClass}>
+            <h3 className="mb-4 text-sm font-bold text-gray-900">Affiliate settings</h3>
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               <Field label="Completed Referred Users" value={level1DepositCount} onChange={setLevel1DepositCount} type="number" />
               <Field label="Total Referrers" value={totalReferrers} onChange={setTotalReferrers} type="number" />
@@ -255,8 +315,8 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
         )}
 
         {activeTab === "Meta Ads" && (
-          <div className="space-y-4">
-            <h3 className="font-bold text-slate-800 dark:text-slate-100">Meta Ads Tab Values</h3>
+          <div className={sectionClass}>
+            <h3 className="mb-4 text-sm font-bold text-gray-900">Meta Ads configuration</h3>
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               <Field label="Wallet Balance (USD)" value={walletBalance} onChange={setWalletBalance} type="number" />
               <Field label="USD Rate" value={usdRate} onChange={setUsdRate} type="number" />
@@ -270,8 +330,8 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
         )}
 
         {activeTab === "Profile" && (
-          <div className="space-y-4">
-            <h3 className="font-bold text-slate-800 dark:text-slate-100">Profile / Access Values</h3>
+          <div className={sectionClass}>
+            <h3 className="mb-4 text-sm font-bold text-gray-900">Profile & access</h3>
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               <Field label="Name" value={name} onChange={setName} />
               <Field label="Email" value={email} onChange={setEmail} />
@@ -320,7 +380,9 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
               <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
                 <Toggle label="Projects Access" value={permissions.projectsAccess} onChange={() => togglePermission("projectsAccess")} />
                 <Toggle label="Transactions Access" value={permissions.transactionsAccess} onChange={() => togglePermission("transactionsAccess")} />
-                <Toggle label="Affiliate Access" value={permissions.affiliateAccess} onChange={() => togglePermission("affiliateAccess")} />
+                {AFFILIATE_UI_ENABLED ? (
+                  <Toggle label="Affiliate Access" value={permissions.affiliateAccess} onChange={() => togglePermission("affiliateAccess")} />
+                ) : null}
                 <Toggle label="Meta Ad Access" value={permissions.metaAdAccess} onChange={() => togglePermission("metaAdAccess")} />
               </div>
             )}
@@ -328,9 +390,9 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
         )}
 
         {activeTab === "Team Card" && (
-          <div className="space-y-6">
+          <div className={`${sectionClass} space-y-6`}>
             <div>
-              <h3 className="font-bold text-slate-800 dark:text-slate-100">Team Member Public Card</h3>
+              <h3 className="text-sm font-bold text-gray-900">Team member public card</h3>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 This card will be visible to other team members and stakeholders, including username.
               </p>
@@ -393,14 +455,29 @@ export default function ManageUserModal({ user, onClose, onUpdated }) {
           </p>
         ) : null}
 
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <button onClick={onClose} className="rounded-lg border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
-            Cancel
-          </button>
-          <button onClick={submit} disabled={loading} className="rounded-lg bg-sky-600 px-4 py-2 font-semibold text-white transition hover:bg-sky-700 disabled:opacity-60 dark:bg-sky-500 dark:hover:bg-sky-400">
-            {loading ? "Saving..." : "Save All Changes"}
-          </button>
-        </div>
+        {showFooter ? (
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            {!isPage ? (
+              <button type="button" onClick={onClose} className="rounded-lg border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-700 transition hover:bg-slate-50">
+                Cancel
+              </button>
+            ) : null}
+            <button type="submit" disabled={loading} className="admin-accent-button rounded-xl px-5 py-2.5 text-sm font-bold disabled:opacity-60">
+              {loading ? "Saving..." : "Save all changes"}
+            </button>
+          </div>
+        ) : null}
+    </form>
+  );
+
+  return panel;
+}
+
+export default function ManageUserModal({ user, onClose, onUpdated }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-3 backdrop-blur-sm sm:p-4">
+      <div className="max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.22)] sm:p-5 md:p-6">
+        <ManageUserPanel user={user} onUpdated={onUpdated} onClose={onClose} variant="modal" />
       </div>
     </div>
   );
