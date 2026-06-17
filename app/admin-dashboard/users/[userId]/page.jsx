@@ -4,9 +4,9 @@ import { useAdminUserDetail } from "@/components/admin/AdminUserDetailShell";
 import { InsightsLoader, UserOverviewPanel } from "@/components/admin/userDetailShared";
 
 export default function UserOverviewPage() {
-  const { insights, insightsLoading } = useAdminUserDetail();
+  const { insights, insightsLoading, userId } = useAdminUserDetail();
 
   if (insightsLoading) return <InsightsLoader />;
 
-  return <UserOverviewPanel insights={insights} />;
+  return <UserOverviewPanel insights={insights} userId={userId} />;
 }
