@@ -26,6 +26,7 @@ import {
   Moon,
 } from "lucide-react";
 import useAppAuth from "@/hooks/useAppAuth";
+import { AFFILIATE_UI_ENABLED } from "@/lib/featureFlags";
 import Swal from "sweetalert2";
 import DashboardThemeToggle from "@/components/DashboardThemeToggle";
 
@@ -106,12 +107,16 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
       href: "/admin-dashboard/chats",
       public: true,
     },
-    {
-      name: "Affiliate Payouts",
-      icon: Share2,
-      href: "/admin-dashboard/affiliates",
-      permissionKey: "affiliateAccess",
-    },
+    ...(AFFILIATE_UI_ENABLED
+      ? [
+          {
+            name: "Affiliate Payouts",
+            icon: Share2,
+            href: "/admin-dashboard/affiliates",
+            permissionKey: "affiliateAccess",
+          },
+        ]
+      : []),
     {
       name: "News",
       icon: Newspaper,
@@ -167,7 +172,7 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
       items: [
         findMenuItem("/admin-dashboard/support"),
         findMenuItem("/admin-dashboard/chats"),
-        findMenuItem("/admin-dashboard/affiliates"),
+        ...(AFFILIATE_UI_ENABLED ? [findMenuItem("/admin-dashboard/affiliates")] : []),
       ].filter(Boolean),
     },
     {

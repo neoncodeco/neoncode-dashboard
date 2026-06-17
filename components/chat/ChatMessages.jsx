@@ -10,6 +10,7 @@ export default function ChatMessages({ chatId, currentRole = "user", variant = "
   const { token } = useAppAuth();
   const scrollRef = useRef(null);
   const isLight = variant === "light";
+  const isAdmin = variant === "admin";
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -61,6 +62,7 @@ export default function ChatMessages({ chatId, currentRole = "user", variant = "
       className="flex-1 overflow-y-auto px-3 py-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:px-4"
       style={{ height: "100%" }}
     >
+      {messages.length > 0 && !isAdmin ? (
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -77,47 +79,61 @@ export default function ChatMessages({ chatId, currentRole = "user", variant = "
           Today
         </span>
       </motion.div>
+      ) : null}
 
       {messages.length === 0 && (
         <div className="flex h-full items-center justify-center px-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 260, damping: 24 }}
-            className={`max-w-xs rounded-[30px] p-6 text-center shadow-[0_24px_50px_rgba(0,0,0,0.22)] ${
-              isLight
-                ? "border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] shadow-[0_20px_45px_rgba(148,163,184,0.22)]"
-                : "border border-white/10 bg-white/[0.04]"
-            }`}
-          >
-            <div
-              className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${
-                isLight
-                  ? "border border-[rgba(194,235,45,0.55)] bg-[linear-gradient(180deg,#C2EB2D,#B2DF21)] text-[var(--dashboard-accent-text)]"
-                  : "bg-emerald-400/10 text-emerald-300"
-              }`}
-            >
-              <Sparkles size={18} />
-            </div>
-            <p className={`text-sm font-semibold ${isLight ? "text-slate-900" : "text-white"}`}>
-              Start a smooth support chat
-            </p>
-            <p className={`mt-2 text-xs leading-6 ${isLight ? "text-slate-600" : "text-white/65"}`}>
-              Ask about billing, order updates, service issue, or anything you need help with.
-            </p>
-          </motion.div>
+          <p className={`text-sm ${isAdmin || isLight ? "text-gray-400" : "text-white/60"}`}>
+            No messages yet. Start the conversation.
+          </p>
         </div>
       )}
 
       <AnimatePresence initial={false}>
         {messages.map((m) => {
           const isMe = m.senderRole === currentRole;
+          const isUserMessage = m.senderRole === "user";
           const timeLabel = m.createdAt
             ? new Date(m.createdAt).toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
               })
             : "Sending...";
+
+          if (isAdmin) {
+            return (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`mb-3 flex w-full ${isMe ? "justify-end" : "justify-start"}`}
+              >
+                <div className={`max-w-[78%] sm:max-w-[68%] ${isMe ? "items-end" : "items-start"}`}>
+                  <div
+                    className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                      isMe
+                        ? "rounded-br-md bg-sky-600 text-white"
+                        : "rounded-bl-md border border-gray-200 bg-white text-gray-800"
+                    }`}
+                  >
+                    {m.type === "text" ? (
+                      <p className="whitespace-pre-wrap break-words">{m.text}</p>
+                    ) : null}
+                    {m.type === "image" ? (
+                      <img
+                        src={m.imageUrl}
+                        alt="attachment"
+                        className="max-w-full rounded-lg object-cover"
+                      />
+                    ) : null}
+                  </div>
+                  <p className={`mt-1 px-1 text-[10px] text-gray-400 ${isMe ? "text-right" : "text-left"}`}>
+                    {timeLabel}
+                  </p>
+                </div>
+              </motion.div>
+            );
+          }
 
           return (
             <motion.div
@@ -129,8 +145,12 @@ export default function ChatMessages({ chatId, currentRole = "user", variant = "
               className={`mb-4 flex w-full items-end gap-2 ${isMe ? "justify-end" : "justify-start"}`}
             >
               {!isMe ? (
-              <div className="mb-6 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-emerald-300 shadow-[0_10px_25px_rgba(0,0,0,0.18)]">
-                <Bot size={16} />
+              <div className={`mb-6 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl ${
+                isUserMessage
+                  ? (isLight ? "border border-slate-200 bg-white text-slate-600" : "border border-white/10 bg-white/5 text-emerald-300")
+                  : (isLight ? "border border-slate-200 bg-slate-100 text-slate-500" : "border border-white/10 bg-white/5 text-emerald-300")
+              } shadow-[0_10px_25px_rgba(0,0,0,0.18)]`}>
+                {isUserMessage ? <User2 size={16} /> : <Bot size={16} />}
               </div>
             ) : null}
 

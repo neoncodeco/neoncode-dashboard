@@ -7,6 +7,7 @@ import {
   ArrowRight, Globe, History, LogOut, MessageSquareText, Sparkles,
 } from "lucide-react";
 import useAppAuth from "@/hooks/useAppAuth";
+import { AFFILIATE_UI_ENABLED } from "@/lib/featureFlags";
 import Swal from "sweetalert2";
 import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
 
@@ -440,10 +441,12 @@ const handleVerifyOtp = async () => {
               <Shield size={18} className="text-indigo-600" /> Account Info
             </h3>
             <div className="space-y-3">
-              <div className="dashboard-subpanel flex justify-between rounded-2xl p-3 text-sm">
-                <span className="dashboard-text-muted">Referral Code</span>
-                <span className="font-black text-indigo-600">{userData?.referralCode}</span>
-              </div>
+              {AFFILIATE_UI_ENABLED ? (
+                <div className="dashboard-subpanel flex justify-between rounded-2xl p-3 text-sm">
+                  <span className="dashboard-text-muted">Referral Code</span>
+                  <span className="font-black text-indigo-600">{userData?.referralCode}</span>
+                </div>
+              ) : null}
               <div className="dashboard-subpanel flex justify-between rounded-2xl p-3 text-sm">
                 <span className="dashboard-text-muted">Joined On</span>
                 <span className="dashboard-text-strong font-medium">{userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString() : "N/A"}</span>

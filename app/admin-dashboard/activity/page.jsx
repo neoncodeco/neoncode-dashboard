@@ -2,13 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import useAppAuth from "@/hooks/useAppAuth";
+import { AFFILIATE_UI_ENABLED } from "@/lib/featureFlags";
 import { Activity, Filter, Loader2, Search } from "lucide-react";
 
 const TYPE_OPTIONS = [
   { key: "all", label: "All" },
   { key: "support", label: "Support" },
   { key: "payment", label: "Payments" },
-  { key: "withdraw", label: "Withdraws" },
+  ...(AFFILIATE_UI_ENABLED ? [{ key: "withdraw", label: "Withdraws" }] : []),
   { key: "ads", label: "Ads" },
   { key: "users", label: "Users" },
 ];
@@ -96,13 +97,20 @@ export default function AdminActivityPage() {
     return `${start}-${end}`;
   }, [pagination]);
 
+  const visibleRows = useMemo(
+    () => (AFFILIATE_UI_ENABLED ? rows : rows.filter((item) => item.type !== "withdraw")),
+    [rows]
+  );
+
   return (
-    <div className="space-y-5 bg-transparent p-3 sm:p-4 lg:p-6">
+    <div className="space-y-5 md:space-y-6">
       <div className="dashboard-subpanel mt-3 rounded-[24px] border p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-black tracking-tight text-[var(--dashboard-text-strong)] sm:text-3xl">Admin Activity</h1>
-            <p className="mt-1 text-sm text-[var(--dashboard-text-muted)]">Monitor key actions from support, payments, ads, withdrawals, and registrations.</p>
+            <p className="mt-1 text-sm text-[var(--dashboard-text-muted)]">
+              Monitor key actions from support, payments, ads{AFFILIATE_UI_ENABLED ? ", withdrawals" : ""}, and registrations.
+            </p>
           </div>
           <div className="dashboard-accent-surface flex h-11 w-11 items-center justify-center rounded-2xl text-white">
             <Activity size={18} />
@@ -172,14 +180,14 @@ export default function AdminActivityPage() {
                     </div>
                   </td>
                 </tr>
-              ) : rows.length === 0 ? (
+              ) : visibleRows.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-16 text-center text-sm font-semibold text-[var(--dashboard-text-muted)]">
                     No activity found for this filter.
                   </td>
                 </tr>
               ) : (
-                rows.map((item) => (
+                visibleRows.map((item) => (
                   <tr key={item.id} className="bg-[var(--dashboard-table-row)]">
                     <td className="whitespace-nowrap px-5 py-4 text-sm font-semibold text-[var(--dashboard-text-strong)]">
                       {formatDateTime(item.createdAt)}

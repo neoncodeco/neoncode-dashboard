@@ -2,78 +2,75 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { formatBdt, formatUsd } from "@/lib/currency";
 import {
-  Banknote,
-  ArrowUpRight,
-  ArrowDownLeft,
-  Download,
-  Search,
-  Filter,
-  FileText,
-  Calendar,
-  CheckCircle,
-  XCircle
+  Banknote, ArrowUpRight, Download, Search, Filter,
+  CheckCircle, XCircle, Clock, DollarSign,
 } from "lucide-react";
 import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
 import useAppAuth from "@/hooks/useAppAuth";
 import Swal from "sweetalert2";
 
-export default function TransactionsPage() {
+const statusConfig = (status) => {
+  switch (status?.toLowerCase()) {
+    case "approved": return { label: "Approved", cls: "text-emerald-700 border-emerald-200", dot: "#10b981" };
+    case "rejected": return { label: "Rejected", cls: "text-red-600 border-red-200",         dot: "#ef4444" };
+    default:         return { label: "Pending",  cls: "text-amber-600 border-amber-200",     dot: "#f59e0b" };
+  }
+};
 
-  const { token, role, loading: authLoading } = useAppAuth();
+function SkeletonRow() {
+  return (
+    <tr>
+      <td className="p-4 pl-6">
+        <div className="space-y-2">
+          <div className="admin-skeleton h-3.5 w-28 rounded-full" />
+          <div className="admin-skeleton h-2.5 w-36 rounded-full" />
+        </div>
+      </td>
+      <td className="p-4"><div className="admin-skeleton h-5 w-20 rounded-lg" /></td>
+      <td className="p-4"><div className="admin-skeleton h-3.5 w-16 rounded-full" /></td>
+      <td className="p-4"><div className="admin-skeleton h-3.5 w-20 rounded-full" /></td>
+      <td className="p-4"><div className="admin-skeleton h-6 w-16 rounded-lg" /></td>
+      <td className="p-4 pr-6 text-right"><div className="admin-skeleton ml-auto h-7 w-24 rounded-lg" /></td>
+    </tr>
+  );
+}
+
+export default function TransactionsPage() {
+  const { token } = useAppAuth();
   const { getCache, setCache } = useAdminDashboardCache();
 
   const [payments, setPayments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [loading, setLoading]   = useState(true);
+  const [search, setSearch]     = useState("");
 
-  // ------------ Fetch Payments --------------
   const loadPayments = useCallback(async (options = {}) => {
-    if (!token) return; // wait until auth ready
+    if (!token) return;
     if (!options.force) {
-      const cachedPayments = getCache("admin-transactions:list");
-      if (cachedPayments) {
-        setPayments(cachedPayments);
-        setLoading(false);
-        return;
-      }
+      const cached = getCache("admin-transactions:list");
+      if (cached) { setPayments(cached); setLoading(false); return; }
     }
-
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/payments/list", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
+      const res  = await fetch("/api/admin/payments/list", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
-
-      if (data.ok) {
-        setPayments(data.payments);
-        setCache("admin-transactions:list", data.payments || []);
-      } else {
-        console.log("API Error:", data.error);
-      }
+      if (data.ok) { setPayments(data.payments); setCache("admin-transactions:list", data.payments || []); }
     } catch (e) {
-      console.log("Fetch error:", e);
+      console.error("Fetch error:", e);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [getCache, setCache, token]);
 
   useEffect(() => {
     if (!token) return;
-    const timer = setTimeout(() => {
-      void loadPayments();
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [token, loadPayments]); // wait for token
+    const t = setTimeout(() => loadPayments(), 0);
+    return () => clearTimeout(t);
+  }, [token, loadPayments]);
 
-  // ------------ Approve / Reject Handler --------------
   const handleAction = async (userUid, action) => {
-    const actionLabel = action === "approve" ? "approve" : "reject";
-    const confirmResult = await Swal.fire({
+    const confirmed = await Swal.fire({
       title: `${action === "approve" ? "Approve" : "Reject"} payment?`,
-      text: `You are about to ${actionLabel} this transaction.`,
+      text: `You are about to ${action} this transaction.`,
       icon: "question",
       showCancelButton: true,
       confirmButtonText: action === "approve" ? "Yes, approve" : "Yes, reject",
@@ -82,183 +79,181 @@ export default function TransactionsPage() {
       background: "#ffffff",
       color: "#0f172a",
     });
+    if (!confirmed.isConfirmed) return;
 
-    if (!confirmResult.isConfirmed) return;
-
-    const res = await fetch("/api/admin/payments/approve", {
+    const res  = await fetch("/api/admin/payments/approve", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ userUid, action }),
     });
-
     const data = await res.json();
-
     if (data.ok) {
       await Swal.fire({
         title: action === "approve" ? "Payment approved" : "Payment rejected",
-        text: data.message,
-        icon: "success",
+        text: data.message, icon: "success",
         confirmButtonColor: action === "approve" ? "#059669" : "#2563eb",
-        background: "#ffffff",
-        color: "#0f172a",
+        background: "#ffffff", color: "#0f172a",
       });
-      loadPayments({ force: true }); 
+      loadPayments({ force: true });
     } else {
-      await Swal.fire({
-        title: "Action failed",
-        text: data.error || "Something went wrong.",
-        icon: "error",
-        confirmButtonColor: "#dc2626",
-        background: "#ffffff",
-        color: "#0f172a",
-      });
+      await Swal.fire({ title: "Action failed", text: data.error || "Something went wrong.", icon: "error", confirmButtonColor: "#dc2626", background: "#ffffff", color: "#0f172a" });
     }
   };
 
-  // ------------ Status Color -------------
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "approved":
-        return "bg-green-100 text-green-700";
-      case "pending":
-        return "bg-orange-100 text-orange-700";
-      case "rejected":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
+  const filtered = payments.filter((p) =>
+    `${p.userName ?? ""} ${p.userUid ?? ""} ${p.userEmail ?? ""}`.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const pendingCount  = payments.filter((p) => p.status?.toLowerCase() === "pending").length;
+  const approvedTotal = payments.filter((p) => p.status?.toLowerCase() === "approved").reduce((s, p) => s + (p.amountBdt ?? p.amount ?? 0), 0);
 
   return (
-    <div className="space-y-6 p-4  sm:p-6  md:space-y-8 md:p-8 md:pt-8">
+    <div className="space-y-5 md:space-y-6">
 
-      {/* Header */}
-      <div className="flex flex-col gap-4 pt-2 sm:pt-4 md:flex-row md:items-center md:justify-between md:pt-0">
+      {/* ── Header ── */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
-          <p className="text-gray-500 text-sm mt-1">Monitor all financial activities.</p>
+          <h1 className="text-2xl font-black tracking-tight text-gray-900">Transactions</h1>
+          <p className="mt-0.5 text-sm text-gray-500">Monitor and approve all financial activities</p>
         </div>
+        <button className="admin-accent-button flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold">
+          <Download size={15} /> Export Report
+        </button>
+      </div>
 
-        <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto">
-          {/* <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 transition">
-            <Calendar size={16} /> Select Date
-          </button> */}
-          <button className="admin-accent-button flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition">
-            <Download size={16} /> Export Report
-          </button>
+      {/* ── Summary cards ── */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+        <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-4" style={{ borderLeft: "3px solid #3b82f6" }}>
+          <div className="rounded-xl p-2.5" style={{ background: "#3b82f618" }}>
+            <Banknote size={18} style={{ color: "#3b82f6" }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Total Records</p>
+            <p className="mt-0.5 text-xl font-black text-gray-900">{loading ? "—" : payments.length}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-4" style={{ borderLeft: "3px solid #f59e0b" }}>
+          <div className="rounded-xl p-2.5" style={{ background: "#f59e0b18" }}>
+            <Clock size={18} style={{ color: "#f59e0b" }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Pending</p>
+            <p className="mt-0.5 text-xl font-black text-gray-900">{loading ? "—" : pendingCount}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-4" style={{ borderLeft: "3px solid #10b981" }}>
+          <div className="rounded-xl p-2.5" style={{ background: "#10b98118" }}>
+            <DollarSign size={18} style={{ color: "#10b981" }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Approved Total</p>
+            <p className="mt-0.5 text-xl font-black text-emerald-600">{loading ? "—" : formatBdt(approvedTotal)}</p>
+          </div>
         </div>
       </div>
 
-      {/* Transactions Table */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      {/* ── Table ── */}
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
 
-        {/* Search */}
-        <div className="flex flex-col justify-between gap-4 border-b border-gray-200 p-4 md:flex-row">
+        {/* Search bar */}
+        <div className="flex flex-col justify-between gap-3 border-b border-gray-100 p-4 sm:flex-row sm:items-center">
           <div className="relative max-w-md flex-1">
-            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by name, UID or amount..."
+              placeholder="Search by name, UID or email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white"
             />
           </div>
-          <button className="admin-secondary-button flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition">
-            <Filter size={16} /> Filter
+          <button className="admin-secondary-button flex min-h-10 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold">
+            <Filter size={15} /> Filter
           </button>
         </div>
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] border-collapse text-left">
+          <table className="w-full min-w-[760px] text-left">
             <thead>
-              <tr className="bg-gray-50 text-xs font-bold text-gray-500 uppercase border-b border-gray-200">
+              <tr className="border-b border-gray-100 bg-gray-50/50 text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400">
                 <th className="p-4 pl-6">User</th>
                 <th className="p-4">Amount</th>
                 <th className="p-4">Method</th>
                 <th className="p-4">Date</th>
                 <th className="p-4">Status</th>
-                <th className="p-4 text-right pr-6">Action</th>
+                <th className="p-4 pr-6 text-right">Action</th>
               </tr>
             </thead>
-
-            <tbody className="text-sm">
-              {loading ? (
-                <tr><td className="p-4">Loading...</td></tr>
-              ) : (
-                payments
-                  .filter((p) =>
-                    `${p.userName || ""} ${p.userUid || ""} ${p.userEmail || ""}`.toLowerCase().includes(search.toLowerCase())
-                  )
-                  .map((p, index) => (
-                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition group">
-                      
-                      <td className="p-4 pl-6">
-                        <div className="min-w-0">
-                          <p className="truncate font-bold text-gray-900">
-                            {p.userName || "Unknown User"}
-                          </p>
-                          <p className="truncate font-mono text-xs font-semibold text-gray-500">
-                            {p.userUid}
-                          </p>
-                        </div>
-                      </td>
-
-                      <td className="p-4">
-                        {(Number(p.creditedUsdAmount) || 0) > 0 ? (
-                          <div className="text-lg font-extrabold text-emerald-600">{formatUsd(p.creditedUsdAmount)}</div>
-                        ) : (
-                          <div className="text-lg font-extrabold text-emerald-600">{formatBdt(p.amountBdt ?? p.amount)}</div>
-                        )}
-                        <div className="text-xs font-semibold text-gray-500">
-                          {formatBdt(p.amountBdt ?? p.amount)} deposit
-                        </div>
-                      </td>
-
-                      <td className="p-4 text-gray-600">{p.method || "N/A"}</td>
-
-                      <td className="p-4 text-gray-500">
-                        {new Date(p.createdAt).toLocaleDateString()}
-                      </td>
-
-                      <td className="p-4">
-                        <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${getStatusColor(p.status)}`}>
-                          {p.status}
-                        </span>
-                      </td>
-
-                      <td className="p-4 text-right pr-6 flex gap-2 justify-end">
-
-                        {/* Only show buttons if pending */}
-                        {p.status.toLowerCase() === "pending" && (
-                          <>
-                            <button
-                              onClick={() => handleAction(p.userUid, "approve")}
-                              className="flex items-center gap-1 rounded-lg border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 font-bold text-emerald-200"
-                            >
-                              <CheckCircle size={14} /> Approve
-                            </button>
-
-                            <button
-                              onClick={() => handleAction(p.userUid, "reject")}
-                              className="flex items-center gap-1 rounded-lg border border-red-400/20 bg-red-400/10 px-3 py-1 font-bold text-red-200"
-                            >
-                              <XCircle size={14} /> Reject
-                            </button>
-                          </>
-                        )}
+            <tbody className="divide-y divide-gray-50 text-sm">
+              {loading
+                ? Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
+                : filtered.length === 0
+                  ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-16 text-center">
+                        <Banknote size={36} className="mx-auto mb-3 text-gray-200" />
+                        <p className="font-medium text-gray-400">No transactions found</p>
                       </td>
                     </tr>
-                  ))
-              )}
+                  )
+                  : filtered.map((p, i) => {
+                    const status = statusConfig(p.status);
+                    const isPending = p.status?.toLowerCase() === "pending";
+                    return (
+                      <tr key={i} className="transition hover:bg-gray-50/60">
+                        <td className="p-4 pl-6">
+                          <p className="font-bold text-gray-900 leading-tight">{p.userName || "Unknown User"}</p>
+                          <p className="mt-0.5 font-mono text-[11px] text-gray-400">{p.userUid}</p>
+                        </td>
+                        <td className="p-4">
+                          <p className="text-base font-black text-emerald-600">
+                            {(Number(p.creditedUsdAmount) || 0) > 0
+                              ? formatUsd(p.creditedUsdAmount)
+                              : formatBdt(p.amountBdt ?? p.amount)}
+                          </p>
+                          <p className="text-[11px] text-gray-400">
+                            {formatBdt(p.amountBdt ?? p.amount)} deposit
+                          </p>
+                        </td>
+                        <td className="p-4 font-medium text-gray-600">{p.method || "N/A"}</td>
+                        <td className="p-4 text-gray-500">
+                          {new Date(p.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="p-4">
+                          <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${status.cls}`}>
+                            <span className="h-1.5 w-1.5 rounded-full" style={{ background: status.dot }} />
+                            {status.label}
+                          </span>
+                        </td>
+                        <td className="p-4 pr-6 text-right">
+                          {isPending ? (
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleAction(p.userUid, "approve")}
+                                className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100"
+                              >
+                                <CheckCircle size={13} /> Approve
+                              </button>
+                              <button
+                                onClick={() => handleAction(p.userUid, "reject")}
+                                className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-100"
+                              >
+                                <XCircle size={13} /> Reject
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                              Processed
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
             </tbody>
           </table>
         </div>
-
       </div>
     </div>
   );
