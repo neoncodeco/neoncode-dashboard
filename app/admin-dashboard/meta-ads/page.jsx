@@ -79,7 +79,6 @@ export default function AdminAdAccountApprove() {
     accountName: "",
     bmId: "",
     monthlyBudget: 0,
-    usdToBdtRate: "135",
     userUid: "",
     userEmail: "",
     MetaAccountID: "",
@@ -139,13 +138,6 @@ export default function AdminAdAccountApprove() {
     const rowKey = serializeMongoId(row?._id);
     const override = editMap[rowKey];
     if (override && override[key] !== undefined) return override[key];
-    if (key === "usdToBdtRate") {
-      const direct = row[key];
-      if (direct !== undefined && direct !== null && direct !== "") return direct;
-      const slots = normalizeAssignedAccounts(row?.assignedAccounts, row);
-      const fromSlot = slots[0]?.usdToBdtRate;
-      if (fromSlot !== undefined && fromSlot !== null && fromSlot !== "") return fromSlot;
-    }
     return row[key];
   };
 
@@ -192,7 +184,6 @@ export default function AdminAdAccountApprove() {
     accountName: "",
     bmId: "",
     monthlyBudget: 0,
-    usdToBdtRate: "135",
     userUid: "",
     userEmail: "",
     MetaAccountID: "",
@@ -217,16 +208,12 @@ export default function AdminAdAccountApprove() {
 
   const saveRow = async (row) => {
     const rowKey = serializeMongoId(row?._id);
-    const rawRate = getRowValue(row, "usdToBdtRate");
-    const parsedRate = parseFloat(String(rawRate ?? "").replace(/,/g, "").trim(), 10);
-    const usdToBdtRate = Number.isFinite(parsedRate) && parsedRate >= 0 ? parsedRate : 0;
 
     const payload = {
       id: rowKey,
       accountName: getRowValue(row, "accountName") || "",
       bmId: getRowValue(row, "bmId") || "",
       monthlyBudget: Number(getRowValue(row, "monthlyBudget") || 0),
-      usdToBdtRate,
       userUid: getRowValue(row, "userUid") || "",
       userEmail: getRowValue(row, "userEmail") || "",
       MetaAccountID: getRowValue(row, "MetaAccountID") || "",
@@ -270,7 +257,6 @@ export default function AdminAdAccountApprove() {
         ...assignedAccounts[0],
         assignedAccounts,
         monthlyBudget: Number(assignedAccounts[0]?.monthlyBudget || 0),
-        usdToBdtRate: Number(assignedAccounts[0]?.usdToBdtRate || 0),
         accountName: assignedAccounts[0]?.accountName || "Manual Account",
         bmId: assignedAccounts[0]?.bmId || "",
         userUid: assignedAccounts[0]?.userUid || "",
@@ -329,11 +315,10 @@ export default function AdminAdAccountApprove() {
           {showManualAdd && (
             <div className="space-y-3">
               {newAccounts.map((account, index) => (
-                <div key={index} className="grid grid-cols-1 gap-2 rounded-2xl border border-gray-100 bg-gray-50 p-3 md:grid-cols-2 xl:grid-cols-8">
+                <div key={index} className="grid grid-cols-1 gap-2 rounded-2xl border border-gray-100 bg-gray-50 p-3 md:grid-cols-2 xl:grid-cols-7">
                   <input placeholder="Account Name" value={account.accountName} onChange={(e) => updateManualRow(index, "accountName", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
                   <input placeholder="BM ID" value={account.bmId} onChange={(e) => updateManualRow(index, "bmId", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
                   <input placeholder="Budget" type="number" value={account.monthlyBudget} onChange={(e) => updateManualRow(index, "monthlyBudget", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
-                  <input title="1 USD = how many BDT for this user" placeholder="1 USD = Tk" type="number" value={account.usdToBdtRate} onChange={(e) => updateManualRow(index, "usdToBdtRate", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
                   <input placeholder="User UID" value={account.userUid} onChange={(e) => updateManualRow(index, "userUid", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
                   <input placeholder="User Email" value={account.userEmail} onChange={(e) => updateManualRow(index, "userEmail", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
                   <input placeholder="Meta ID" value={account.MetaAccountID} onChange={(e) => updateManualRow(index, "MetaAccountID", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
@@ -363,10 +348,6 @@ export default function AdminAdAccountApprove() {
                     <input className="w-full truncate border-b text-base font-bold text-gray-900 outline-none focus:border-blue-500" value={getRowValue(r, "accountName")} onChange={(e) => onRowFieldChange(r._id, "accountName", e.target.value)} />
                     <p className="mt-1 text-xs font-bold text-gray-400">{getRowValue(r, "userEmail")}</p>
                   </div>
-                </div>
-                <div>
-                  <label className="mb-1 block text-[9px] font-black uppercase text-gray-400">1 USD = Tk</label>
-                  <input className="w-full border rounded-lg p-2 text-sm font-bold" type="number" placeholder="135" value={getRowValue(r, "usdToBdtRate") ?? ""} onChange={(e) => onRowFieldChange(r._id, "usdToBdtRate", e.target.value)} />
                 </div>
                 <div className="relative">
                   <input className="w-full border rounded-lg p-2 text-xs font-mono" placeholder="Meta ID" value={getRowValue(r, "MetaAccountID") || ""} onChange={(e) => onRowFieldChange(r._id, "MetaAccountID", e.target.value)} />
@@ -398,7 +379,6 @@ export default function AdminAdAccountApprove() {
                 <th className="px-6 py-5 text-center">BM Assignment</th>
                 <th className="px-6 py-5 text-center">Meta ID & Smart Link</th>
                 <th className="px-6 py-5 text-center">Budget</th>
-                <th className="px-6 py-5 text-center">1 USD → Tk</th>
                 <th className="px-6 py-5 text-center">Status</th>
                 <th className="px-6 py-5 text-right">Actions</th>
               </tr>
@@ -445,16 +425,6 @@ export default function AdminAdAccountApprove() {
                          <span className="text-sm text-gray-400">$</span>
                          <input type="number" className="w-20 bg-transparent py-2 text-center text-sm font-black outline-none" value={getRowValue(r, "monthlyBudget")} onChange={(e) => onRowFieldChange(r._id, "monthlyBudget", e.target.value)} />
                        </div>
-                    </td>
-
-                    <td className="px-6 py-4 text-center">
-                      <input
-                        type="number"
-                        className="w-24 rounded-lg border border-gray-200 bg-white px-2 py-2 text-center text-sm font-black outline-none shadow-inner focus:border-blue-500"
-                        placeholder="135"
-                        value={getRowValue(r, "usdToBdtRate") ?? ""}
-                        onChange={(e) => onRowFieldChange(r._id, "usdToBdtRate", e.target.value)}
-                      />
                     </td>
 
                     <td className="px-6 py-4 text-center">

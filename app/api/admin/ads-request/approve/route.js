@@ -3,6 +3,7 @@ import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import { ObjectId } from "mongodb";
 import { normalizeAssignedAccounts } from "@/lib/adAccountRequests";
+import { resolveUserEffectiveUsdRate } from "@/lib/dollarRateManagement";
 import { serializeMongoId } from "@/lib/serializeMongoId";
 import { notifyUserDashboardActivity } from "@/lib/whatsappActivityNotify";
 
@@ -84,6 +85,14 @@ export async function PUT(req) {
     }
 
     const updateData = buildUpdateData(payload);
+    const userUid = updateData.userUid || payload.userUid || existing.userUid;
+    if (payload.usdToBdtRate !== undefined) {
+      updateData.usdToBdtRate = await resolveUserEffectiveUsdRate(
+        db,
+        userUid,
+        updateData.usdToBdtRate ?? payload.usdToBdtRate
+      );
+    }
     const mergedForSlots = { ...existing, ...updateData };
 
     const pendingActivationStatus = String(updateData.status ?? payload.status ?? existing.status ?? "").toLowerCase();
@@ -157,7 +166,16 @@ export async function POST(req) {
     const { db } = auth;
 
     const body = await req.json();
-    const assignedAccounts = normalizeAssignedAccounts(body.assignedAccounts, body);
+    const userUid = body.userUid || body.assignedAccounts?.[0]?.userUid || "";
+    const resolvedRate = await resolveUserEffectiveUsdRate(
+      db,
+      userUid,
+      body.usdToBdtRate ?? body.assignedAccounts?.[0]?.usdToBdtRate
+    );
+    const assignedAccounts = normalizeAssignedAccounts(body.assignedAccounts, {
+      ...body,
+      usdToBdtRate: resolvedRate,
+    });
     const primaryAccount = assignedAccounts[0] || {};
     const doc = {
       accountName: body.accountName || primaryAccount.accountName || "Manual Account",
@@ -166,7 +184,7 @@ export async function POST(req) {
       facebookPage: body.facebookPage || primaryAccount.facebookPage || "",
       email: body.email || primaryAccount.email || "",
       monthlyBudget: Number(body.monthlyBudget || primaryAccount.monthlyBudget || 0),
-      usdToBdtRate: Number(body.usdToBdtRate || primaryAccount.usdToBdtRate || 0),
+      usdToBdtRate: resolvedRate,
       startDate: body.startDate || primaryAccount.startDate || "",
       userEmail: body.userEmail || primaryAccount.userEmail || "",
       userUid: body.userUid || primaryAccount.userUid || "",

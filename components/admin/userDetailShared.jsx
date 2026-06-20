@@ -16,7 +16,7 @@ import {
   Wallet,
 } from "lucide-react";
 import Swal from "sweetalert2";
-import { formatBdt, formatUsd, DEFAULT_USD_TO_BDT_RATE } from "@/lib/currency";
+import { formatBdt, formatUsd } from "@/lib/currency";
 
 export function formatDate(value) {
   if (!value) return "—";
@@ -345,7 +345,7 @@ export function UserOverviewPanel({ insights, userId }) {
   );
 }
 
-export function UserAddAccountPanel({ userId, userEmail, usdToBdtRate, onAdded, token }) {
+export function UserAddAccountPanel({ userId, userEmail, onAdded, token }) {
   const [newAccount, setNewAccount] = useState({
     accountName: "",
     bmId: "",
@@ -368,7 +368,6 @@ export function UserAddAccountPanel({ userId, userEmail, usdToBdtRate, onAdded, 
         bmId: newAccount.bmId.trim(),
         MetaAccountID: newAccount.MetaAccountID.trim(),
         monthlyBudget: Number(newAccount.monthlyBudget || 0),
-        usdToBdtRate: Number(usdToBdtRate || DEFAULT_USD_TO_BDT_RATE),
         userUid: userId,
         userEmail: userEmail || "",
         status: "active",
