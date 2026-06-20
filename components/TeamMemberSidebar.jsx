@@ -78,7 +78,7 @@ export default function TeamMemberSidebar({ theme, toggleTheme }) {
     <>
       <div>
         <div className="mb-10 flex items-center gap-3">
-          <Image src="/Neon Studio icon.png" alt="Logo" width={34} height={34} />
+          <Image src="/Neon-Studio-icon.png" alt="Logo" width={34} height={34} />
           <div>
             <p className="text-lg font-black text-white">NEON TEAM</p>
             <p className="text-[11px] uppercase tracking-[0.22em] text-sky-200/70">Member Hub</p>
@@ -126,7 +126,7 @@ export default function TeamMemberSidebar({ theme, toggleTheme }) {
     <>
       <div className="sidebar-shell fixed left-0 top-0 z-[60] flex w-full items-center justify-between border-b px-4 py-3 lg:hidden">
         <div className="flex items-center gap-2">
-          <Image src="/Neon Studio icon.png" alt="Logo" width={24} height={24} />
+          <Image src="/Neon-Studio-icon.png" alt="Logo" width={24} height={24} />
           <span className="text-lg font-bold text-white">team dashboard</span>
         </div>
         <button type="button" onClick={() => setIsOpen(true)} className="rounded-lg p-2 text-white" aria-label="Open menu">

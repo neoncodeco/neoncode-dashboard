@@ -20,6 +20,11 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: "/Neon Studio icon.png",
+        destination: "/Neon-Studio-icon.png",
+        permanent: true,
+      },
+      {
         source: userDashboardRoutes.root,
         destination: userDashboardRoutes.dashboard,
         permanent: true,
