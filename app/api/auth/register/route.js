@@ -133,6 +133,13 @@ export async function POST(req) {
         maxRequests: EMAIL_VERIFICATION_MAX_REQUESTS,
         lastRequestedAt: new Date(),
       },
+      status: "pending",
+      approval: {
+        requestedAt: new Date(),
+        reviewedAt: null,
+        reviewedBy: null,
+        reviewNote: "",
+      },
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -155,6 +162,8 @@ export async function POST(req) {
       created: true,
       userId,
       verificationRequired: true,
+      approvalRequired: true,
+      message: "Account created. Verify your email, then wait for admin approval before signing in.",
       ...(process.env.NODE_ENV !== "production" ? { verificationUrl } : {}),
       ...(emailResult.ok ? {} : { warning: emailResult.error }),
     });

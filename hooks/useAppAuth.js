@@ -133,6 +133,16 @@ function useProvideAppAuth() {
     });
 
     if (res?.error) {
+      const code = res.code || res.error;
+      if (code === "pending_approval") {
+        throw new Error("Your account is pending admin approval. Please try again after approval.");
+      }
+      if (code === "account_rejected") {
+        throw new Error("Your registration was rejected. Contact support if you need help.");
+      }
+      if (code === "account_blocked") {
+        throw new Error("Your account is blocked. Contact support.");
+      }
       throw new Error("Invalid email or password");
     }
 
