@@ -16,6 +16,11 @@ export async function GET(req, { params }) {
       return NextResponse.json({ ok: false, error: "User ID required" }, { status: 400 });
     }
 
+    const reserved = new Set(["list", "delete", "update", "insights"]);
+    if (reserved.has(String(userId).toLowerCase())) {
+      return NextResponse.json({ ok: false, error: "Invalid user ID" }, { status: 400 });
+    }
+
     const user = await db.collection("users").findOne(
       { userId },
       { projection: { password: 0 } }

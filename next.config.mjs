@@ -38,7 +38,13 @@ const nextConfig = {
     ];
   },
   async rewrites() {
-    return userDashboardCanonicalRewrites;
+    return [
+      {
+        source: "/api/admin/users/list",
+        destination: "/api/admin/users-list",
+      },
+      ...userDashboardCanonicalRewrites,
+    ];
   },
   async headers() {
     const securityHeaders = [
