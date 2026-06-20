@@ -144,8 +144,36 @@ TURNSTILE_SECRET_KEY=...
 UPSTASH_REDIS_REST_URL=...
 UPSTASH_REDIS_REST_TOKEN=...
 
-# Payments, SMTP, Meta — see .env.example
+# Payments, SMTP, Meta — see .env.example (Spacemail: mail.spacemail.com)
 ```
+
+### Email notifications (Spacemail)
+
+Production mail uses **Spaceweb Spacemail** with `notifications@neoncode.co`. Add to `.env.local`:
+
+```env
+SMTP_HOST=mail.spacemail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=notifications@neoncode.co
+SMTP_PASS=<mailbox password from Spacemail panel>
+SMTP_FROM="Neon Code <notifications@neoncode.co>"
+ADMIN_NOTIFICATION_EMAILS=admin@neoncode.co
+NOTIFICATIONS_ENABLED=true
+APP_BASE_URL=https://app.neoncode.co
+```
+
+**What sends email automatically:**
+
+| Event | Recipient | Admin dashboard link |
+|-------|-----------|----------------------|
+| Bank transfer payment submitted | Admin | `/admin-dashboard/transactions` |
+| Admin approves/rejects payment | User | — |
+| Gateway payment success/failed | User | — |
+| New user registration (email or Google) | Admin | `/admin-dashboard/user-approvals` |
+| Admin approves/rejects/blocks user | User | — |
+| New Meta ad account request | Admin | `/admin-dashboard/meta-ads/[id]` |
+| Admin sets ad account active/blocked/rejected | User | — |
 
 > `prepare-standalone.mjs` copies `.env.local` into the standalone bundle. Keep this file on the server only — never commit it.
 

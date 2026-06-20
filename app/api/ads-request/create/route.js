@@ -3,6 +3,7 @@ import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
 import { ensureWritableUser } from "@/lib/userAccess";
 import { normalizeAssignedAccounts } from "@/lib/adAccountRequests";
+import { getAppBaseUrl, notifyAdminsNewAdAccountRequest, fetchUserByUid } from "@/lib/emailNotifications";
 
 
 export async function POST(req) {
@@ -38,7 +39,7 @@ export async function POST(req) {
         { status: 400 }
       );
     }
-    await db.collection("adAccountRequests").insertOne({
+    const requestDoc = {
       ...body,
       userEmail: decoded.email,
       userUid: decoded.uid,
@@ -46,7 +47,16 @@ export async function POST(req) {
       status: "pending",
       assignedAccounts,
       createdAt: new Date(),
-    });
+    };
+
+    const insertResult = await db.collection("adAccountRequests").insertOne(requestDoc);
+    const request = { ...requestDoc, _id: insertResult.insertedId };
+    const user = await fetchUserByUid(db, decoded.uid);
+    const baseUrl = getAppBaseUrl(req);
+
+    void notifyAdminsNewAdAccountRequest(db, { request, user, baseUrl }).catch((err) =>
+      console.error("Admin ad account notification error:", err)
+    );
 
     return NextResponse.json({ ok: true, message: "Request submitted successfully" });
   } catch (err) {

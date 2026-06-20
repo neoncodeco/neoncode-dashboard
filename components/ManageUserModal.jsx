@@ -85,7 +85,7 @@ export function ManageUserPanel({
     ...DEFAULT_PERMISSIONS,
     ...(user.permissions || {}),
   });
-  const [usdRate, setUsdRate] = useState(safeNum(user.metaAdsConfig?.usdRate, DEFAULT_USD_TO_BDT_RATE));
+  const [usdRate] = useState(safeNum(user.metaAdsConfig?.usdRate, DEFAULT_USD_TO_BDT_RATE));
   const [allowBudgetIncrease, setAllowBudgetIncrease] = useState(user.metaAdsConfig?.allowBudgetIncrease ?? true);
   const [allowTopupAction, setAllowTopupAction] = useState(user.metaAdsConfig?.allowTopupAction ?? true);
   const [remainingBudgetOverride, setRemainingBudgetOverride] = useState(user.metaAdsConfig?.remainingBudgetOverride ?? "");
@@ -319,7 +319,6 @@ export function ManageUserPanel({
             <h3 className="mb-4 text-sm font-bold text-gray-900">Meta Ads configuration</h3>
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               <Field label="Wallet Balance (USD)" value={walletBalance} onChange={setWalletBalance} type="number" />
-              <Field label="USD Rate" value={usdRate} onChange={setUsdRate} type="number" />
               <Field label="Top Up Balance (USD)" value={topupBalance} onChange={setTopupBalance} type="number" />
               <Field label="Remaining Budget Override" value={remainingBudgetOverride} onChange={setRemainingBudgetOverride} type="number" />
               <Toggle label="Allow Increase Budget Button" value={allowBudgetIncrease} onChange={() => setAllowBudgetIncrease((v) => !v)} />

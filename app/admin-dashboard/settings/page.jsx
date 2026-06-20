@@ -19,7 +19,6 @@ export default function TokenSettings() {
   // এখানে slots: [] অ্যাড করা হয়েছে যাতে ডাটাবেস থেকে লোড হতে পারে
   const [bmConfigs, setBmConfigs] = useState([{ bmName: "", businessId: "", token: "", slots: [] }]);
   const [clientRequests, setClientRequests] = useState([]); 
-  const [usdToBdtRate, setUsdToBdtRate] = useState("135");
   const [expandedBM, setExpandedBM] = useState(null); 
   const [loading, setLoading] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -31,7 +30,6 @@ export default function TokenSettings() {
     if (cachedSettings) {
       setBmConfigs(cachedSettings.bmConfigs || [{ bmName: "", businessId: "", token: "", slots: [] }]);
       setClientRequests(cachedSettings.clientRequests || []);
-      setUsdToBdtRate(String(cachedSettings.usdToBdtRate || 135));
       setInitialLoading(false);
       return;
     }
@@ -46,13 +44,11 @@ export default function TokenSettings() {
       const nextPayload = {
         bmConfigs: settingsData.bmConfigs || [{ bmName: "", businessId: "", token: "", slots: [] }],
         clientRequests: requestsData.ok ? requestsData.data || [] : [],
-        usdToBdtRate: Number(settingsData.usdToBdtRate || 135),
       };
 
       // ডাটাবেস থেকে bmConfigs এবং তাদের slots লোড করা
       setBmConfigs(nextPayload.bmConfigs);
       setClientRequests(nextPayload.clientRequests);
-      setUsdToBdtRate(String(nextPayload.usdToBdtRate));
       setCache("admin-settings:data", nextPayload);
     } catch (err) {
       console.error("Load Error:", err);
@@ -138,15 +134,13 @@ export default function TokenSettings() {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({
-        bmConfigs,           
-        usdToBdtRate: Number(usdToBdtRate),
+        bmConfigs,
       }),
     });
     if (res.ok) {
       setCache("admin-settings:data", {
         bmConfigs,
         clientRequests,
-        usdToBdtRate: Number(usdToBdtRate),
       });
       Swal.fire({ icon: "success", title: `BM ${bmIndex + 1} Saved`, timer: 1500, showConfirmButton: false });
     }

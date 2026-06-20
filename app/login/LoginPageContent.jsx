@@ -34,6 +34,7 @@ export default function LoginPageContent() {
   const turnstileRef = useRef(null);
 
   const verifyEmailSent = searchParams.get("verify_email_sent") === "1";
+  const pendingApproval = searchParams.get("pending_approval") === "1";
   const emailVerified = searchParams.get("email_verified");
 
   useEffect(() => {
@@ -49,6 +50,10 @@ export default function LoginPageContent() {
   }, []);
 
   useEffect(() => {
+    if (verifyEmailSent && pendingApproval) {
+      setNotice("Account created. Verify your email, then wait for admin approval before signing in.");
+      return;
+    }
     if (verifyEmailSent) {
       setNotice("Verification email sent. Check your inbox. Link expires in 5 minutes.");
       return;
@@ -60,7 +65,7 @@ export default function LoginPageContent() {
     if (emailVerified === "0") {
       setError("Verification link is invalid or expired. Please request a new one.");
     }
-  }, [emailVerified, verifyEmailSent]);
+  }, [emailVerified, pendingApproval, verifyEmailSent]);
 
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 

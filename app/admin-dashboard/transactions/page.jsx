@@ -1,6 +1,7 @@
 "use client";
 import React, { useCallback, useEffect, useState } from "react";
 import { formatBdt, formatUsd } from "@/lib/currency";
+import { formatPaymentMethod } from "@/lib/displayFormatters";
 import {
   Banknote, ArrowUpRight, Download, Search, Filter,
   CheckCircle, XCircle, Clock, DollarSign,
@@ -216,7 +217,7 @@ export default function TransactionsPage() {
                             {formatBdt(p.amountBdt ?? p.amount)} deposit
                           </p>
                         </td>
-                        <td className="p-4 font-medium text-gray-600">{p.method || "N/A"}</td>
+                        <td className="p-4 font-medium text-gray-600">{formatPaymentMethod(p.method)}</td>
                         <td className="p-4 text-gray-500">
                           {new Date(p.createdAt).toLocaleDateString()}
                         </td>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   CheckCircle,
   XCircle,
@@ -10,13 +11,19 @@ import {
   Loader2,
   RefreshCcw,
   Layers,
-  ExternalLink,
   ShieldAlert,
-  Building2,
-  Check,
-  Save,
-  Trash2
+  Plus,
+  ChevronDown,
+  ChevronUp,
+  ChevronRight,
+  Mail,
+  Hash,
+  DollarSign,
+  Link2,
+  Sparkles,
+  Filter,
 } from "lucide-react";
+import { formatUsd } from "@/lib/currency";
 import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
 import useAppAuth from "@/hooks/useAppAuth";
 import { normalizeAssignedAccounts } from "@/lib/adAccountRequests";
@@ -29,183 +36,153 @@ const normalizeAdRequestRows = (rows) =>
     _id: serializeMongoId(doc?._id),
   }));
 
-/* -------- STATUS UI CONFIG (Original Design Intact) -------- */
-const getStatusClasses = (status) => {
+const STATUS_FILTERS = [
+  { id: "all", label: "All" },
+  { id: "active", label: "Active" },
+  { id: "pending", label: "Pending" },
+  { id: "blocked", label: "Blocked" },
+  { id: "rejected", label: "Rejected" },
+];
+
+const getStatusMeta = (status) => {
   switch (status?.toLowerCase()) {
     case "active":
       return {
-        bg: "bg-emerald-400/10 text-emerald-200 ring-emerald-400/20 border-emerald-400/20",
-        icon: <CheckCircle size={14} className="mr-1.5" />,
+        badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        dot: "bg-emerald-500",
+        icon: CheckCircle,
       };
     case "pending":
       return {
-        bg: "bg-amber-400/10 text-amber-200 ring-amber-400/20 border-amber-400/20",
-        icon: <Clock size={14} className="mr-1.5" />,
+        badge: "bg-amber-50 text-amber-700 border-amber-200",
+        dot: "bg-amber-500",
+        icon: Clock,
       };
     case "blocked":
       return {
-        bg: "bg-red-600/20 text-red-400 ring-red-500/20 border-red-500/20",
-        icon: <ShieldAlert size={14} className="mr-1.5" />,
+        badge: "bg-red-50 text-red-700 border-red-200",
+        dot: "bg-red-500",
+        icon: ShieldAlert,
       };
     case "rejected":
-      return {
-        bg: "bg-red-400/10 text-red-200 ring-red-400/20 border-red-400/20",
-        icon: <XCircle size={14} className="mr-1.5" />,
-      };
     case "cancelled":
       return {
-        bg: "bg-slate-400/10 text-slate-200 ring-slate-400/20 border-slate-400/20",
-        icon: <XCircle size={14} className="mr-1.5" />,
+        badge: "bg-slate-100 text-slate-600 border-slate-200",
+        dot: "bg-slate-400",
+        icon: XCircle,
       };
     default:
       return {
-        bg: "bg-slate-400/10 text-slate-200 ring-slate-400/20 border-slate-400/20",
-        icon: <AlertTriangle size={14} className="mr-1.5" />,
+        badge: "bg-slate-100 text-slate-600 border-slate-200",
+        dot: "bg-slate-400",
+        icon: AlertTriangle,
       };
   }
 };
 
+function StatusBadge({ status }) {
+  const meta = getStatusMeta(status);
+  const Icon = meta.icon;
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${meta.badge}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+      <Icon size={12} />
+      {status || "unknown"}
+    </span>
+  );
+}
+
+function FormField({ label, icon: Icon, children }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-500">
+        {Icon ? <Icon size={12} className="text-gray-400" /> : null}
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+const inputClass =
+  "w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-100";
+
 export default function AdminAdAccountApprove() {
+  const router = useRouter();
   const { token } = useAppAuth();
   const { getCache, setCache } = useAdminDashboardCache();
   const [data, setData] = useState([]);
-  const [bmConfigs, setBmConfigs] = useState([]); 
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [editMap, setEditMap] = useState({});
+  const [statusFilter, setStatusFilter] = useState("all");
   const [showManualAdd, setShowManualAdd] = useState(true);
-  const [newAccounts, setNewAccounts] = useState([{
-    accountName: "",
-    bmId: "",
-    monthlyBudget: 0,
-    usdToBdtRate: "135",
-    userUid: "",
-    userEmail: "",
-    MetaAccountID: "",
-    status: "active",
-  }]);
 
-  // ১. ডাটা লোড ফাংশন (সেটিংস এবং রিকোয়েস্ট লিস্ট সহ)
-  const load = useCallback(async (options = {}) => {
-    if (!options.force) {
-      const cachedPayload = getCache("admin-meta-ads:data");
-      if (cachedPayload) {
-        setData(normalizeAdRequestRows(cachedPayload.data || []));
-        setBmConfigs(cachedPayload.bmConfigs || []);
-        setInitialLoading(false);
-        return;
+  const [newAccounts, setNewAccounts] = useState([
+    {
+      accountName: "",
+      bmId: "",
+      monthlyBudget: 0,
+      userUid: "",
+      userEmail: "",
+      MetaAccountID: "",
+      status: "active",
+    },
+  ]);
+
+  const load = useCallback(
+    async (options = {}) => {
+      if (!options.force) {
+        const cachedPayload = getCache("admin-meta-ads:data");
+        if (cachedPayload) {
+          setData(normalizeAdRequestRows(cachedPayload.data || []));
+          setInitialLoading(false);
+          return;
+        }
       }
-    }
 
-    try {
-      const fetchOpts = { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" };
-      const [listRes, settingsRes] = await Promise.all([
-        fetch("/api/admin/ads-request/list", fetchOpts),
-        fetch("/api/admin/settings", fetchOpts),
-      ]);
-      const listJson = await listRes.json();
-      const settingsJson = await settingsRes.json();
-      const nextPayload = {
-        data: listRes.ok ? normalizeAdRequestRows(listJson.data || []) : [],
-        bmConfigs: settingsJson.bmConfigs || [],
-      };
+      try {
+        const fetchOpts = { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" };
+        const listRes = await fetch("/api/admin/ads-request/list", fetchOpts);
+        const listJson = await listRes.json();
+        const nextPayload = {
+          data: listRes.ok ? normalizeAdRequestRows(listJson.data || []) : [],
+        };
 
-      if (listRes.ok) setData(nextPayload.data);
-      if (settingsJson.bmConfigs) setBmConfigs(nextPayload.bmConfigs);
-      setCache("admin-meta-ads:data", nextPayload);
-    } catch (error) {
-      console.error("Error loading data:", error);
-    } finally {
-      setInitialLoading(false);
-    }
-  }, [getCache, setCache, token]);
+        if (listRes.ok) setData(nextPayload.data);
+        setCache("admin-meta-ads:data", nextPayload);
+      } catch (error) {
+        console.error("Error loading data:", error);
+      } finally {
+        setInitialLoading(false);
+      }
+    },
+    [getCache, setCache, token]
+  );
 
   useEffect(() => {
     if (token) load();
   }, [token, load]);
 
-  // ২. স্মার্ট সাজেশন লজিক
-  const getSuggestedBM = (metaId) => {
-    if (!metaId) return null;
-    for (const bm of bmConfigs) {
-      const found = bm.slots?.find(s => s.metaId?.trim() === metaId.trim());
-      if (found) return bm;
-    }
-    return null;
-  };
-
-  const getRowValue = (row, key) => {
-    const rowKey = serializeMongoId(row?._id);
-    const override = editMap[rowKey];
-    if (override && override[key] !== undefined) return override[key];
-    if (key === "usdToBdtRate") {
-      const direct = row[key];
-      if (direct !== undefined && direct !== null && direct !== "") return direct;
-      const slots = normalizeAssignedAccounts(row?.assignedAccounts, row);
-      const fromSlot = slots[0]?.usdToBdtRate;
-      if (fromSlot !== undefined && fromSlot !== null && fromSlot !== "") return fromSlot;
-    }
-    return row[key];
-  };
-
-  const handleAction = async (id, newStatus) => {
-    const rid = serializeMongoId(id);
-    const row = data.find((item) => serializeMongoId(item._id) === rid);
-    const MetaAccountID = getRowValue(row || {}, "MetaAccountID");
-
-    if (newStatus === "active" && (!MetaAccountID)) {
-      return Swal.fire({ icon: 'error', title: 'ID Missing', text: 'Meta ID is required!' });
-    }
-
-    const result = await Swal.fire({
-      title: `Confirm ${newStatus}?`,
-      text: "Are you sure?",
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: newStatus === 'blocked' ? '#d33' : '#000',
-    });
-
-    if (!result.isConfirmed) return;
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/admin/ads-request/approve", {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: rid,
-          status: newStatus,
-          MetaAccountID: MetaAccountID?.toString().trim() || "",
-        }),
-      });
-      if (res.ok) { load({ force: true }); Swal.fire('Success', '', 'success'); }
-    } finally { setLoading(false); }
-  };
-
-  const onRowFieldChange = (id, key, value) => {
-    const rid = serializeMongoId(id);
-    setEditMap((prev) => ({ ...prev, [rid]: { ...(prev[rid] || {}), [key]: value } }));
+  const openAccount = (row) => {
+    const id = serializeMongoId(row?._id);
+    if (!id) return;
+    router.push(`/admin-dashboard/meta-ads/${encodeURIComponent(id)}`);
   };
 
   const createEmptyManualAccount = () => ({
     accountName: "",
     bmId: "",
     monthlyBudget: 0,
-    usdToBdtRate: "135",
     userUid: "",
     userEmail: "",
     MetaAccountID: "",
     status: "active",
   });
 
-  const addManualRow = () => {
-    setNewAccounts((prev) => [...prev, createEmptyManualAccount()]);
-  };
-
-  const removeManualRow = (index) => {
+  const addManualRow = () => setNewAccounts((prev) => [...prev, createEmptyManualAccount()]);
+  const removeManualRow = (index) =>
     setNewAccounts((prev) => (prev.length === 1 ? prev : prev.filter((_, i) => i !== index)));
-  };
 
   const updateManualRow = (index, field, value) => {
     setNewAccounts((prev) => {
@@ -213,51 +190,6 @@ export default function AdminAdAccountApprove() {
       next[index] = { ...next[index], [field]: value };
       return next;
     });
-  };
-
-  const saveRow = async (row) => {
-    const rowKey = serializeMongoId(row?._id);
-    const rawRate = getRowValue(row, "usdToBdtRate");
-    const parsedRate = parseFloat(String(rawRate ?? "").replace(/,/g, "").trim(), 10);
-    const usdToBdtRate = Number.isFinite(parsedRate) && parsedRate >= 0 ? parsedRate : 0;
-
-    const payload = {
-      id: rowKey,
-      accountName: getRowValue(row, "accountName") || "",
-      bmId: getRowValue(row, "bmId") || "",
-      monthlyBudget: Number(getRowValue(row, "monthlyBudget") || 0),
-      usdToBdtRate,
-      userUid: getRowValue(row, "userUid") || "",
-      userEmail: getRowValue(row, "userEmail") || "",
-      MetaAccountID: getRowValue(row, "MetaAccountID") || "",
-      status: getRowValue(row, "status") || "pending",
-    };
-    const res = await fetch("/api/admin/ads-request/approve", {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (res.ok) {
-      setEditMap((prev) => {
-        const next = { ...prev };
-        delete next[rowKey];
-        return next;
-      });
-      await load({ force: true });
-      Swal.fire("Saved", "", "success");
-    } else {
-      const json = await res.json().catch(() => ({}));
-      Swal.fire("Save failed", json?.message || `HTTP ${res.status}`, "error");
-    }
-  };
-
-  const cancelRow = async (row) => {
-    const res = await fetch("/api/admin/ads-request/approve", {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ id: serializeMongoId(row?._id) }),
-    });
-    if (res.ok) { load({ force: true }); }
   };
 
   const addManualAccount = async () => {
@@ -270,7 +202,6 @@ export default function AdminAdAccountApprove() {
         ...assignedAccounts[0],
         assignedAccounts,
         monthlyBudget: Number(assignedAccounts[0]?.monthlyBudget || 0),
-        usdToBdtRate: Number(assignedAccounts[0]?.usdToBdtRate || 0),
         accountName: assignedAccounts[0]?.accountName || "Manual Account",
         bmId: assignedAccounts[0]?.bmId || "",
         userUid: assignedAccounts[0]?.userUid || "",
@@ -279,202 +210,358 @@ export default function AdminAdAccountApprove() {
       }),
     });
     if (res.ok) {
+      const json = await res.json().catch(() => ({}));
+      const newId = serializeMongoId(json?.data?._id);
       setNewAccounts([createEmptyManualAccount()]);
       load({ force: true });
+      if (newId) {
+        router.push(`/admin-dashboard/meta-ads/${encodeURIComponent(newId)}`);
+      } else {
+        Swal.fire({ title: "Account created", icon: "success", timer: 1500, showConfirmButton: false });
+      }
     }
   };
 
+  const stats = useMemo(() => {
+    const counts = { total: data.length, active: 0, pending: 0, blocked: 0 };
+    for (const row of data) {
+      const s = String(row.status || "").toLowerCase();
+      if (s === "active") counts.active += 1;
+      else if (s === "pending") counts.pending += 1;
+      else if (s === "blocked") counts.blocked += 1;
+    }
+    return counts;
+  }, [data]);
+
   const filtered = useMemo(() => {
     const s = search.toLowerCase();
-    return data.filter((d) => d.accountName?.toLowerCase().includes(s) || d.userEmail?.toLowerCase().includes(s) || d.bmId?.includes(s));
-  }, [data, search]);
+    return data.filter((d) => {
+      const matchesSearch =
+        !s ||
+        d.accountName?.toLowerCase().includes(s) ||
+        d.userEmail?.toLowerCase().includes(s) ||
+        d.bmId?.includes(s) ||
+        d.MetaAccountID?.includes(s);
+      const matchesStatus =
+        statusFilter === "all" || String(d.status || "").toLowerCase() === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [data, search, statusFilter]);
 
-  if (initialLoading) return (
-    <div className="flex flex-col items-center justify-center min-h-[500px]">
-      <Loader2 className="mb-4 h-10 w-10 animate-spin text-[#8ab4ff]" />
-      <p className="text-gray-500 font-medium animate-pulse">Organizing Workspace...</p>
-    </div>
-  );
+  if (initialLoading) {
+    return (
+      <div className="flex min-h-[420px] flex-col items-center justify-center gap-4">
+        <Loader2 className="h-9 w-9 animate-spin text-sky-500" />
+        <p className="text-sm font-medium text-gray-500">Loading ad accounts…</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen space-y-6 bg-[#fcfcfc] p-4 sm:p-6 md:space-y-8 md:p-8">
-      
-      {/* HEADER SECTION (Original) */}
-      <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-[linear-gradient(135deg,#ffffff,#eef4ff)] p-5 shadow-xl shadow-slate-200/70 sm:p-6 dark:border-[#22375d] dark:bg-[linear-gradient(135deg,rgba(19,37,70,0.96),rgba(11,24,48,0.96))] dark:shadow-black/30">
-        <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
-          <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-sky-600 dark:border-[#8ab4ff]/20 dark:bg-[#8ab4ff]/10 dark:text-[#cfe0ff]">
-              <Layers size={12} /> Meta Ads Workspace
-            </div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl dark:text-white">Ad Account Panel</h1>
-            <p className="mt-1 max-w-2xl text-sm font-medium text-slate-500 dark:text-[#9fb3de]">Review and manage requests with smart mapping.</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-sky-700">
+            <Layers size={11} />
+            Meta Ads
           </div>
-          <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
-            <div className="group relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#7f96c7]" size={18} />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search records..." className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-sky-400 sm:w-72 dark:border-[#2c4167] dark:bg-[#132546] dark:text-[#f5f8ff]" />
-            </div>
-            <button onClick={() => load({ force: true })} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-95 dark:border-[#2c4167] dark:bg-[#132546] dark:text-[#dbe8ff] dark:hover:bg-[#1a2f57]"><RefreshCcw size={16} /> Refresh</button>
+          <h1 className="text-2xl font-black tracking-tight text-gray-900 sm:text-3xl">Ad Account Workspace</h1>
+          <p className="mt-1 max-w-xl text-sm text-gray-500">
+            Provision accounts, map BM slots, and manage approvals from one control panel.
+          </p>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search name, email, Meta ID…"
+              className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-4 text-sm text-gray-800 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 sm:w-72"
+            />
           </div>
+          <button
+            onClick={() => load({ force: true })}
+            disabled={loading}
+            className="admin-accent-button flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-60"
+          >
+            <RefreshCcw size={15} className={loading ? "animate-spin" : ""} />
+            Refresh
+          </button>
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
-        {/* MANUAL ADD FORM */}
-        <div className="p-5 border-b border-gray-100 bg-white">
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <h3 className="text-base font-black text-gray-800 uppercase sm:text-lg">Manual Entry</h3>
-            <button onClick={() => setShowManualAdd(!showManualAdd)} className="admin-accent-button rounded-lg px-4 py-2 text-sm font-bold">{showManualAdd ? "Hide Form" : "Show Form"}</button>
-          </div>
-          {showManualAdd && (
-            <div className="space-y-3">
-              {newAccounts.map((account, index) => (
-                <div key={index} className="grid grid-cols-1 gap-2 rounded-2xl border border-gray-100 bg-gray-50 p-3 md:grid-cols-2 xl:grid-cols-8">
-                  <input placeholder="Account Name" value={account.accountName} onChange={(e) => updateManualRow(index, "accountName", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
-                  <input placeholder="BM ID" value={account.bmId} onChange={(e) => updateManualRow(index, "bmId", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
-                  <input placeholder="Budget" type="number" value={account.monthlyBudget} onChange={(e) => updateManualRow(index, "monthlyBudget", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
-                  <input title="1 USD = how many BDT for this user" placeholder="1 USD = Tk" type="number" value={account.usdToBdtRate} onChange={(e) => updateManualRow(index, "usdToBdtRate", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
-                  <input placeholder="User UID" value={account.userUid} onChange={(e) => updateManualRow(index, "userUid", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
-                  <input placeholder="User Email" value={account.userEmail} onChange={(e) => updateManualRow(index, "userEmail", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
-                  <input placeholder="Meta ID" value={account.MetaAccountID} onChange={(e) => updateManualRow(index, "MetaAccountID", e.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => removeManualRow(index)} disabled={newAccounts.length === 1} className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-600 disabled:opacity-40">Remove</button>
-                  </div>
-                </div>
-              ))}
-              <div className="flex flex-wrap gap-3">
-                <button type="button" onClick={addManualRow} className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700">+ Add Another Account</button>
-                <button onClick={addManualAccount} className="admin-accent-button rounded-lg px-4 py-3 text-sm font-bold">Save Bundle</button>
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { label: "Total accounts", value: stats.total, accent: "#3b82f6", icon: Layers },
+          { label: "Active", value: stats.active, accent: "#10b981", icon: CheckCircle },
+          { label: "Pending", value: stats.pending, accent: "#f59e0b", icon: Clock },
+          { label: "Blocked", value: stats.blocked, accent: "#ef4444", icon: ShieldAlert },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+          >
+            <div
+              className="absolute inset-y-0 left-0 w-1 rounded-l-2xl"
+              style={{ background: item.accent }}
+            />
+            <div className="flex items-start justify-between pl-2">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500">{item.label}</p>
+                <p className="mt-1 text-2xl font-black text-gray-900">{item.value}</p>
+              </div>
+              <div
+                className="rounded-xl p-2"
+                style={{ background: `${item.accent}18`, color: item.accent }}
+              >
+                <item.icon size={18} />
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        ))}
+      </div>
 
-        {/* MOBILE VIEW */}
-        <div className="space-y-3 p-3 md:hidden">
-          {filtered.map((r) => {
-            const st = getStatusClasses(r.status);
-            const suggested = getSuggestedBM(getRowValue(r, "MetaAccountID"));
-            return (
-              <div key={r._id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm space-y-4">
-                <div className="flex gap-3">
-                  <div className="p-2.5 bg-blue-100 rounded-xl text-blue-600"><Layers size={18} /></div>
-                  <div className="flex-1">
-                    <input className="w-full truncate border-b text-base font-bold text-gray-900 outline-none focus:border-blue-500" value={getRowValue(r, "accountName")} onChange={(e) => onRowFieldChange(r._id, "accountName", e.target.value)} />
-                    <p className="mt-1 text-xs font-bold text-gray-400">{getRowValue(r, "userEmail")}</p>
-                  </div>
+      {/* Manual entry */}
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <button
+          type="button"
+          onClick={() => setShowManualAdd((v) => !v)}
+          className="flex w-full items-center justify-between gap-3 border-b border-gray-100 px-5 py-4 text-left transition hover:bg-gray-50/80"
+        >
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 p-2.5 text-white shadow-md shadow-sky-200">
+              <Plus size={18} />
+            </div>
+            <div>
+              <h2 className="text-sm font-black text-gray-900">Quick provision</h2>
+              <p className="text-xs text-gray-500">Add one or more ad accounts manually</p>
+            </div>
+          </div>
+          {showManualAdd ? (
+            <ChevronUp size={18} className="shrink-0 text-gray-400" />
+          ) : (
+            <ChevronDown size={18} className="shrink-0 text-gray-400" />
+          )}
+        </button>
+
+        {showManualAdd ? (
+          <div className="space-y-4 p-5">
+            {newAccounts.map((account, index) => (
+              <div
+                key={index}
+                className="rounded-2xl border border-gray-100 bg-gradient-to-br from-gray-50/80 to-white p-4 sm:p-5"
+              >
+                <div className="mb-4 flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-widest text-gray-400">
+                    Account slot {index + 1}
+                  </span>
+                  {newAccounts.length > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => removeManualRow(index)}
+                      className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-100"
+                    >
+                      Remove
+                    </button>
+                  ) : null}
                 </div>
-                <div>
-                  <label className="mb-1 block text-[9px] font-black uppercase text-gray-400">1 USD = Tk</label>
-                  <input className="w-full border rounded-lg p-2 text-sm font-bold" type="number" placeholder="135" value={getRowValue(r, "usdToBdtRate") ?? ""} onChange={(e) => onRowFieldChange(r._id, "usdToBdtRate", e.target.value)} />
-                </div>
-                <div className="relative">
-                  <input className="w-full border rounded-lg p-2 text-xs font-mono" placeholder="Meta ID" value={getRowValue(r, "MetaAccountID") || ""} onChange={(e) => onRowFieldChange(r._id, "MetaAccountID", e.target.value)} />
-                  {suggested && (
-                    <div className="mt-2 p-2 bg-emerald-50 border border-emerald-200 rounded-xl">
-                      <p className="text-[9px] text-emerald-700 font-bold uppercase"><Building2 size={12}/> suggest: {suggested.bmName}</p>
-                      <button onClick={() => handleAction(r._id, "active")} className="mt-1 text-[8px] bg-emerald-600 text-white px-2 py-0.5 rounded font-black">CONNECT</button>
-                    </div>
-                  )}
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase border ${st.bg}`}>{r.status}</span>
-                  <div className="flex gap-2">
-                    <button onClick={() => saveRow(r)} className="p-2 bg-blue-50 rounded-lg text-blue-600"><Save size={14}/></button>
-                    <button onClick={() => handleAction(r._id, "active")} className="p-2 bg-emerald-50 rounded-lg text-emerald-600"><CheckCircle size={14}/></button>
-                  </div>
+
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <FormField label="Account name" icon={Layers}>
+                    <input
+                      className={inputClass}
+                      placeholder="e.g. Brand Ads"
+                      value={account.accountName}
+                      onChange={(e) => updateManualRow(index, "accountName", e.target.value)}
+                    />
+                  </FormField>
+                  <FormField label="Monthly budget (USD)" icon={DollarSign}>
+                    <input
+                      type="number"
+                      className={inputClass}
+                      placeholder="0"
+                      value={account.monthlyBudget}
+                      onChange={(e) => updateManualRow(index, "monthlyBudget", e.target.value)}
+                    />
+                  </FormField>
+                  <FormField label="User UID" icon={Hash}>
+                    <input
+                      className={inputClass}
+                      placeholder="Firebase / user ID"
+                      value={account.userUid}
+                      onChange={(e) => updateManualRow(index, "userUid", e.target.value)}
+                    />
+                  </FormField>
+                  <FormField label="User email" icon={Mail}>
+                    <input
+                      type="email"
+                      className={inputClass}
+                      placeholder="user@example.com"
+                      value={account.userEmail}
+                      onChange={(e) => updateManualRow(index, "userEmail", e.target.value)}
+                    />
+                  </FormField>
+                  <FormField label="Meta account ID" icon={Link2}>
+                    <input
+                      className={`${inputClass} font-mono`}
+                      placeholder="act_…"
+                      value={account.MetaAccountID}
+                      onChange={(e) => updateManualRow(index, "MetaAccountID", e.target.value)}
+                    />
+                  </FormField>
                 </div>
               </div>
-            );
-          })}
+            ))}
+
+            <div className="flex flex-wrap items-center gap-3 border-t border-gray-100 pt-4">
+              <button
+                type="button"
+                onClick={addManualRow}
+                className="admin-secondary-button flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold"
+              >
+                <Plus size={15} />
+                Add another slot
+              </button>
+              <button
+                onClick={addManualAccount}
+                className="admin-accent-button flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold"
+              >
+                <Sparkles size={15} />
+                Save & provision
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      {/* Accounts list */}
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-gray-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-sm font-black text-gray-900">All ad accounts</h2>
+            <p className="text-xs text-gray-500">
+              {filtered.length} of {data.length} shown · Click any row to open full profile
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Filter size={14} className="text-gray-400" />
+            {STATUS_FILTERS.map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setStatusFilter(f.id)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+                  statusFilter === f.id
+                    ? "border-sky-300 bg-sky-50 text-sky-700"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* DESKTOP TABLE VIEW (Full Detailed) */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-white border-b border-gray-100 text-xs font-black uppercase tracking-widest text-gray-500">
-              <tr>
-                <th className="px-6 py-5">Account & User Details</th>
-                <th className="px-6 py-5 text-center">BM Assignment</th>
-                <th className="px-6 py-5 text-center">Meta ID & Smart Link</th>
-                <th className="px-6 py-5 text-center">Budget</th>
-                <th className="px-6 py-5 text-center">1 USD → Tk</th>
-                <th className="px-6 py-5 text-center">Status</th>
-                <th className="px-6 py-5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {filtered.map((r) => {
-                const st = getStatusClasses(r.status);
-                const currentMetaId = getRowValue(r, "MetaAccountID");
-                const suggested = getSuggestedBM(currentMetaId);
-
-                return (
-                  <tr key={r._id} className="group hover:bg-slate-50 transition-all">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="admin-panel-muted rounded-xl p-2.5 text-[#8ab4ff]"><Layers size={18}/></div>
-                        <div>
-                          <input className="w-44 border-none bg-transparent text-lg font-bold text-gray-900 outline-none" value={getRowValue(r, "accountName")} onChange={(e) => onRowFieldChange(r._id, "accountName", e.target.value)} />
-                          <p className="mt-1 text-xs font-bold text-gray-400">{getRowValue(r, "userEmail")}</p>
-                        </div>
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+            <div className="rounded-2xl bg-gray-100 p-4 text-gray-400">
+              <Layers size={28} />
+            </div>
+            <p className="text-sm font-bold text-gray-700">No accounts match your filters</p>
+            <p className="max-w-sm text-xs text-gray-500">
+              Try a different search term or status filter, or provision a new account above.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Mobile cards */}
+            <div className="space-y-3 p-4 md:hidden">
+              {filtered.map((r) => (
+                <button
+                  key={r._id}
+                  type="button"
+                  onClick={() => openAccount(r)}
+                  className="w-full rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/30"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="rounded-xl bg-sky-50 p-2.5 text-sky-600">
+                        <Layers size={18} />
                       </div>
-                    </td>
-
-                    <td className="px-6 py-4 text-center">
-                       <input className="w-40 rounded-lg border border-gray-200 bg-white px-3 py-2 text-center font-mono text-sm font-bold text-slate-600 outline-none shadow-sm" value={getRowValue(r, "bmId")} onChange={(e) => onRowFieldChange(r._id, "bmId", e.target.value)} />
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col items-center space-y-2">
-                        <input className="w-52 rounded-lg border border-gray-200 px-4 py-2 text-sm font-mono text-center outline-none shadow-inner focus:border-blue-500" placeholder="Paste Meta ID" value={currentMetaId || ""} onChange={(e) => onRowFieldChange(r._id, "MetaAccountID", e.target.value)} />
-                        {suggested && (
-                          <div className="animate-in fade-in slide-in-from-top-1 bg-emerald-50 border border-emerald-100 p-2 rounded-xl flex items-center gap-3 shadow-sm">
-                             <div className="flex items-center gap-1.5 text-emerald-700">
-                                <Building2 size={12} />
-                                <span className="text-[11px] font-black uppercase">Slot: {suggested.bmName}</span>
-                             </div>
-                             <button onClick={() => handleAction(r._id, "active")} className="rounded bg-emerald-600 px-3 py-1.5 text-[11px] font-bold uppercase text-white transition-all hover:bg-emerald-700">Connect</button>
-                          </div>
-                        )}
+                      <div className="min-w-0">
+                        <p className="truncate text-base font-bold text-gray-900">{r.accountName || "Ad Account"}</p>
+                        <p className="truncate text-xs text-gray-500">{r.userEmail || "No email"}</p>
                       </div>
-                    </td>
+                    </div>
+                    <ChevronRight size={18} className="shrink-0 text-gray-300" />
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <StatusBadge status={r.status} />
+                    <span className="text-xs font-bold text-gray-600">{formatUsd(r.monthlyBudget)}</span>
+                    {r.MetaAccountID ? (
+                      <span className="truncate font-mono text-[10px] text-gray-400">{r.MetaAccountID}</span>
+                    ) : null}
+                  </div>
+                </button>
+              ))}
+            </div>
 
-                    <td className="px-6 py-4 text-center">
-                       <div className="inline-flex items-center rounded-lg border border-slate-100 bg-slate-50 px-3">
-                         <span className="text-sm text-gray-400">$</span>
-                         <input type="number" className="w-20 bg-transparent py-2 text-center text-sm font-black outline-none" value={getRowValue(r, "monthlyBudget")} onChange={(e) => onRowFieldChange(r._id, "monthlyBudget", e.target.value)} />
-                       </div>
-                    </td>
-
-                    <td className="px-6 py-4 text-center">
-                      <input
-                        type="number"
-                        className="w-24 rounded-lg border border-gray-200 bg-white px-2 py-2 text-center text-sm font-black outline-none shadow-inner focus:border-blue-500"
-                        placeholder="135"
-                        value={getRowValue(r, "usdToBdtRate") ?? ""}
-                        onChange={(e) => onRowFieldChange(r._id, "usdToBdtRate", e.target.value)}
-                      />
-                    </td>
-
-                    <td className="px-6 py-4 text-center">
-                       <span className={`inline-flex items-center px-4 py-2 rounded-full text-xs font-black uppercase border transition-all ${st.bg}`}>{st.icon} {r.status}</span>
-                    </td>
-
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => saveRow(r)} title="Save Settings" className="rounded-lg border border-blue-200 bg-blue-100 p-2.5 text-blue-700 shadow-sm transition-all hover:bg-blue-600 hover:text-white"><Save size={18} /></button>
-                        <button onClick={() => handleAction(r._id, "active")} title="Approve Account" className="rounded-lg border border-emerald-200 bg-emerald-100 p-2.5 text-emerald-700 shadow-sm transition-all hover:bg-emerald-600 hover:text-white"><CheckCircle size={18} /></button>
-                        <button onClick={() => handleAction(r._id, "blocked")} title="Block This Account" className="rounded-lg border border-red-200 bg-red-100 p-2.5 text-red-700 shadow-sm transition-all hover:bg-red-600 hover:text-white"><ShieldAlert size={18} /></button>
-                        <button onClick={() => cancelRow(r)} title="Reject & Delete" className="rounded-lg border border-slate-200 bg-slate-100 p-2.5 text-slate-600 shadow-sm transition-all hover:bg-slate-500 hover:text-white"><Trash2 size={18} /></button>
-                      </div>
-                    </td>
+            {/* Desktop table */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-gray-100 text-[11px] font-black uppercase tracking-widest text-gray-500">
+                    <th className="px-5 py-4">Account</th>
+                    <th className="px-5 py-4">Meta ID</th>
+                    <th className="px-5 py-4 text-center">Budget</th>
+                    <th className="px-5 py-4 text-center">Status</th>
+                    <th className="px-5 py-4 w-10" />
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {filtered.map((r) => (
+                    <tr
+                      key={r._id}
+                      onClick={() => openAccount(r)}
+                      className="group cursor-pointer transition hover:bg-sky-50/40"
+                    >
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="rounded-xl bg-sky-50 p-2 text-sky-600 transition group-hover:bg-sky-100">
+                            <Layers size={16} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-gray-900 group-hover:text-sky-700">
+                              {r.accountName || "Ad Account"}
+                            </p>
+                            <p className="text-xs text-gray-500">{r.userEmail || "—"}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="font-mono text-xs text-gray-600">{r.MetaAccountID || "—"}</span>
+                      </td>
+                      <td className="px-5 py-4 text-center">
+                        <span className="text-sm font-bold text-gray-900">{formatUsd(r.monthlyBudget)}</span>
+                      </td>
+                      <td className="px-5 py-4 text-center">
+                        <StatusBadge status={r.status} />
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <ChevronRight
+                          size={18}
+                          className="ml-auto text-gray-300 transition group-hover:translate-x-0.5 group-hover:text-sky-500"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

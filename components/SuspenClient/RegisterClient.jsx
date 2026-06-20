@@ -67,7 +67,7 @@ export default function RegisterClient() {
         turnstileToken,
         deviceFingerprint
       );
-      router.replace(`/login?verify_email_sent=1&email=${encodeURIComponent(normalizeTextValue(email).trim())}`);
+      router.replace(`/login?verify_email_sent=1&pending_approval=1&email=${encodeURIComponent(normalizeTextValue(email).trim())}`);
     } catch (err) {
       setTurnstileToken("");
       turnstileRef.current?.reset();

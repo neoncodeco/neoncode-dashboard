@@ -16,7 +16,8 @@ import {
   Wallet,
 } from "lucide-react";
 import Swal from "sweetalert2";
-import { formatBdt, formatUsd, DEFAULT_USD_TO_BDT_RATE } from "@/lib/currency";
+import { formatBdt, formatUsd } from "@/lib/currency";
+import { formatPaymentMethod, formatStatusLabel } from "@/lib/displayFormatters";
 
 export function formatDate(value) {
   if (!value) return "—";
@@ -115,7 +116,7 @@ export function AccountDetailCard({ account, defaultOpen = false }) {
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-bold text-gray-900">{account.accountName}</p>
             <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${statusPill(account.status)}`}>
-              {account.status}
+              {formatStatusLabel(account.status)}
             </span>
           </div>
           <p className="mt-0.5 text-xs text-gray-500">
@@ -138,7 +139,7 @@ export function AccountDetailCard({ account, defaultOpen = false }) {
             <DetailField label="Account name" value={account.accountName} />
             <DetailField label="Business Manager (BM) ID" value={account.bmId || "—"} mono />
             <DetailField label="Meta Account ID" value={account.MetaAccountID || "—"} mono />
-            <DetailField label="Status" value={account.status} />
+            <DetailField label="Status" value={formatStatusLabel(account.status)} />
             <DetailField label="Monthly budget" value={formatUsd(account.monthlyBudget)} />
             <DetailField label="Spend cap" value={account.spendCap != null ? formatUsd(account.spendCap) : "—"} />
             <DetailField label="Amount spent" value={account.amountSpent != null ? formatUsd(account.amountSpent) : "—"} />
@@ -285,13 +286,11 @@ export function UserOverviewPanel({ insights, userId }) {
                     <tr key={tx.id}>
                       <td className="py-3 pr-4 text-gray-600">{formatDate(tx.createdAt)}</td>
                       <td className="py-3 pr-4 font-bold text-gray-900">{formatBdt(tx.amountBdt)}</td>
-                      <td className="py-3 pr-4 capitalize text-gray-600">
-                        {tx.method === "bank_transfer" ? "Bank transfer" : "Online"}
-                      </td>
+                      <td className="py-3 pr-4 text-gray-600">{formatPaymentMethod(tx.method)}</td>
                       <td className="py-3 pr-4 font-mono text-xs text-gray-500">{tx.trxId || "—"}</td>
                       <td className="py-3">
                         <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${statusPill(tx.status)}`}>
-                          {tx.status}
+                          {formatStatusLabel(tx.status)}
                         </span>
                       </td>
                     </tr>
@@ -322,7 +321,7 @@ export function UserOverviewPanel({ insights, userId }) {
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-semibold text-gray-900">{item.title}</p>
                         <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${statusPill(item.status)}`}>
-                          {item.status}
+                          {formatStatusLabel(item.status)}
                         </span>
                       </div>
                       {item.description ? <p className="mt-0.5 text-xs text-gray-500">{item.description}</p> : null}
@@ -345,7 +344,7 @@ export function UserOverviewPanel({ insights, userId }) {
   );
 }
 
-export function UserAddAccountPanel({ userId, userEmail, usdToBdtRate, onAdded, token }) {
+export function UserAddAccountPanel({ userId, userEmail, onAdded, token }) {
   const [newAccount, setNewAccount] = useState({
     accountName: "",
     bmId: "",
@@ -368,7 +367,6 @@ export function UserAddAccountPanel({ userId, userEmail, usdToBdtRate, onAdded, 
         bmId: newAccount.bmId.trim(),
         MetaAccountID: newAccount.MetaAccountID.trim(),
         monthlyBudget: Number(newAccount.monthlyBudget || 0),
-        usdToBdtRate: Number(usdToBdtRate || DEFAULT_USD_TO_BDT_RATE),
         userUid: userId,
         userEmail: userEmail || "",
         status: "active",
@@ -511,12 +509,10 @@ export function UserTransactionsPanel({ insights }) {
                       <span className="ml-2 text-xs text-gray-400">({formatUsd(tx.amountUsd)})</span>
                     ) : null}
                   </td>
-                  <td className="py-3 pr-4 capitalize text-gray-600">
-                    {tx.method === "bank_transfer" ? "Bank transfer" : "Online"}
-                  </td>
+                  <td className="py-3 pr-4 text-gray-600">{formatPaymentMethod(tx.method)}</td>
                   <td className="py-3">
                     <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${statusPill(tx.status)}`}>
-                      {tx.status}
+                      {formatStatusLabel(tx.status)}
                     </span>
                   </td>
                 </tr>
@@ -549,7 +545,7 @@ export function UserActivityPanel({ insights }) {
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm font-semibold text-gray-900">{item.title}</p>
                     <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${statusPill(item.status)}`}>
-                      {item.status}
+                      {formatStatusLabel(item.status)}
                     </span>
                   </div>
                   {item.description ? <p className="mt-0.5 text-xs text-gray-500">{item.description}</p> : null}

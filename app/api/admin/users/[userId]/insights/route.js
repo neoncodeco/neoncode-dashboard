@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { requireAuth, requireRoles } from "@/lib/apiGuard";
 import { expandAdAccountRequests } from "@/lib/adAccountRequests";
+import { formatPaymentDescription } from "@/lib/displayFormatters";
 import { normalizeAdAccountId, resolveMetaAccessTokens } from "@/lib/metaAdsAccess";
 import { serializeMongoId } from "@/lib/serializeMongoId";
 
@@ -50,9 +51,7 @@ function normalizeActivityItem(item, prefix) {
     title:
       item.title ||
       (prefix === "payment"
-        ? item.method === "bank_transfer"
-          ? "Manual Payment"
-          : "Online Payment"
+        ? formatPaymentDescription(item.method)
         : prefix === "ads"
           ? "Meta Ad Account Budget Updated"
           : "Activity"),

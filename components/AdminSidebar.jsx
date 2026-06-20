@@ -24,6 +24,8 @@ import {
   Activity,
   Sun,
   Moon,
+  DollarSign,
+  UserCheck,
 } from "lucide-react";
 import useAppAuth from "@/hooks/useAppAuth";
 import { AFFILIATE_UI_ENABLED } from "@/lib/featureFlags";
@@ -78,6 +80,12 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
       adminOnly: true,
     },
     {
+      name: "Approve Requests",
+      icon: UserCheck,
+      href: "/admin-dashboard/user-approvals",
+      adminOnly: true,
+    },
+    {
       name: "Meta Ads",
       icon: FolderKanban,
       href: "/admin-dashboard/meta-ads",
@@ -127,6 +135,12 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
       name: "Payment Details",
       icon: Landmark,
       href: "/admin-dashboard/payment-details",
+      adminOnly: true,
+    },
+    {
+      name: "Dollar Rates",
+      icon: DollarSign,
+      href: "/admin-dashboard/dollar-rates",
       adminOnly: true,
     },
     {

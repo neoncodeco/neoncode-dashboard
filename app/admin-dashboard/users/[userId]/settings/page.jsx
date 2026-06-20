@@ -11,7 +11,7 @@ export default function UserSettingsPage() {
     <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
       <div className="border-b border-gray-100 px-5 py-4">
         <h2 className="text-sm font-bold text-gray-900">Meta Ads settings</h2>
-        <p className="mt-0.5 text-xs text-gray-500">USD rate, budget controls, and Meta ads access.</p>
+        <p className="mt-0.5 text-xs text-gray-500">Budget controls and Meta ads access. Dollar rates are managed from Dollar Rates.</p>
       </div>
       <div className="p-4 sm:p-5">
         <ManageUserPanel

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { formatBdt, formatUsd } from "@/lib/currency";
+import { formatStatusLabel } from "@/lib/displayFormatters";
 import {
   RefreshCw,
   ChevronLeft,
@@ -13,19 +14,17 @@ import {
 import useAppAuth from "@/hooks/useAppAuth";
 
 const ROWS_PER_PAGE = 10;
-// এখানে 'All' সহ সমস্ত সম্ভাব্য স্ট্যাটাস অন্তর্ভুক্ত করা হয়েছে।
 const STATUS_OPTIONS = ["All", "approved", "pending", "failed", "cancelled", "rejected"];
 
 const PaymentHistory = () => {
   const { token } = useAppAuth();
 
-  const [payments, setPayments] = useState([]); // Original fetched data
-  const [filterStatus, setFilterStatus] = useState("All"); // State for status filter
-  const [filteredPayments, setFilteredPayments] = useState([]); // Data after status filtering
+  const [payments, setPayments] = useState([]);
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [filteredPayments, setFilteredPayments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1); // Current page
+  const [page, setPage] = useState(1);
 
-  // 1. Fetch Payment History
   const fetchData = async () => {
     if (!token) return;
 
@@ -51,24 +50,20 @@ const PaymentHistory = () => {
     fetchData();
   }, [token]);
 
-  // 2. Filter payments by Status (Updated for case-insensitive check)
   useEffect(() => {
     const lowerCaseFilter = filterStatus.toLowerCase();
 
     if (lowerCaseFilter === "all") {
       setFilteredPayments(payments);
     } else {
-      // ডেটার status এবং ফিল্টারের status কে lower case করে তুলনা করা হচ্ছে
       const filtered = payments.filter(
         (p) => p.status.toLowerCase() === lowerCaseFilter
       );
       setFilteredPayments(filtered);
     }
-    // Filter পরিবর্তন হলে পেজ ১ এ চলে যাবে
     setPage(1);
   }, [filterStatus, payments]);
 
-  // 3. Pagination Logic
   const currentPageData = useMemo(() => {
     const start = (page - 1) * ROWS_PER_PAGE;
     return filteredPayments.slice(start, start + ROWS_PER_PAGE);
@@ -76,7 +71,6 @@ const PaymentHistory = () => {
 
   const totalPages = Math.ceil(filteredPayments.length / ROWS_PER_PAGE);
 
-  // Pagination Handlers
   const goToNextPage = () => {
     setPage((prev) => Math.min(prev + 1, totalPages));
   };
@@ -85,7 +79,6 @@ const PaymentHistory = () => {
     setPage((prev) => Math.max(prev - 1, 1));
   };
 
-  // 4. Export CSV
   const exportCSV = () => {
     if (!filteredPayments.length) return;
     const csvContent = [
@@ -96,7 +89,7 @@ const PaymentHistory = () => {
         p.description,
         p.amount,
         p.method,
-        p.status,
+        p.statusLabel || formatStatusLabel(p.status),
       ]),
     ]
       .map((e) => e.join(","))
@@ -145,7 +138,7 @@ const PaymentHistory = () => {
                 >
                   {STATUS_OPTIONS.map((status) => (
                     <option key={status} value={status}>
-                      {status}
+                      {status === "All" ? "All" : formatStatusLabel(status)}
                     </option>
                   ))}
                 </select>
@@ -228,7 +221,7 @@ const PaymentHistory = () => {
                           : "bg-[var(--dashboard-panel-soft)] dashboard-text-muted"
                       }`}
                     >
-                      {p?.status}
+                      {p?.statusLabel || formatStatusLabel(p?.status)}
                     </span>
                   </td>
                 </tr>
@@ -240,7 +233,7 @@ const PaymentHistory = () => {
                     colSpan="6"
                     className="dashboard-text-muted py-10 text-center text-lg"
                   >
-                    No {filterStatus !== "All" ? filterStatus : ""} Payments
+                    No {filterStatus !== "All" ? formatStatusLabel(filterStatus) : ""} Payments
                     Found.
                   </td>
                 </tr>

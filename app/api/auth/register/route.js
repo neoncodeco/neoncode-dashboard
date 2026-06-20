@@ -9,6 +9,7 @@ import {
 } from "@/lib/emailVerification";
 import { sendVerificationEmail } from "@/lib/mailer";
 import { verifyTurnstileToken } from "@/lib/turnstile";
+import { getAppBaseUrl, notifyAdminsNewUserApproval } from "@/lib/emailNotifications";
 
 export async function POST(req) {
   try {
@@ -133,6 +134,13 @@ export async function POST(req) {
         maxRequests: EMAIL_VERIFICATION_MAX_REQUESTS,
         lastRequestedAt: new Date(),
       },
+      status: "pending",
+      approval: {
+        requestedAt: new Date(),
+        reviewedAt: null,
+        reviewedBy: null,
+        reviewNote: "",
+      },
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -143,6 +151,18 @@ export async function POST(req) {
         { $inc: { "referralStats.totalReferrers": 1 } }
       );
     }
+
+    const baseUrl = getAppBaseUrl(req);
+    void notifyAdminsNewUserApproval(db, {
+      user: {
+        userId,
+        name: normalizedName || "User",
+        email: normalizedEmail,
+        authProvider: "credentials",
+        referredBy: referredByUser ? referredByUser.userId : null,
+      },
+      baseUrl,
+    }).catch((err) => console.error("Admin new user notification error:", err));
 
     const emailResult = await sendVerificationEmail({
       to: normalizedEmail,
@@ -155,6 +175,8 @@ export async function POST(req) {
       created: true,
       userId,
       verificationRequired: true,
+      approvalRequired: true,
+      message: "Account created. Verify your email, then wait for admin approval before signing in.",
       ...(process.env.NODE_ENV !== "production" ? { verificationUrl } : {}),
       ...(emailResult.ok ? {} : { warning: emailResult.error }),
     });

@@ -5,6 +5,12 @@ import { convertBdtToUsd, DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@
 import { ensureWritableUser } from "@/lib/userAccess";
 import { parseWholeNumberAmount } from "@/lib/wholeAmount";
 import { isSafeHttpUrl, sanitizeText } from "@/lib/security";
+import {
+  fetchUserByUid,
+  getAppBaseUrl,
+  notifyAdminsNewPayment,
+  notifyUserPaymentStatus,
+} from "@/lib/emailNotifications";
 
 const MIN_BANK_PAYMENT_AMOUNT_BDT = 1000;
 
@@ -51,7 +57,7 @@ export async function POST(req) {
 
     const usdToBdtRate = await getCurrentUsdToBdtRate(db);
 
-    await db.collection("payments").insertOne({
+    const payment = {
       userUid: decoded.uid,
       email: decoded.email,
       amount: amountBdt,
@@ -64,7 +70,21 @@ export async function POST(req) {
       method: "bank_transfer",
       status: "pending",
       createdAt: new Date(),
-    });
+    };
+
+    await db.collection("payments").insertOne(payment);
+
+    const user = await fetchUserByUid(db, decoded.uid);
+    const baseUrl = getAppBaseUrl(req);
+    void notifyAdminsNewPayment(db, { payment, user, baseUrl }).catch((err) =>
+      console.error("Admin payment notification error:", err)
+    );
+    void notifyUserPaymentStatus(db, {
+      payment,
+      user,
+      status: "pending",
+      baseUrl,
+    }).catch((err) => console.error("User payment pending email error:", err));
 
     return NextResponse.json({
       ok: true,

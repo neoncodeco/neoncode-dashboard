@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { parseJsonBody, requireAuth, requireRoles } from "@/lib/apiGuard";
 import { convertBdtToUsd, DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@/lib/currency";
+import { getAppBaseUrl, notifyUserPaymentStatus } from "@/lib/emailNotifications";
 
 const REQUIRED_TOTAL = 2000;
 const ONE_TIME_COMMISSION = 10;
@@ -185,6 +186,22 @@ export async function POST(req) {
         }
       }
 
+      const approvedPayment = {
+        ...payment,
+        status: "approved",
+        amountBdt,
+        creditedUsdAmount,
+        currency: "BDT",
+        usdToBdtRate,
+      };
+      const baseUrl = getAppBaseUrl(req);
+      void notifyUserPaymentStatus(db, {
+        payment: approvedPayment,
+        user,
+        status: "approved",
+        baseUrl,
+      }).catch((err) => console.error("User payment approval email error:", err));
+
       return NextResponse.json({
         ok: true,
         message: "Payment approved and balances updated safely",
@@ -200,6 +217,16 @@ export async function POST(req) {
         },
       }
     );
+
+    const user = await db.collection("users").findOne({ userId: userUid });
+    const rejectedPayment = { ...payment, status: "rejected" };
+    const baseUrl = getAppBaseUrl(req);
+    void notifyUserPaymentStatus(db, {
+      payment: rejectedPayment,
+      user,
+      status: "rejected",
+      baseUrl,
+    }).catch((err) => console.error("User payment rejection email error:", err));
 
     return NextResponse.json({
       ok: true,
