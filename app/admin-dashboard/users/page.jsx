@@ -58,7 +58,7 @@ export default function AllUsersPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/users/list", {
+      const res = await fetch("/api/admin/users-list", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();

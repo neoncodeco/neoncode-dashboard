@@ -139,6 +139,7 @@ APP_BASE_URL=https://app.neoncode.co
 
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=...
 TURNSTILE_SECRET_KEY=...
+# Must add production domain in Cloudflare Turnstile → Hostname Management (fixes error 110200)
 
 UPSTASH_REDIS_REST_URL=...
 UPSTASH_REDIS_REST_TOKEN=...
@@ -373,6 +374,40 @@ pm2 restart neoncode-app
 ```
 
 A redirect from the old path to the new one is included in `next.config.mjs`.
+
+### Turnstile error `110200` — page keeps refreshing / login broken
+
+**Error 110200** means the current **domain is not authorized** in Cloudflare Turnstile.
+
+**Fix in Cloudflare dashboard:**
+
+1. Go to [Cloudflare Turnstile](https://dash.cloudflare.com/?to=/:account/turnstile)
+2. Open your widget (site key `0x4AAAAAADB-d5o9aQXot-4f` or your production key)
+3. **Hostname Management** → add your production domain, e.g.:
+   - `app.neoncode.co`
+   - `neoncode.co` (covers subdomains)
+4. Do **not** open the site via raw IP (`http://217.216.108.237`) — Turnstile needs a domain name
+5. Ensure `.env.local` on VPS has matching keys:
+
+```env
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=<your-production-site-key>
+TURNSTILE_SECRET_KEY=<matching-secret-key>
+```
+
+6. Rebuild and restart:
+
+```bash
+npm run build && npm run prepare:standalone && pm2 restart neoncode-app
+```
+
+**Local development:** use Cloudflare test keys in `.env.local`:
+
+```env
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+```
+
+The app no longer auto-resets Turnstile on error (that caused infinite refresh). Use **Retry security check** if the widget fails once.
 
 ### 502 Bad Gateway (Nginx)
 
