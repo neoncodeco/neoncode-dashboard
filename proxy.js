@@ -46,7 +46,6 @@ async function isRateLimited(key, maxRequests) {
 
     return { limited: false, retryAfter: 0 };
   } catch (error) {
-    // Fail-open to avoid taking down APIs if Redis is temporarily unavailable.
     console.error("Redis rate limit error:", error);
     return { limited: false, retryAfter: 0 };
   }
@@ -77,7 +76,7 @@ function applySecurityHeaders(response) {
   return response;
 }
 
-export async function middleware(req) {
+export async function proxy(req) {
   const { pathname } = req.nextUrl;
 
   if (!isExcludedFromGeoBlock(pathname)) {
