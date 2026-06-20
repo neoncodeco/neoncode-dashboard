@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { requireAuth } from "@/lib/apiGuard";
+import { formatPaymentDescription, formatPaymentMethod, formatStatusLabel } from "@/lib/displayFormatters";
 
 export async function GET(req) {
   try {
@@ -22,13 +23,14 @@ export async function GET(req) {
     const formatted = payments.map((p) => ({
       id: p.trx_id || p.trxId || String(p._id),
       date: (p.createdAt ? new Date(p.createdAt) : new Date()).toISOString(),
-      description: p.method === "bank_transfer" ? "Manual Payment" : "Online Payment",
+      description: formatPaymentDescription(p.method),
       amount: Number((p.amountBdt ?? p.amount) || 0),
       amountBdt: Number((p.amountBdt ?? p.amount) || 0),
       creditedUsdAmount: Number(p.creditedUsdAmount || 0),
       currency: p.currency || "BDT",
-      method: p.method || "unknown",
+      method: formatPaymentMethod(p.method),
       status: p.status || "pending",
+      statusLabel: formatStatusLabel(p.status || "pending"),
       screenshot: p.screenshotUrl || p.screenshot || null,
     }));
 

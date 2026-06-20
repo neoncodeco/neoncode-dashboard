@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
+import { formatPaymentDescription } from "@/lib/displayFormatters";
 
 const normalizeText = (value) => (typeof value === "string" ? value.toLowerCase() : "");
 
@@ -91,7 +92,7 @@ export async function GET(req) {
 
     const normalizedPayments = payments.map((item) => {
       const amount = Number(item.amountBdt ?? item.amount ?? 0);
-      const method = item.method === "bank_transfer" ? "Manual Payment" : "Online Payment";
+      const method = formatPaymentDescription(item.method);
 
       return {
         ...item,

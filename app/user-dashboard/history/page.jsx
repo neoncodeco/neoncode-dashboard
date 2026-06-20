@@ -2,6 +2,7 @@
 
 import useAppAuth from "@/hooks/useAppAuth";
 import { AFFILIATE_UI_ENABLED } from "@/lib/featureFlags";
+import { formatStatusLabel } from "@/lib/displayFormatters";
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, ClipboardList, Clock3, Filter, History } from "lucide-react";
@@ -343,7 +344,7 @@ const HistoryPage = () => {
                       <td className="whitespace-nowrap px-6 py-4 text-center">
                         <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold ${getStatusStyle(item.status)}`}>
                           <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-current" />
-                          {item.status?.toUpperCase() || "--"}
+                          {formatStatusLabel(item.status) || "--"}
                         </span>
                       </td>
                     </tr>

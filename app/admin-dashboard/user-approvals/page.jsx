@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import useAppAuth from "@/hooks/useAppAuth";
 import Swal from "sweetalert2";
+import { formatAuthProvider, formatStatusLabel } from "@/lib/displayFormatters";
 
 const FILTERS = [
   { id: "pending", label: "Pending" },
@@ -233,7 +234,7 @@ export default function UserApprovalsPage() {
                         </div>
                       </td>
                       <td className="p-4 text-gray-600">{row.email}</td>
-                      <td className="p-4 capitalize text-gray-600">{row.authProvider}</td>
+                      <td className="p-4 text-gray-600">{formatAuthProvider(row.authProvider)}</td>
                       <td className="p-4">
                         {row.emailVerified ? (
                           <span className="text-emerald-600">Yes</span>
@@ -244,7 +245,7 @@ export default function UserApprovalsPage() {
                       <td className="p-4 text-gray-600">{formatDate(row.createdAt)}</td>
                       <td className="p-4">
                         <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase ${statusStyle(row.status)}`}>
-                          {row.status}
+                          {formatStatusLabel(row.status)}
                         </span>
                       </td>
                       <td className="p-4">

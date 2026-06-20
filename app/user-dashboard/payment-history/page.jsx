@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { formatBdt, formatUsd } from "@/lib/currency";
+import { formatStatusLabel } from "@/lib/displayFormatters";
 import {
   FileText,
   RefreshCw,
@@ -15,7 +16,7 @@ import useAppAuth from "@/hooks/useAppAuth";
 
 const ROWS_PER_PAGE = 10;
 // এখানে 'All' সহ সমস্ত সম্ভাব্য স্ট্যাটাস অন্তর্ভুক্ত করা হয়েছে।
-const STATUS_OPTIONS = ["All", "approved", "Pending", "Failed"]; 
+const STATUS_OPTIONS = ["All", "approved", "pending", "failed", "cancelled", "rejected"];
 
 const PaymentHistoryUI = () => {
   
@@ -98,7 +99,7 @@ const PaymentHistoryUI = () => {
         p.description,
         p.amount,
         p.method,
-        p.status,
+        p.statusLabel || formatStatusLabel(p.status),
       ]),
     ]
       .map((e) => e.join(","))
@@ -145,7 +146,7 @@ const PaymentHistoryUI = () => {
                 >
                   {STATUS_OPTIONS.map((status) => (
                     <option key={status} value={status}>
-                      {status}
+                      {status === "All" ? "All" : formatStatusLabel(status)}
                     </option>
                   ))}
                 </select>
@@ -185,16 +186,16 @@ const PaymentHistoryUI = () => {
                 </div>
                 <span
                   className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-semibold ${
-                    p.status === "approved"
+                    p.status?.toLowerCase() === "approved"
                       ? "bg-green-100 text-green-700"
-                      : p.status === "Pending"
+                      : p.status?.toLowerCase() === "pending"
                       ? "bg-yellow-100 text-yellow-700"
-                      : p.status === "Failed"
+                      : p.status?.toLowerCase() === "failed" || p.status?.toLowerCase() === "rejected" || p.status?.toLowerCase() === "cancelled"
                       ? "bg-red-100 text-red-600"
                       : "bg-gray-200 text-gray-700"
                   }`}
                 >
-                  {p.status}
+                  {p.statusLabel || formatStatusLabel(p.status)}
                 </span>
               </div>
               <p className="mt-3 text-sm font-semibold text-gray-800">{p.description}</p>
@@ -218,7 +219,7 @@ const PaymentHistoryUI = () => {
 
           {currentPageData.length === 0 && (
             <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-10 text-center text-sm text-gray-500">
-              No {filterStatus !== "All" ? filterStatus : ""} Payments Found.
+              No {filterStatus !== "All" ? formatStatusLabel(filterStatus) : ""} Payments Found.
             </div>
           )}
         </div>
@@ -254,16 +255,16 @@ const PaymentHistoryUI = () => {
                   <td className="px-6 py-4">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        p.status === "approved"
+                        p.status?.toLowerCase() === "approved"
                           ? "bg-green-100 text-green-700"
-                          : p.status === "Pending"
+                          : p.status?.toLowerCase() === "pending"
                           ? "bg-yellow-100 text-yellow-700"
-                          : p.status === "Failed"
+                          : p.status?.toLowerCase() === "failed" || p.status?.toLowerCase() === "rejected" || p.status?.toLowerCase() === "cancelled"
                           ? "bg-red-100 text-red-600"
                           : "bg-gray-200 text-gray-700"
                       }`}
                     >
-                      {p.status}
+                      {p.statusLabel || formatStatusLabel(p.status)}
                     </span>
                   </td>
                 </tr>
@@ -272,7 +273,7 @@ const PaymentHistoryUI = () => {
               {currentPageData.length === 0 && (
                 <tr>
                   <td colSpan="6" className="text-center py-10 text-gray-500 text-lg">
-                    No {filterStatus !== "All" ? filterStatus : ""} Payments Found.
+                    No {filterStatus !== "All" ? formatStatusLabel(filterStatus) : ""} Payments Found.
                   </td>
                 </tr>
               )}
