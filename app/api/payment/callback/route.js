@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { convertBdtToUsd, DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@/lib/currency";
 import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
+import {
+  fetchUserByUid,
+  getAppBaseUrl,
+  notifyUserPaymentStatus,
+} from "@/lib/emailNotifications";
 
 const VERIFIED_SUCCESS_STATUS = "COMPLETED";
 const getGatewayApiKey = () => {
@@ -113,6 +118,18 @@ const getCreditedUsdAmount = async (db, paymentDoc) => {
   return convertBdtToUsd(amountBdt, usdToBdtRate);
 };
 
+const sendGatewayPaymentStatusEmail = async ({ trxId, status, req }) => {
+  const { db } = await getDB();
+  const payment = await db.collection("payments").findOne({ trx_id: trxId });
+  if (!payment) return;
+
+  const user = await fetchUserByUid(db, payment.userUid);
+  const baseUrl = getAppBaseUrl(req);
+  void notifyUserPaymentStatus(db, { payment, user, status, baseUrl }).catch((err) =>
+    console.error("Gateway payment status email error:", err)
+  );
+};
+
 const processPayment = async ({ trxId, callbackData = null }) => {
   const { db } = await getDB();
 
@@ -128,7 +145,7 @@ const processPayment = async ({ trxId, callbackData = null }) => {
   const { ok: paid, verifyData } = await verifyPayment(trxId);
 
   if (!paid) {
-    await db.collection("payments").updateOne(
+    const failedUpdate = await db.collection("payments").updateOne(
       { trx_id: trxId, status: { $ne: "approved" } },
       {
         $set: {
@@ -140,7 +157,7 @@ const processPayment = async ({ trxId, callbackData = null }) => {
       }
     );
 
-    return { ok: true, status: "failed" };
+    return { ok: true, status: "failed", notify: failedUpdate.modifiedCount > 0 };
   }
 
   const approveResult = await db.collection("payments").updateOne(
@@ -165,7 +182,12 @@ const processPayment = async ({ trxId, callbackData = null }) => {
     }
   }
 
-  return { ok: true, status: "approved" };
+  return {
+    ok: true,
+    status: "approved",
+    notify: approveResult.modifiedCount > 0,
+    alreadyProcessed: approveResult.modifiedCount === 0,
+  };
 };
 
 export async function POST(req) {
@@ -180,6 +202,10 @@ export async function POST(req) {
     const result = await processPayment({ trxId, callbackData: body });
     if (!result.ok) {
       return NextResponse.json({ ok: false, error: result.error }, { status: result.status || 500 });
+    }
+
+    if (result.notify) {
+      await sendGatewayPaymentStatusEmail({ trxId, status: result.status, req });
     }
 
     return NextResponse.json({ ok: true, status: result.status });
@@ -209,6 +235,9 @@ export async function GET(req) {
     }
 
     const result = await processPayment({ trxId });
+    if (result.notify) {
+      await sendGatewayPaymentStatusEmail({ trxId, status: result.status, req });
+    }
     return NextResponse.redirect(result.status === "approved" ? successUrl : failedUrl, 303);
   } catch {
     return NextResponse.redirect(failedUrl, 303);

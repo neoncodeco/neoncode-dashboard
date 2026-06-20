@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { parseJsonBody, requireAuth, requireRoles } from "@/lib/apiGuard";
 import { getUserStatus, buildApprovalMeta, USER_APPROVAL_STATUSES } from "@/lib/userApproval";
+import { getAppBaseUrl, notifyUserApprovalStatus } from "@/lib/emailNotifications";
 
 export async function GET(req) {
   try {
@@ -177,6 +178,18 @@ export async function POST(req) {
       status: nextStatus,
       createdAt: new Date(),
     });
+
+    const baseUrl = getAppBaseUrl(req);
+    void notifyUserApprovalStatus(db, {
+      user: {
+        userId: target.userId,
+        name: target.name,
+        email: target.email,
+      },
+      status: nextStatus,
+      note,
+      baseUrl,
+    }).catch((err) => console.error("User approval status email error:", err));
 
     return NextResponse.json({ ok: true, status: nextStatus, message: `${action} successful` });
   } catch (err) {

@@ -7,6 +7,12 @@ import { ensureWritableUser } from "@/lib/userAccess";
 import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
 import { parseWholeNumberAmount } from "@/lib/wholeAmount";
 import { sanitizeText } from "@/lib/security";
+import {
+  fetchUserByUid,
+  getAppBaseUrl,
+  notifyAdminsNewPayment,
+  notifyUserPaymentStatus,
+} from "@/lib/emailNotifications";
 import { notifyUserDashboardActivity } from "@/lib/whatsappActivityNotify";
 
 const withInvoiceId = (url, trackingId) => {
@@ -149,7 +155,7 @@ export async function POST(req) {
     }
 
     if (res.ok && data.status && data.payment_url) {
-      await db.collection("payments").insertOne({
+      const payment = {
         trx_id: trackingId,
         userUid: decoded.uid,
         email: decoded.email,
@@ -162,7 +168,20 @@ export async function POST(req) {
         reason: normalizedReason,
         status: "pending",
         createdAt: new Date(),
-      });
+      };
+      await db.collection("payments").insertOne(payment);
+
+      const user = await fetchUserByUid(db, decoded.uid);
+      const baseUrl = getAppBaseUrl(req);
+      void notifyAdminsNewPayment(db, { payment, user, baseUrl }).catch((err) =>
+        console.error("Admin payment notification error:", err)
+      );
+      void notifyUserPaymentStatus(db, {
+        payment,
+        user,
+        status: "pending",
+        baseUrl,
+      }).catch((err) => console.error("User payment pending email error:", err));
 
       void notifyUserDashboardActivity(
         db,

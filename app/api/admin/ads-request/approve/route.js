@@ -6,6 +6,11 @@ import { normalizeAssignedAccounts } from "@/lib/adAccountRequests";
 import { resolveUserEffectiveUsdRate } from "@/lib/dollarRateManagement";
 import { serializeMongoId } from "@/lib/serializeMongoId";
 import { notifyUserDashboardActivity } from "@/lib/whatsappActivityNotify";
+import {
+  fetchUserByUid,
+  getAppBaseUrl,
+  notifyUserAdAccountStatus,
+} from "@/lib/emailNotifications";
 
 const assertAdmin = async (req) => {
   const decoded = await verifyToken(req);
@@ -129,6 +134,9 @@ export async function PUT(req) {
     const prevStatus = String(existing.status || "").toLowerCase();
     const nextStatus = String(updatedDoc.status || "").toLowerCase();
     const becameActive = nextStatus === "active" && prevStatus !== "active";
+    const statusChanged = nextStatus !== prevStatus;
+    const notifyStatuses = ["active", "blocked", "rejected"];
+
     if (becameActive && updatedDoc.userUid) {
       const label = updatedDoc.MetaAccountID || updatedDoc.accountName || "Ad account";
       void notifyUserDashboardActivity(
@@ -136,6 +144,17 @@ export async function PUT(req) {
         updatedDoc.userUid,
         `NeonCode: Your Meta ad account is approved — ${label}.`
       );
+    }
+
+    if (statusChanged && notifyStatuses.includes(nextStatus)) {
+      const user = await fetchUserByUid(db, updatedDoc.userUid);
+      const baseUrl = getAppBaseUrl(req);
+      void notifyUserAdAccountStatus(db, {
+        request: updatedDoc,
+        user,
+        status: nextStatus,
+        baseUrl,
+      }).catch((err) => console.error("User ad account status email error:", err));
     }
 
     await db.collection("otherCollection").insertOne({
