@@ -259,7 +259,7 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
                     />
                   ) : (
                     <Image
-                      src="/Neon Studio icon.png"
+                      src="/Neon-Studio-icon.png"
                       alt="Admin Logo"
                       width={20}
                       height={20}
@@ -306,7 +306,7 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
                             />
                           ) : (
                             <Image
-                              src="/Neon Studio icon.png"
+                              src="/Neon-Studio-icon.png"
                               alt="Admin Logo"
                               width={22}
                               height={22}
@@ -474,7 +474,7 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
           <div className="mb-10 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl shadow-lg">
               <Image
-                src="/Neon Studio icon.png"
+                src="/Neon-Studio-icon.png"
                 alt="Admin Logo"
                 width={24}
                 height={24}

@@ -69,7 +69,7 @@ export default function ForgotPasswordClient() {
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(216,255,48,0.08),transparent_24%),radial-gradient(circle_at_80%_24%,rgba(0,255,213,0.08),transparent_24%)]" />
             <div className="relative z-10">
               <div className="inline-flex items-center gap-4">
-                <Image src="/Neon Studio icon.png" alt="NeonCode logo" width={64} height={64} className="h-14 w-14 object-contain" priority />
+                <Image src="/Neon-Studio-icon.png" alt="NeonCode logo" width={64} height={64} className="h-14 w-14 object-contain" priority />
                 <p className="text-[1.75rem] font-black tracking-[0.22em] text-[#f5ffe6] sm:text-[2rem]">
                   <span className="text-[#d8ff30]">NEON</span>CODE
                 </p>

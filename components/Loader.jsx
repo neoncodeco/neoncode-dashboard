@@ -53,7 +53,7 @@ export default function Loader() {
                 transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
               />
               <Image
-                src="/Neon Studio icon.png"
+                src="/Neon-Studio-icon.png"
                 alt="NeonCode logo"
                 width={60}
                 height={60}

@@ -132,6 +132,7 @@ PORT=3000
 MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/neoncode_dashboard_db
 
 NEXTAUTH_SECRET=<run: openssl rand -base64 32>
+NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=<run: openssl rand -base64 32>
 NEXTAUTH_URL=https://app.neoncode.co
 NEXT_PUBLIC_BASE_URL=https://app.neoncode.co
 APP_BASE_URL=https://app.neoncode.co
@@ -325,6 +326,53 @@ Common causes:
 - `MONGODB_URI` missing or wrong
 - `NEXTAUTH_SECRET` not set
 - Port 3000 already in use: `ss -tlnp | grep 3000`
+
+### `Failed to find Server Action "x"` or `"1"` in PM2 logs
+
+This app does **not** use Next.js Server Actions. These errors are usually caused by:
+
+1. **Bots/scanners** sending fake `Next-Action` POST requests (safe to ignore if the site works).
+2. **Stale build** after `git pull` without a full rebuild.
+3. **Browser cache** from an older deployment (users should hard-refresh: `Ctrl+Shift+R`).
+
+**Fix — clean redeploy on VPS:**
+
+```bash
+cd /var/www/neon-studio   # or your app path
+chmod +x scripts/deploy-vps.sh
+PM2_APP_NAME=neoncode-app ./scripts/deploy-vps.sh
+```
+
+Or manually:
+
+```bash
+pm2 stop neoncode-app
+rm -rf .next
+npm ci
+npm run build
+npm run prepare:standalone
+pm2 restart neoncode-app
+```
+
+Add to `.env.local` (generate once, keep the same value across deploys):
+
+```env
+NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=<openssl rand -base64 32>
+```
+
+### `The requested resource isn't a valid image for /Neon Studio icon.png`
+
+The logo file must be **`public/Neon-Studio-icon.png`** (hyphens, no spaces). Old builds referenced `/Neon Studio icon.png`, which does not exist on the server.
+
+After pulling the fix:
+
+```bash
+ls -la public/Neon-Studio-icon.png
+npm run build && npm run prepare:standalone
+pm2 restart neoncode-app
+```
+
+A redirect from the old path to the new one is included in `next.config.mjs`.
 
 ### 502 Bad Gateway (Nginx)
 
