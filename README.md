@@ -87,7 +87,7 @@ app/
 components/            # Shared React components
 lib/                   # MongoDB, auth, currency, Meta API helpers
 hooks/                 # Client hooks
-middleware.js          # Rate limiting, security headers
+proxy.js               # Rate limiting, security headers (Next.js proxy)
 scripts/
   prepare-standalone.mjs
   mongodb-indexes.mongo.js
