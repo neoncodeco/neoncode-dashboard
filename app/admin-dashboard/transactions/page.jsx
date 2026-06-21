@@ -6,6 +6,7 @@ import {
   Banknote, ArrowUpRight, Download, Search, Filter,
   CheckCircle, XCircle, Clock, DollarSign,
 } from "lucide-react";
+import PaymentProofPreviewModal, { PaymentProofField } from "@/components/admin/PaymentProofPreviewModal";
 import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
 import useAppAuth from "@/hooks/useAppAuth";
 import Swal from "sweetalert2";
@@ -29,6 +30,7 @@ function SkeletonRow() {
       </td>
       <td className="p-4"><div className="admin-skeleton h-5 w-20 rounded-lg" /></td>
       <td className="p-4"><div className="admin-skeleton h-3.5 w-16 rounded-full" /></td>
+      <td className="p-4"><div className="admin-skeleton h-10 w-44 rounded-xl" /></td>
       <td className="p-4"><div className="admin-skeleton h-3.5 w-20 rounded-full" /></td>
       <td className="p-4"><div className="admin-skeleton h-6 w-16 rounded-lg" /></td>
       <td className="p-4 pr-6 text-right"><div className="admin-skeleton ml-auto h-7 w-24 rounded-lg" /></td>
@@ -43,6 +45,7 @@ export default function TransactionsPage() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [search, setSearch]     = useState("");
+  const [previewPayment, setPreviewPayment] = useState(null);
 
   const loadPayments = useCallback(async (options = {}) => {
     if (!token) return;
@@ -110,6 +113,9 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-5 md:space-y-6">
+      {previewPayment ? (
+        <PaymentProofPreviewModal payment={previewPayment} onClose={() => setPreviewPayment(null)} />
+      ) : null}
 
       {/* ── Header ── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -175,12 +181,13 @@ export default function TransactionsPage() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-left">
+          <table className="w-full min-w-[920px] text-left">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/50 text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400">
                 <th className="p-4 pl-6">User</th>
                 <th className="p-4">Amount</th>
                 <th className="p-4">Method</th>
+                <th className="p-4">Proof</th>
                 <th className="p-4">Date</th>
                 <th className="p-4">Status</th>
                 <th className="p-4 pr-6 text-right">Action</th>
@@ -192,7 +199,7 @@ export default function TransactionsPage() {
                 : filtered.length === 0
                   ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-16 text-center">
+                      <td colSpan={7} className="px-6 py-16 text-center">
                         <Banknote size={36} className="mx-auto mb-3 text-gray-200" />
                         <p className="font-medium text-gray-400">No transactions found</p>
                       </td>
@@ -218,6 +225,9 @@ export default function TransactionsPage() {
                           </p>
                         </td>
                         <td className="p-4 font-medium text-gray-600">{formatPaymentMethod(p.method)}</td>
+                        <td className="p-4">
+                          <PaymentProofField payment={p} onPreview={setPreviewPayment} />
+                        </td>
                         <td className="p-4 text-gray-500">
                           {new Date(p.createdAt).toLocaleDateString()}
                         </td>

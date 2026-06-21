@@ -1510,3 +1510,259 @@ textarea {
   color: rgba(195, 210, 200, 0.62);
 }
 
+/* Billing — UddoktaPay payment SweetAlert */
+.dashboard-payment-swal {
+  border-radius: 28px !important;
+  border: 1px solid rgba(16, 185, 129, 0.2) !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(236, 253, 245, 0.98)) !important;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.22) !important;
+  overflow: hidden !important;
+}
+
+.dashboard-payment-swal-failed {
+  border-color: rgba(248, 113, 113, 0.24) !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(255, 241, 242, 0.98)) !important;
+}
+
+.dashboard-payment-swal-html {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.dashboard-payment-swal-btn {
+  display: inline-flex !important;
+  min-width: 140px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 0 22px !important;
+  padding: 12px 28px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(5, 150, 105, 0.22) !important;
+  background: linear-gradient(90deg, #059669, #10b981) !important;
+  color: #ffffff !important;
+  font-size: 0.95rem !important;
+  font-weight: 800 !important;
+  box-shadow: 0 14px 30px rgba(16, 185, 129, 0.22) !important;
+  cursor: pointer !important;
+}
+
+.dashboard-payment-swal-btn-muted {
+  background: #ffffff !important;
+  color: #334155 !important;
+  border: 1px solid rgba(148, 163, 184, 0.35) !important;
+  box-shadow: none !important;
+}
+
+.dashboard-payment-card {
+  position: relative;
+  text-align: left;
+  color: #0f172a;
+}
+
+.dashboard-payment-glow {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+}
+
+.dashboard-payment-glow-success {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(16, 185, 129, 0.14), transparent 28%),
+    radial-gradient(circle at 84% 18%, rgba(52, 211, 153, 0.1), transparent 24%);
+}
+
+.dashboard-payment-glow-failed {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(248, 113, 113, 0.12), transparent 28%),
+    radial-gradient(circle at 84% 18%, rgba(251, 146, 60, 0.08), transparent 24%);
+}
+
+.dashboard-payment-inner {
+  position: relative;
+  z-index: 1;
+  padding: 28px 28px 8px;
+}
+
+.dashboard-payment-top {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.dashboard-payment-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.dashboard-payment-badge-success {
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  background: rgba(16, 185, 129, 0.1);
+  color: #047857;
+}
+
+.dashboard-payment-badge-failed {
+  border: 1px solid rgba(248, 113, 113, 0.28);
+  background: rgba(254, 226, 226, 0.85);
+  color: #b91c1c;
+}
+
+.dashboard-payment-icon-wrap {
+  display: inline-flex;
+  height: 58px;
+  width: 58px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  margin-top: 14px;
+}
+
+.dashboard-payment-icon-wrap-success {
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  background: rgba(16, 185, 129, 0.1);
+  box-shadow: 0 12px 28px rgba(16, 185, 129, 0.14);
+}
+
+.dashboard-payment-icon-wrap-failed {
+  border: 1px solid rgba(248, 113, 113, 0.22);
+  background: rgba(254, 226, 226, 0.85);
+}
+
+.dashboard-payment-title {
+  margin: 18px 0 10px;
+  font-size: 1.55rem;
+  line-height: 1.2;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.dashboard-payment-lead {
+  margin: 0 0 18px;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #475569;
+}
+
+.dashboard-payment-amount-box {
+  margin-bottom: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  background: rgba(255, 255, 255, 0.82);
+  padding: 14px 16px;
+}
+
+.dashboard-payment-amount-label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #047857;
+}
+
+.dashboard-payment-amount-value {
+  margin: 6px 0 0;
+  font-size: 1.8rem;
+  line-height: 1;
+  font-weight: 900;
+  color: #065f46;
+}
+
+.dashboard-payment-panel {
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(255, 255, 255, 0.76);
+  padding: 16px 18px;
+}
+
+.dashboard-payment-panel-title {
+  margin: 0 0 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #047857;
+}
+
+.dashboard-payment-swal-failed .dashboard-payment-panel-title {
+  color: #b45309;
+}
+
+.dashboard-payment-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.dashboard-payment-list li + li {
+  margin-top: 8px;
+}
+
+.dashboard-payment-list li::marker {
+  color: #10b981;
+}
+
+.dashboard-payment-swal-failed .dashboard-payment-list li::marker {
+  color: #f97316;
+}
+
+.dashboard-payment-foot {
+  margin: 16px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: #64748b;
+}
+
+.dashboard-payment-ref {
+  font-weight: 800;
+  color: #334155;
+  word-break: break-all;
+}
+
+/* Payment proof modal — keep footer buttons readable inside admin theme */
+.payment-proof-modal-root .payment-proof-btn-close {
+  background: #111827 !important;
+  color: #ffffff !important;
+  border-color: #111827 !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18) !important;
+}
+
+.payment-proof-modal-root .payment-proof-btn-close:hover {
+  background: #1f2937 !important;
+  border-color: #1f2937 !important;
+  color: #ffffff !important;
+}
+
+.payment-proof-modal-root .payment-proof-btn-secondary {
+  background: #ffffff !important;
+  color: #334155 !important;
+  border-color: #dbe2ea !important;
+}
+
+.payment-proof-modal-root .payment-proof-btn-secondary:hover {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.payment-proof-modal-root .payment-proof-btn-download {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border-color: #a7f3d0 !important;
+}
+
+.payment-proof-modal-root .payment-proof-btn-download:hover {
+  background: #d1fae5 !important;
+  color: #065f46 !important;
+}
+
+.payment-proof-modal-root :is(button, a)[class*="payment-proof-btn-"] svg {
+  color: currentColor !important;
+}
+
