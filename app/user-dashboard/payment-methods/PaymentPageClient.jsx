@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import useAppAuth from "@/hooks/useAppAuth";
 import { AlertTriangle, CheckCircle2, ChevronRight, CreditCard, Landmark, ShieldCheck } from "lucide-react";
 import UddoktaPayForm from "@/components/PaymentsSection/UddoktaPay";
 import BankPayForm from "@/components/PaymentsSection/BankPay";
 import PaymentHistory from "@/components/PaymentsSection/PaymentHistory";
+import { showUddoktaPayFailedAlert, showUddoktaPaySuccessAlert } from "@/lib/paymentStatusAlerts";
+import { userDashboardRoutes } from "@/lib/userDashboardRoutes";
 
 function PaymentOptionCard({
   title,
@@ -88,24 +91,36 @@ export default function PaymentPageClient() {
   const [method, setMethod] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState(null);
   const { token } = useAppAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const showPaymentState = async () => {
-      const Swal = (await import("sweetalert2")).default;
-      const params = new URLSearchParams(window.location.search);
-      const paymentState = params.get("payment");
+    const paymentState = searchParams.get("payment");
+    if (!paymentState) return;
 
+    let active = true;
+
+    const showPaymentResult = async () => {
       if (paymentState === "success") {
-        Swal.fire("Success", "Payment completed and balance updated.", "success");
+        await showUddoktaPaySuccessAlert({
+          amountBdt: searchParams.get("amount"),
+          trxId: searchParams.get("trx_id"),
+        });
+      } else if (paymentState === "failed") {
+        await showUddoktaPayFailedAlert();
       }
 
-      if (paymentState === "failed") {
-        Swal.fire("Failed", "Payment verification failed. Please try again.", "error");
+      if (active) {
+        router.replace(userDashboardRoutes.billing, { scroll: false });
       }
     };
 
-    showPaymentState();
-  }, []);
+    void showPaymentResult();
+
+    return () => {
+      active = false;
+    };
+  }, [router, searchParams]);
 
   useEffect(() => {
     const loadPaymentStatus = async () => {

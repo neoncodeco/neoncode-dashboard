@@ -238,7 +238,20 @@ export async function GET(req) {
     if (result.notify) {
       await sendGatewayPaymentStatusEmail({ trxId, status: result.status, req });
     }
-    return NextResponse.redirect(result.status === "approved" ? successUrl : failedUrl, 303);
+
+    if (result.status === "approved") {
+      const { db } = await getDB();
+      const payment = await db.collection("payments").findOne(
+        { trx_id: trxId },
+        { projection: { amountBdt: 1, amount: 1 } }
+      );
+      const amount = payment?.amountBdt ?? payment?.amount;
+      if (amount != null) successUrl.searchParams.set("amount", String(amount));
+      if (trxId) successUrl.searchParams.set("trx_id", trxId);
+      return NextResponse.redirect(successUrl, 303);
+    }
+
+    return NextResponse.redirect(failedUrl, 303);
   } catch {
     return NextResponse.redirect(failedUrl, 303);
   }
