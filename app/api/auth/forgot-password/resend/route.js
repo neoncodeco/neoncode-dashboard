@@ -2,18 +2,19 @@ import getDB from "@/lib/mongodb";
 import { isValidEmail } from "@/lib/security";
 import {
   canResendOtp,
-  createEmailVerificationOtp,
-  EMAIL_VERIFICATION_MAX_REQUESTS,
+  createPasswordResetOtp,
   OTP_RESEND_COOLDOWN_MS,
-} from "@/lib/emailVerification";
-import { sendEmailVerificationOtp } from "@/lib/mailer";
+  PASSWORD_RESET_MAX_REQUESTS,
+} from "@/lib/passwordReset";
+import { sendPasswordResetOtp } from "@/lib/mailer";
 
-const GENERIC_MESSAGE = "If an account exists and is not verified, a verification code has been sent.";
+const GENERIC_MESSAGE = "If an account exists for this email, a reset code has been sent.";
 
 export async function POST(req) {
   try {
     const body = await req.json().catch(() => null);
     const email = String(body?.email || "").trim().toLowerCase();
+
     if (!email || !isValidEmail(email)) {
       return Response.json({ ok: false, error: "Valid email is required" }, { status: 400 });
     }
@@ -21,19 +22,20 @@ export async function POST(req) {
     const { db } = await getDB();
     const user = await db.collection("users").findOne({ email });
 
-    if (!user || user?.emailVerification?.verified === true) {
+    if (!user || !user.passwordHash) {
       return Response.json({ ok: true, message: GENERIC_MESSAGE });
     }
 
-    const currentCount = Number(user?.emailVerification?.requestedCount || 0);
-    if (currentCount >= EMAIL_VERIFICATION_MAX_REQUESTS) {
+    const resetState = user.passwordReset || {};
+    const currentCount = Number(resetState.requestedCount || 0);
+    if (currentCount >= PASSWORD_RESET_MAX_REQUESTS) {
       return Response.json(
-        { ok: false, error: "Maximum verification requests reached (5)." },
+        { ok: false, error: "Maximum reset requests reached (5)." },
         { status: 429 }
       );
     }
 
-    if (!canResendOtp(user?.emailVerification?.lastRequestedAt)) {
+    if (!canResendOtp(resetState.lastRequestedAt)) {
       return Response.json(
         {
           ok: false,
@@ -43,27 +45,32 @@ export async function POST(req) {
       );
     }
 
-    const { code, codeHash, expiresAt } = createEmailVerificationOtp();
+    const { code, codeHash, expiresAt } = createPasswordResetOtp();
 
     await db.collection("users").updateOne(
       { userId: user.userId },
       {
         $set: {
-          "emailVerification.codeHash": codeHash,
-          "emailVerification.tokenHash": null,
-          "emailVerification.expiresAt": expiresAt,
-          "emailVerification.attempts": 0,
-          "emailVerification.lastRequestedAt": new Date(),
-          "emailVerification.maxRequests": EMAIL_VERIFICATION_MAX_REQUESTS,
+          passwordReset: {
+            codeHash,
+            expiresAt,
+            attempts: 0,
+            lastRequestedAt: new Date(),
+            requestedCount: currentCount + 1,
+            maxRequests: PASSWORD_RESET_MAX_REQUESTS,
+            sessionTokenHash: null,
+            sessionExpiresAt: null,
+          },
           updatedAt: new Date(),
         },
-        $inc: {
-          "emailVerification.requestedCount": 1,
+        $unset: {
+          passwordResetTokenHash: "",
+          passwordResetExpiresAt: "",
         },
       }
     );
 
-    await sendEmailVerificationOtp({
+    await sendPasswordResetOtp({
       to: email,
       name: user?.name || "User",
       code,
@@ -71,12 +78,12 @@ export async function POST(req) {
 
     return Response.json({
       ok: true,
-      message: "Verification code sent.",
-      requestsLeft: Math.max(0, EMAIL_VERIFICATION_MAX_REQUESTS - (currentCount + 1)),
+      message: "Reset code sent.",
+      requestsLeft: Math.max(0, PASSWORD_RESET_MAX_REQUESTS - (currentCount + 1)),
       ...(process.env.NODE_ENV !== "production" ? { debugOtp: code } : {}),
     });
   } catch (error) {
-    console.error("Email verification resend error:", error);
+    console.error("Forgot password resend error:", error);
     return Response.json({ ok: false, error: "Server error" }, { status: 500 });
   }
 }

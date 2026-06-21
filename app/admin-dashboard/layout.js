@@ -1,13 +1,37 @@
 ﻿"use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import AdminSidebar from "@/components/AdminSidebar";
 import { AdminDashboardCacheProvider } from "@/components/AdminDashboardCacheProvider";
 import DashboardMouseGlow from "@/components/DashboardMouseGlow";
+import Loader from "@/components/Loader";
 import useDashboardTheme from "@/hooks/useDashboardTheme";
+import useAppAuth from "@/hooks/useAppAuth";
+import { getDashboardPathByRole } from "@/lib/roleRouting";
 import React from "react";
 
 export default function AdminLayout({ children }) {
+  const router = useRouter();
+  const { authReady, loadingRole, role, user } = useAppAuth();
   const { theme, toggleTheme } = useDashboardTheme();
+  const isAdmin = role === "admin" || role === "manager";
+
+  useEffect(() => {
+    if (!authReady || loadingRole) return;
+
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+
+    if (isAdmin) return;
+    router.replace(getDashboardPathByRole(role));
+  }, [authReady, isAdmin, loadingRole, role, router, user]);
+
+  if (!authReady || loadingRole || !user || !isAdmin) {
+    return <Loader />;
+  }
 
   return (
     <AdminDashboardCacheProvider>

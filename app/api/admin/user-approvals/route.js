@@ -20,7 +20,13 @@ export async function GET(req) {
     const query =
       status === "all"
         ? { role: { $nin: ["admin", "manager"] } }
-        : { status, role: { $nin: ["admin", "manager"] } };
+        : status === USER_APPROVAL_STATUSES.PENDING
+          ? {
+              status,
+              role: { $nin: ["admin", "manager"] },
+              "emailVerification.verified": true,
+            }
+          : { status, role: { $nin: ["admin", "manager"] } };
 
     const users = await db
       .collection("users")

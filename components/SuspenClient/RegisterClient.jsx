@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -9,13 +9,15 @@ import { FcGoogle } from "react-icons/fc";
 import useAppAuth from "@/hooks/useAppAuth";
 import AuthTurnstile from "@/components/AuthTurnstile";
 import useFingerprint from "@/hooks/useFingerprint";
-import { ArrowRight, Check, Eye, EyeOff, Loader2, LockKeyhole, Mail, MoveRight, Ticket, UserRound } from "lucide-react";
+import AuthPasswordFields from "@/components/auth/AuthPasswordFields";
+import { ArrowRight, Check, Loader2, Mail, MoveRight, Ticket, UserRound } from "lucide-react";
 
-const REGISTER_STEPS = ["Create profile", "Set access", "Start workspace"];
+const REGISTER_STEPS = ["Create profile", "Verify email", "Await approval"];
+const OTP_RESEND_COOLDOWN_SEC = 60;
 const normalizeTextValue = (value) => (typeof value === "string" ? value : "");
 
 export default function RegisterClient() {
-  const { signup, googleLogin } = useAppAuth();
+  const { signup, verifyEmailOtp, resendEmailVerification, googleLogin } = useAppAuth();
   const { getFingerprint, loadingFingerprint } = useFingerprint();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -25,19 +27,33 @@ export default function RegisterClient() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
+  const [confirmPass, setConfirmPass] = useState("");
   const [referralCode, setReferralCode] = useState(initialRef);
   const [showPass, setShowPass] = useState(false);
   const [agree, setAgree] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [step, setStep] = useState("form");
+  const [otpCode, setOtpCode] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [turnstileToken, setTurnstileToken] = useState("");
   const turnstileRef = useRef(null);
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return undefined;
+    const timer = window.setInterval(() => {
+      setResendCooldown((current) => (current > 0 ? current - 1 : 0));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [resendCooldown]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setNotice("");
 
     if (!name.trim()) {
       setError("Full name is required.");
@@ -57,9 +73,21 @@ export default function RegisterClient() {
       return;
     }
 
+    if (pass.length < 6) {
+      setError("Password must be at least 6 characters.");
+      setLoading(false);
+      return;
+    }
+
+    if (pass !== confirmPass) {
+      setError("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const deviceFingerprint = await getFingerprint();
-      await signup(
+      const result = await signup(
         normalizeTextValue(email).trim(),
         normalizeTextValue(pass),
         normalizeTextValue(name).trim(),
@@ -67,11 +95,57 @@ export default function RegisterClient() {
         turnstileToken,
         deviceFingerprint
       );
-      router.replace(`/login?verify_email_sent=1&pending_approval=1&email=${encodeURIComponent(normalizeTextValue(email).trim())}`);
+      setStep("verify");
+      setOtpCode("");
+      setResendCooldown(OTP_RESEND_COOLDOWN_SEC);
+      setNotice(result?.message || "Verification code sent to your email.");
+      setLoading(false);
     } catch (err) {
       setTurnstileToken("");
       turnstileRef.current?.reset();
       setError(err.message || "Registration failed");
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setNotice("");
+
+    const normalizedCode = normalizeTextValue(otpCode).replace(/\D/g, "");
+    if (normalizedCode.length !== 6) {
+      setError("Enter the 6-digit verification code from your email.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await verifyEmailOtp(normalizeTextValue(email).trim(), normalizedCode);
+      router.replace(
+        `/login?email_verified=1&pending_approval=1&email=${encodeURIComponent(normalizeTextValue(email).trim())}`
+      );
+    } catch (err) {
+      setError(err.message || "Verification failed");
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return;
+
+    setLoading(true);
+    setError("");
+    setNotice("");
+
+    try {
+      const result = await resendEmailVerification(normalizeTextValue(email).trim());
+      setResendCooldown(OTP_RESEND_COOLDOWN_SEC);
+      setNotice(result?.message || "A new verification code has been sent.");
+    } catch (err) {
+      setError(err.message || "Could not resend verification code.");
+    } finally {
       setLoading(false);
     }
   };
@@ -142,13 +216,23 @@ export default function RegisterClient() {
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(0,255,213,0.14),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(216,255,48,0.12),transparent_26%)]" />
 
             <div className="relative z-10">
-              <h2 className="text-3xl font-black tracking-tight text-[#f8ffec] sm:text-[2.35rem]">Create Account</h2>
+              <h2 className="text-3xl font-black tracking-tight text-[#f8ffec] sm:text-[2.35rem]">
+                {step === "verify" ? "Verify Email" : "Create Account"}
+              </h2>
               <p className="mt-3 text-sm leading-7 text-[#d3e5d9]/74 sm:text-base">
-                Fill the form below to create your account.
+                {step === "verify"
+                  ? `Enter the 6-digit code sent to ${normalizeTextValue(email).trim() || "your email"}.`
+                  : "Fill the form below to create your account."}
               </p>
 
+              {notice ? (
+                <div className="mt-5 rounded-[16px] border border-[#9ddb52]/28 bg-[#9ddb52]/10 px-4 py-3 text-sm text-[#e6ffd2]">
+                  {notice}
+                </div>
+              ) : null}
               {error ? <div className="mt-5 rounded-[16px] border border-[#ff6d6d]/18 bg-[#ff4d4d]/8 px-4 py-3 text-sm text-[#ffd5d5]">{error}</div> : null}
 
+              {step === "form" ? (
               <form onSubmit={handleSubmit} className="mt-6 space-y-4 sm:mt-7 sm:space-y-5">
                 <AuthInput
                   label="Full Name"
@@ -167,23 +251,17 @@ export default function RegisterClient() {
                   placeholder="name@neoncode.co"
                 />
 
-                <AuthInput
-                  label="Password"
-                  icon={LockKeyhole}
-                  type={showPass ? "text" : "password"}
-                  value={normalizeTextValue(pass)}
-                  onChange={setPass}
-                  placeholder="Choose a secure password"
-                  rightAction={
-                    <button
-                      type="button"
-                      onClick={() => setShowPass((current) => !current)}
-                      className="rounded-full p-1 text-[#d6ead6]/66 transition hover:text-[#f3ffe4]"
-                      aria-label={showPass ? "Hide password" : "Show password"}
-                    >
-                      {showPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                  }
+                <AuthPasswordFields
+                  password={normalizeTextValue(pass)}
+                  confirmPassword={normalizeTextValue(confirmPass)}
+                  onPasswordChange={setPass}
+                  onConfirmPasswordChange={setConfirmPass}
+                  showPassword={showPass}
+                  onToggleShowPassword={() => setShowPass((current) => !current)}
+                  passwordLabel="Create Password"
+                  confirmLabel="Confirm Password"
+                  passwordPlaceholder="Create a secure password"
+                  confirmPlaceholder="Re-enter your password"
                 />
 
                 <AuthInput
@@ -227,7 +305,66 @@ export default function RegisterClient() {
                   </span>
                 </motion.button>
               </form>
+              ) : (
+              <form onSubmit={handleVerifyOtp} className="mt-6 space-y-4 sm:mt-7 sm:space-y-5">
+                <label className="block">
+                  <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.24em] text-[#d2e4d3]/48 sm:text-xs">
+                    Verification Code
+                  </span>
+                  <div className="group relative overflow-hidden rounded-[16px] border border-white/10 bg-white/[0.04] transition duration-300 focus-within:border-[#d8ff30]/35 focus-within:shadow-[0_0_0_1px_rgba(216,255,48,0.15),0_0_30px_rgba(0,255,213,0.12)]">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="000000"
+                      className="h-14 w-full bg-transparent px-4 py-3 text-center text-2xl font-bold tracking-[0.45em] text-[#f6ffea] outline-none placeholder:text-[#cad8ca]/36"
+                    />
+                  </div>
+                </label>
 
+                <motion.button
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                  type="submit"
+                  disabled={loading}
+                  className="group relative flex min-h-[62px] w-full items-center justify-center overflow-hidden rounded-[16px] border border-[#d8ff30]/30 bg-[linear-gradient(90deg,#d1ff00_0%,#20d7ca_100%)] px-6 py-3 text-xl font-black text-[#071006] shadow-[0_18px_40px_rgba(0,255,213,0.18),0_0_35px_rgba(216,255,48,0.22)] transition duration-300 disabled:cursor-not-allowed disabled:opacity-70 sm:min-h-[66px] sm:text-2xl"
+                >
+                  <span className="relative z-10 inline-flex items-center gap-3">
+                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Complete Registration"}
+                    {!loading ? <MoveRight className="h-6 w-6 transition-transform duration-300 group-hover:translate-x-1" /> : null}
+                  </span>
+                </motion.button>
+
+                <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-[#d3e0d2]/72">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep("form");
+                      setError("");
+                      setNotice("");
+                      setOtpCode("");
+                    }}
+                    className="font-semibold text-[#f4ffe6] underline underline-offset-4 hover:text-[#d8ff30]"
+                  >
+                    Back to form
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    disabled={loading || resendCooldown > 0}
+                    className="font-semibold text-[#d8ff30] underline underline-offset-4 hover:text-[#ebffd2] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"}
+                  </button>
+                </div>
+              </form>
+              )}
+
+              {step === "form" ? (
+              <>
               <div className="my-5 flex items-center gap-3 text-xs text-[#d3e0d2]/60 sm:my-6">
                 <div className="h-px flex-1 bg-white/10" />
                 <span>OR CONTINUE WITH</span>
@@ -242,6 +379,8 @@ export default function RegisterClient() {
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FcGoogle size={18} />}
                 Sign up with Google
               </button>
+              </>
+              ) : null}
 
               <div className="mt-7 flex flex-wrap items-center gap-2 text-sm text-[#d3e0d2]/72 sm:text-base">
                 <span>Already have an account?</span>

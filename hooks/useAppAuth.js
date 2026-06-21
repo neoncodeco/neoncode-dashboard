@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
+import { AuthLoginError } from "@/lib/authErrors";
 
 const AppAuthContext = createContext(null);
 const normalizeTextValue = (value) => (typeof value === "string" ? value : "");
@@ -13,6 +14,7 @@ function useProvideAppAuth() {
   /** Role from DB only; merged with JWT below for instant routing */
   const [roleFromApi, setRoleFromApi] = useState(null);
   const [userData, setUserData] = useState(null);
+  const [profileReady, setProfileReady] = useState(false);
   const userRequestRef = useRef(null);
   const latestUidRef = useRef(null);
 
@@ -41,8 +43,8 @@ function useProvideAppAuth() {
   const role = useMemo(() => roleFromApi ?? jwtRole ?? null, [roleFromApi, jwtRole]);
 
   const loadingRole = useMemo(
-    () => status === "loading" || (!!user && role == null),
-    [status, user, role]
+    () => status === "loading" || (!!user && !profileReady),
+    [status, user, profileReady]
   );
 
   const refreshUser = useCallback(async () => {
@@ -50,6 +52,7 @@ function useProvideAppAuth() {
       userRequestRef.current = null;
       setUserData(null);
       setRoleFromApi(null);
+      setProfileReady(false);
       return null;
     }
 
@@ -74,23 +77,24 @@ function useProvideAppAuth() {
 
         setUserData(data.data);
         setRoleFromApi(data?.data?.role || session?.user?.role || "user");
-        setToken("session-auth");
       } catch (e) {
         console.error("AUTH ERROR:", e);
         if (latestUidRef.current !== requestUid) {
           return;
         }
         setUserData(null);
-        setToken("");
-        setRoleFromApi(null);
+        setRoleFromApi(jwtRole || session?.user?.role || "user");
       } finally {
+        if (latestUidRef.current === requestUid) {
+          setProfileReady(true);
+        }
         userRequestRef.current = null;
       }
     })();
 
     userRequestRef.current = request;
     return request;
-  }, [session?.user?.role, user?.uid]);
+  }, [jwtRole, session?.user?.role, user?.uid]);
 
   useEffect(() => {
     if (!authReady) return;
@@ -100,9 +104,12 @@ function useProvideAppAuth() {
       setToken("");
       setRoleFromApi(null);
       setUserData(null);
+      setProfileReady(false);
       return;
     }
 
+    setToken("session-auth");
+    setProfileReady(false);
     refreshUser();
   }, [authReady, refreshUser, user?.uid]);
 
@@ -135,15 +142,21 @@ function useProvideAppAuth() {
     if (res?.error) {
       const code = res.code || res.error;
       if (code === "pending_approval") {
-        throw new Error("Your account is pending admin approval. Please try again after approval.");
+        throw new AuthLoginError(
+          "pending_approval",
+          "Your account is pending admin approval. Please try again after approval."
+        );
       }
       if (code === "account_rejected") {
-        throw new Error("Your registration was rejected. Contact support if you need help.");
+        throw new AuthLoginError(
+          "account_rejected",
+          "Your registration was rejected. Contact support if you need help."
+        );
       }
       if (code === "account_blocked") {
-        throw new Error("Your account is blocked. Contact support.");
+        throw new AuthLoginError("account_blocked", "Your account is blocked. Contact support.");
       }
-      throw new Error("Invalid email or password");
+      throw new AuthLoginError("invalid_credentials", "Invalid email or password");
     }
 
     await update();
@@ -173,11 +186,45 @@ function useProvideAppAuth() {
     return regJson;
   };
 
+  const verifyEmailOtp = async (email, code) => {
+    const res = await fetch("/api/auth/email-verification/verify-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: normalizeTextValue(email).trim(),
+        code: normalizeTextValue(code).replace(/\D/g, ""),
+      }),
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json.error || "Verification failed");
+    }
+
+    return json;
+  };
+
+  const resendEmailVerification = async (email) => {
+    const res = await fetch("/api/auth/email-verification/resend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: normalizeTextValue(email).trim() }),
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json.error || "Could not resend verification code");
+    }
+
+    return json;
+  };
+
   const logout = async (callbackUrl = "/login") => {
     userRequestRef.current = null;
     setToken("");
     setRoleFromApi(null);
     setUserData(null);
+    setProfileReady(false);
     try {
       await signOut({ redirect: true, callbackUrl });
     } catch (e) {
@@ -198,6 +245,8 @@ function useProvideAppAuth() {
     loadingRole,
     login,
     signup,
+    verifyEmailOtp,
+    resendEmailVerification,
     googleLogin,
     logout,
     refreshUser,

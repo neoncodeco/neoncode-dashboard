@@ -3,13 +3,103 @@ import crypto from "crypto";
 import { hashPassword } from "@/lib/password";
 import { isValidEmail, sanitizeText } from "@/lib/security";
 import {
-  buildEmailVerificationUrl,
-  createEmailVerificationToken,
+  canResendOtp,
+  createEmailVerificationOtp,
   EMAIL_VERIFICATION_MAX_REQUESTS,
+  OTP_RESEND_COOLDOWN_MS,
 } from "@/lib/emailVerification";
-import { sendVerificationEmail } from "@/lib/mailer";
+import { sendEmailVerificationOtp } from "@/lib/mailer";
 import { verifyTurnstileToken } from "@/lib/turnstile";
-import { getAppBaseUrl, notifyAdminsNewUserApproval } from "@/lib/emailNotifications";
+
+function buildUserDocument({
+  userId,
+  normalizedEmail,
+  normalizedName,
+  photo,
+  hash,
+  salt,
+  myReferralCode,
+  referredByUser,
+  normalizedFingerprint,
+  codeHash,
+  expiresAt,
+}) {
+  return {
+    userId,
+    role: "user",
+    permissions: {
+      projectsAccess: false,
+      transactionsAccess: false,
+      affiliateAccess: false,
+      metaAdAccess: false,
+    },
+    walletBalance: 0,
+    topupBalance: 0,
+    freepikCredits: 0,
+    freepikSubscription: {
+      planId: null,
+      planName: null,
+      status: "inactive",
+      purchasedAt: null,
+      expiresAt: null,
+    },
+    referralCode: myReferralCode,
+    referredBy: referredByUser ? referredByUser.userId : null,
+    referralStats: {
+      totalReferIncome: 0,
+      totalReferrers: 0,
+      totalPayout: 0,
+    },
+    email: normalizedEmail,
+    name: normalizedName || "User",
+    photo: photo || "https://i.ibb.co/kgp65LMf/profile-avater.png",
+    whatsappNumber: "",
+    phoneVerification: {
+      verified: false,
+      verifiedAt: null,
+      status: "unverified",
+      requestedAt: null,
+      expiresAt: null,
+      codeHash: null,
+      attempts: 0,
+    },
+    passwordHash: hash,
+    passwordSalt: salt,
+    authProvider: "credentials",
+    knownDevices: normalizedFingerprint
+      ? [
+          {
+            fingerprint: normalizedFingerprint,
+            firstSeenAt: new Date(),
+            lastSeenAt: new Date(),
+          },
+        ]
+      : [],
+    suspiciousLogin: false,
+    suspiciousDeviceFingerprint: null,
+    suspiciousLoginAt: null,
+    emailVerification: {
+      verified: false,
+      verifiedAt: null,
+      codeHash,
+      tokenHash: null,
+      expiresAt,
+      attempts: 0,
+      requestedCount: 1,
+      maxRequests: EMAIL_VERIFICATION_MAX_REQUESTS,
+      lastRequestedAt: new Date(),
+    },
+    status: "pending",
+    approval: {
+      requestedAt: null,
+      reviewedAt: null,
+      reviewedBy: null,
+      reviewNote: "",
+    },
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+}
 
 export async function POST(req) {
   try {
@@ -46,7 +136,7 @@ export async function POST(req) {
     const { db } = await getDB();
     const existingUser = await db.collection("users").findOne({ email: normalizedEmail });
 
-    if (existingUser) {
+    if (existingUser && existingUser?.emailVerification?.verified !== false) {
       return Response.json({ ok: false, error: "Account already exists with this email" }, { status: 409 });
     }
 
@@ -58,126 +148,102 @@ export async function POST(req) {
       }
     }
 
-    let myReferralCode;
-    let codeExists = true;
-    while (codeExists) {
-      myReferralCode = crypto.randomBytes(4).toString("hex").toUpperCase();
-      codeExists = await db.collection("users").findOne({ referralCode: myReferralCode });
-    }
-
-    const userId = crypto.randomUUID();
     const { hash, salt } = hashPassword(password);
+    const { code, codeHash, expiresAt } = createEmailVerificationOtp();
 
-    const { token, tokenHash, expiresAt } = createEmailVerificationToken();
-    const verificationUrl = buildEmailVerificationUrl(req, token);
+    let userId;
+    let myReferralCode;
 
-    await db.collection("users").insertOne({
-      userId,
-      role: "user",
-      permissions: {
-        projectsAccess: false,
-        transactionsAccess: false,
-        affiliateAccess: false,
-        metaAdAccess: false,
-      },
-      walletBalance: 0,
-      topupBalance: 0,
-      freepikCredits: 0,
-      freepikSubscription: {
-        planId: null,
-        planName: null,
-        status: "inactive",
-        purchasedAt: null,
-        expiresAt: null,
-      },
-      referralCode: myReferralCode,
-      referredBy: referredByUser ? referredByUser.userId : null,
-      referralStats: {
-        totalReferIncome: 0,
-        totalReferrers: 0,
-        totalPayout: 0,
-      },
-      email: normalizedEmail,
-      name: normalizedName || "User",
-      photo: photo || "https://i.ibb.co/kgp65LMf/profile-avater.png",
-      whatsappNumber: "",
-      phoneVerification: {
-        verified: false,
-        verifiedAt: null,
-        status: "unverified",
-        requestedAt: null,
-        expiresAt: null,
-        codeHash: null,
-        attempts: 0,
-      },
-      passwordHash: hash,
-      passwordSalt: salt,
-      authProvider: "credentials",
-      knownDevices: normalizedFingerprint
-        ? [
-            {
-              fingerprint: normalizedFingerprint,
-              firstSeenAt: new Date(),
-              lastSeenAt: new Date(),
-            },
-          ]
-        : [],
-      suspiciousLogin: false,
-      suspiciousDeviceFingerprint: null,
-      suspiciousLoginAt: null,
-      emailVerification: {
-        verified: false,
-        verifiedAt: null,
-        tokenHash,
-        expiresAt,
-        requestedCount: 1,
-        maxRequests: EMAIL_VERIFICATION_MAX_REQUESTS,
-        lastRequestedAt: new Date(),
-      },
-      status: "pending",
-      approval: {
-        requestedAt: new Date(),
-        reviewedAt: null,
-        reviewedBy: null,
-        reviewNote: "",
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    if (existingUser) {
+      userId = existingUser.userId;
+      myReferralCode = existingUser.referralCode;
 
-    if (referredByUser) {
+      const currentCount = Number(existingUser?.emailVerification?.requestedCount || 0);
+      if (currentCount >= EMAIL_VERIFICATION_MAX_REQUESTS) {
+        return Response.json(
+          { ok: false, error: "Maximum verification requests reached. Contact support." },
+          { status: 429 }
+        );
+      }
+
+      if (!canResendOtp(existingUser?.emailVerification?.lastRequestedAt)) {
+        return Response.json(
+          {
+            ok: false,
+            error: `Please wait ${Math.ceil(OTP_RESEND_COOLDOWN_MS / 1000)} seconds before requesting another code.`,
+          },
+          { status: 429 }
+        );
+      }
+
       await db.collection("users").updateOne(
-        { userId: referredByUser.userId },
-        { $inc: { "referralStats.totalReferrers": 1 } }
+        { userId },
+        {
+          $set: {
+            name: normalizedName || existingUser.name || "User",
+            photo: photo || existingUser.photo,
+            passwordHash: hash,
+            passwordSalt: salt,
+            referredBy: referredByUser ? referredByUser.userId : existingUser.referredBy,
+            "emailVerification.codeHash": codeHash,
+            "emailVerification.tokenHash": null,
+            "emailVerification.expiresAt": expiresAt,
+            "emailVerification.attempts": 0,
+            "emailVerification.lastRequestedAt": new Date(),
+            updatedAt: new Date(),
+          },
+          $inc: {
+            "emailVerification.requestedCount": 1,
+          },
+        }
       );
+    } else {
+      let codeExists = true;
+      while (codeExists) {
+        myReferralCode = crypto.randomBytes(4).toString("hex").toUpperCase();
+        codeExists = await db.collection("users").findOne({ referralCode: myReferralCode });
+      }
+
+      userId = crypto.randomUUID();
+
+      await db.collection("users").insertOne(
+        buildUserDocument({
+          userId,
+          normalizedEmail,
+          normalizedName,
+          photo,
+          hash,
+          salt,
+          myReferralCode,
+          referredByUser,
+          normalizedFingerprint,
+          codeHash,
+          expiresAt,
+        })
+      );
+
+      if (referredByUser) {
+        await db.collection("users").updateOne(
+          { userId: referredByUser.userId },
+          { $inc: { "referralStats.totalReferrers": 1 } }
+        );
+      }
     }
 
-    const baseUrl = getAppBaseUrl(req);
-    void notifyAdminsNewUserApproval(db, {
-      user: {
-        userId,
-        name: normalizedName || "User",
-        email: normalizedEmail,
-        authProvider: "credentials",
-        referredBy: referredByUser ? referredByUser.userId : null,
-      },
-      baseUrl,
-    }).catch((err) => console.error("Admin new user notification error:", err));
-
-    const emailResult = await sendVerificationEmail({
+    const emailResult = await sendEmailVerificationOtp({
       to: normalizedEmail,
       name: normalizedName || "User",
-      verificationUrl,
+      code,
     });
 
     return Response.json({
       ok: true,
-      created: true,
+      created: !existingUser,
       userId,
       verificationRequired: true,
-      approvalRequired: true,
-      message: "Account created. Verify your email, then wait for admin approval before signing in.",
-      ...(process.env.NODE_ENV !== "production" ? { verificationUrl } : {}),
+      otpSent: true,
+      message: "Verification code sent to your email. Enter the code to complete registration.",
+      ...(process.env.NODE_ENV !== "production" ? { debugOtp: code } : {}),
       ...(emailResult.ok ? {} : { warning: emailResult.error }),
     });
   } catch (e) {
