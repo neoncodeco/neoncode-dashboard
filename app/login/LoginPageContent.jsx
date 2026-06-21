@@ -11,6 +11,7 @@ import { FcGoogle } from "react-icons/fc";
 import useAppAuth from "@/hooks/useAppAuth";
 import AuthTurnstile from "@/components/AuthTurnstile";
 import useFingerprint from "@/hooks/useFingerprint";
+import { showAccountUnderReviewAlert } from "@/lib/authStatusAlerts";
 
 const LOGIN_STEPS = ["Enter credentials", "Verify access", "Open dashboard"];
 const normalizeTextValue = (value) => (typeof value === "string" ? value : "");
@@ -36,6 +37,7 @@ export default function LoginPageContent() {
   const verifyEmailSent = searchParams.get("verify_email_sent") === "1";
   const pendingApproval = searchParams.get("pending_approval") === "1";
   const emailVerified = searchParams.get("email_verified");
+  const passwordReset = searchParams.get("password_reset") === "1";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -50,12 +52,20 @@ export default function LoginPageContent() {
   }, []);
 
   useEffect(() => {
+    if (passwordReset) {
+      setNotice("Password reset successful. You can now sign in with your new password.");
+      return;
+    }
     if (verifyEmailSent && pendingApproval) {
-      setNotice("Account created. Verify your email, then wait for admin approval before signing in.");
+      setNotice("Enter the verification code from your email, then wait for admin approval before signing in.");
       return;
     }
     if (verifyEmailSent) {
-      setNotice("Verification email sent. Check your inbox. Link expires in 5 minutes.");
+      setNotice("Verification code sent. Check your inbox. Code expires in 10 minutes.");
+      return;
+    }
+    if (emailVerified === "1" && pendingApproval) {
+      setNotice("Email verified. Your account is pending admin approval. You can sign in after approval.");
       return;
     }
     if (emailVerified === "1") {
@@ -63,9 +73,9 @@ export default function LoginPageContent() {
       return;
     }
     if (emailVerified === "0") {
-      setError("Verification link is invalid or expired. Please request a new one.");
+      setError("Verification code is invalid or expired. Please request a new one.");
     }
-  }, [emailVerified, pendingApproval, verifyEmailSent]);
+  }, [emailVerified, pendingApproval, passwordReset, verifyEmailSent]);
 
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -94,9 +104,25 @@ export default function LoginPageContent() {
       }
 
       router.replace("/");
-    } catch {
+    } catch (err) {
       setTurnstileToken("");
       turnstileRef.current?.reset();
+
+      if (err?.code === "pending_approval") {
+        await showAccountUnderReviewAlert();
+        return;
+      }
+
+      if (err?.code === "account_rejected") {
+        setError("Your registration was rejected. Contact support if you need help.");
+        return;
+      }
+
+      if (err?.code === "account_blocked") {
+        setError("Your account is blocked. Contact support.");
+        return;
+      }
+
       setError("Email or password does not match. Please try again.");
     } finally {
       setLoading(false);
@@ -123,9 +149,9 @@ export default function LoginPageContent() {
       if (!res.ok) {
         throw new Error(json?.error || "Resend failed");
       }
-      setNotice(json?.message || "Verification email sent.");
+      setNotice(json?.message || "Verification code sent.");
     } catch (e) {
-      setError(e?.message || "Could not resend verification email.");
+      setError(e?.message || "Could not resend verification code.");
     } finally {
       setResendLoading(false);
     }
@@ -237,7 +263,7 @@ export default function LoginPageContent() {
                       onClick={handleResendVerification}
                       className="mt-2 text-xs font-semibold text-[#d8ff30] underline underline-offset-4 hover:text-[#ebffd2]"
                     >
-                      Need a new verification email?
+                      Need a new verification code?
                     </button>
                   ) : null}
                   {(verifyEmailSent || emailVerified === "0") && resendLoading ? (

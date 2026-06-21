@@ -3,6 +3,7 @@ import {
   hashEmailVerificationToken,
   isEmailVerificationExpired,
 } from "@/lib/emailVerification";
+import { getAppBaseUrl, notifyAdminsNewUserApproval } from "@/lib/emailNotifications";
 
 function successRedirectUrl(req) {
   const base = process.env.NEXT_PUBLIC_BASE_URL?.trim() || process.env.APP_BASE_URL?.trim() || new URL(req.url).origin;
@@ -31,18 +32,36 @@ async function verifyTokenAndUpdate(token) {
     return { ok: false, reason: "expired" };
   }
 
+  const shouldNotifyAdmins = !user?.approval?.requestedAt;
+  const now = new Date();
+
   await db.collection("users").updateOne(
     { userId: user.userId },
     {
       $set: {
         "emailVerification.verified": true,
-        "emailVerification.verifiedAt": new Date(),
+        "emailVerification.verifiedAt": now,
         "emailVerification.tokenHash": null,
+        "emailVerification.codeHash": null,
         "emailVerification.expiresAt": null,
-        updatedAt: new Date(),
+        "approval.requestedAt": user?.approval?.requestedAt || now,
+        updatedAt: now,
       },
     }
   );
+
+  if (shouldNotifyAdmins) {
+    void notifyAdminsNewUserApproval(db, {
+      user: {
+        userId: user.userId,
+        name: user.name || "User",
+        email: user.email,
+        authProvider: user.authProvider || "credentials",
+        referredBy: user.referredBy || null,
+      },
+      baseUrl: getAppBaseUrl(),
+    }).catch((err) => console.error("Admin new user notification error:", err));
+  }
 
   return { ok: true };
 }

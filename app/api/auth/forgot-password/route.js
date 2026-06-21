@@ -1,7 +1,15 @@
 import getDB from "@/lib/mongodb";
-import { createPasswordResetToken } from "@/lib/passwordReset";
 import { isValidEmail } from "@/lib/security";
+import {
+  canResendOtp,
+  createPasswordResetOtp,
+  OTP_RESEND_COOLDOWN_MS,
+  PASSWORD_RESET_MAX_REQUESTS,
+} from "@/lib/passwordReset";
+import { sendPasswordResetOtp } from "@/lib/mailer";
 import { verifyTurnstileToken } from "@/lib/turnstile";
+
+const GENERIC_MESSAGE = "If an account exists for this email, a reset code has been sent.";
 
 export async function POST(req) {
   try {
@@ -23,28 +31,74 @@ export async function POST(req) {
     const user = await db.collection("users").findOne({ email });
 
     if (!user) {
+      return Response.json({ ok: true, message: GENERIC_MESSAGE, otpSent: true });
+    }
+
+    if (!user.passwordHash || !user.passwordSalt) {
       return Response.json({
         ok: true,
-        message: "If an account exists for this email, a reset link has been generated.",
+        message: GENERIC_MESSAGE,
+        otpSent: true,
       });
     }
 
-    const { tokenHash, expiresAt } = createPasswordResetToken();
+    const resetState = user.passwordReset || {};
+    const currentCount = Number(resetState.requestedCount || 0);
+    if (currentCount >= PASSWORD_RESET_MAX_REQUESTS) {
+      return Response.json(
+        { ok: false, error: "Maximum reset requests reached. Contact support." },
+        { status: 429 }
+      );
+    }
+
+    if (!canResendOtp(resetState.lastRequestedAt)) {
+      return Response.json(
+        {
+          ok: false,
+          error: `Please wait ${Math.ceil(OTP_RESEND_COOLDOWN_MS / 1000)} seconds before requesting another code.`,
+        },
+        { status: 429 }
+      );
+    }
+
+    const { code, codeHash, expiresAt } = createPasswordResetOtp();
 
     await db.collection("users").updateOne(
       { userId: user.userId },
       {
         $set: {
-          passwordResetTokenHash: tokenHash,
-          passwordResetExpiresAt: expiresAt,
+          passwordReset: {
+            codeHash,
+            expiresAt,
+            attempts: 0,
+            lastRequestedAt: new Date(),
+            requestedCount: currentCount + 1,
+            maxRequests: PASSWORD_RESET_MAX_REQUESTS,
+            sessionTokenHash: null,
+            sessionExpiresAt: null,
+          },
           updatedAt: new Date(),
+        },
+        $unset: {
+          passwordResetTokenHash: "",
+          passwordResetExpiresAt: "",
         },
       }
     );
 
+    const emailResult = await sendPasswordResetOtp({
+      to: email,
+      name: user?.name || "User",
+      code,
+    });
+
     return Response.json({
       ok: true,
-      message: "If an account exists for this email, a reset link has been generated.",
+      message: "Reset code sent to your email.",
+      otpSent: true,
+      requestsLeft: Math.max(0, PASSWORD_RESET_MAX_REQUESTS - (currentCount + 1)),
+      ...(process.env.NODE_ENV !== "production" ? { debugOtp: code } : {}),
+      ...(emailResult.ok ? {} : { warning: emailResult.error }),
     });
   } catch (error) {
     console.error("FORGOT PASSWORD ERROR:", error);
