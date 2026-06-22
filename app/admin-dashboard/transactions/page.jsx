@@ -4,9 +4,10 @@ import { formatBdt, formatUsd } from "@/lib/currency";
 import { formatPaymentMethod } from "@/lib/displayFormatters";
 import {
   Banknote, ArrowUpRight, Download, Search, Filter,
-  CheckCircle, XCircle, Clock, DollarSign,
+  CheckCircle, XCircle, Clock, DollarSign, Pencil,
 } from "lucide-react";
 import PaymentProofPreviewModal, { PaymentProofField } from "@/components/admin/PaymentProofPreviewModal";
+import AdminPaymentEditModal from "@/components/admin/AdminPaymentEditModal";
 import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
 import useAppAuth from "@/hooks/useAppAuth";
 import Swal from "sweetalert2";
@@ -46,18 +47,19 @@ export default function TransactionsPage() {
   const [loading, setLoading]   = useState(true);
   const [search, setSearch]     = useState("");
   const [previewPayment, setPreviewPayment] = useState(null);
+  const [editPayment, setEditPayment] = useState(null);
 
   const loadPayments = useCallback(async (options = {}) => {
     if (!token) return;
     if (!options.force) {
-      const cached = getCache("admin-transactions:list");
+      const cached = getCache("admin-transactions:list:v2");
       if (cached) { setPayments(cached); setLoading(false); return; }
     }
     setLoading(true);
     try {
       const res  = await fetch("/api/admin/payments/list", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
-      if (data.ok) { setPayments(data.payments); setCache("admin-transactions:list", data.payments || []); }
+      if (data.ok) { setPayments(data.payments); setCache("admin-transactions:list:v2", data.payments || []); }
     } catch (e) {
       console.error("Fetch error:", e);
     } finally {
@@ -115,6 +117,14 @@ export default function TransactionsPage() {
     <div className="space-y-5 md:space-y-6">
       {previewPayment ? (
         <PaymentProofPreviewModal payment={previewPayment} onClose={() => setPreviewPayment(null)} />
+      ) : null}
+      {editPayment ? (
+        <AdminPaymentEditModal
+          payment={editPayment}
+          token={token}
+          onClose={() => setEditPayment(null)}
+          onSaved={() => loadPayments({ force: true })}
+        />
       ) : null}
 
       {/* ── Header ── */}
@@ -205,11 +215,11 @@ export default function TransactionsPage() {
                       </td>
                     </tr>
                   )
-                  : filtered.map((p, i) => {
+                  : filtered.map((p) => {
                     const status = statusConfig(p.status);
                     const isPending = p.status?.toLowerCase() === "pending";
                     return (
-                      <tr key={i} className="transition hover:bg-gray-50/60">
+                      <tr key={p.id || p._id || `${p.userUid}-${p.createdAt}`} className="transition hover:bg-gray-50/60">
                         <td className="p-4 pl-6">
                           <p className="font-bold text-gray-900 leading-tight">{p.userName || "Unknown User"}</p>
                           <p className="mt-0.5 font-mono text-[11px] text-gray-400">{p.userUid}</p>
@@ -238,26 +248,39 @@ export default function TransactionsPage() {
                           </span>
                         </td>
                         <td className="p-4 pr-6 text-right">
-                          {isPending ? (
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => handleAction(p.userUid, "approve")}
-                                className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100"
-                              >
-                                <CheckCircle size={13} /> Approve
-                              </button>
-                              <button
-                                onClick={() => handleAction(p.userUid, "reject")}
-                                className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-100"
-                              >
-                                <XCircle size={13} /> Reject
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-                              Processed
-                            </span>
-                          )}
+                          <div className="flex flex-wrap items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditPayment(p)}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-bold text-sky-700 transition hover:bg-sky-100"
+                            >
+                              <Pencil size={13} />
+                              Edit
+                              {(p.editHistoryCount || 0) > 0 ? (
+                                <span className="rounded-full bg-sky-200/80 px-1.5 text-[9px] font-black">{p.editHistoryCount}</span>
+                              ) : null}
+                            </button>
+                            {isPending ? (
+                              <>
+                                <button
+                                  onClick={() => handleAction(p.userUid, "approve")}
+                                  className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100"
+                                >
+                                  <CheckCircle size={13} /> Approve
+                                </button>
+                                <button
+                                  onClick={() => handleAction(p.userUid, "reject")}
+                                  className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-100"
+                                >
+                                  <XCircle size={13} /> Reject
+                                </button>
+                              </>
+                            ) : (
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                                Processed
+                              </span>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );

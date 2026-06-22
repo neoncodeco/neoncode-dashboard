@@ -174,7 +174,8 @@ export default function OverviewPage() {
   const totalReferIncome = AFFILIATE_UI_ENABLED ? Number(stats.totalReferIncome || 0) : 0;
   const totalTopup = Number(userData.topupBalance || 0);
   const totalWallet = Number(userData.walletBalance || 0);
-  const totalFunds = totalWallet + totalTopup + totalReferIncome + totalPayout;
+  // Total funds — temporarily hidden (wallet + topup + referral + payout)
+  // const totalFunds = totalWallet + totalTopup + totalReferIncome + totalPayout;
   const firstTopupPoint = topupHistory[0]?.total || 0;
   const lastTopupPoint = topupHistory[topupHistory.length - 1]?.total || 0;
   const trendPercent =
@@ -227,7 +228,7 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-6 p-3 sm:p-4 lg:space-y-8 lg:p-6">
-      <section className={`grid gap-4 sm:grid-cols-2 ${AFFILIATE_UI_ENABLED ? "xl:grid-cols-5" : "xl:grid-cols-3"}`}>
+      <section className={`grid gap-4 sm:grid-cols-2 ${AFFILIATE_UI_ENABLED ? "xl:grid-cols-4" : "xl:grid-cols-2"}`}>
         <MetricCard
           title="Wallet Balance"
           value={<CurrencyAmount value={userData.walletBalance} usdToBdtRate={usdToBdtRate} showSecondary={false} primaryClassName="text-[1.65rem] font-black leading-none dashboard-text-strong" />}
@@ -236,7 +237,7 @@ export default function OverviewPage() {
           tone="accent"
         />
         <MetricCard
-          title="Topup Balance"
+          title="Total Topup Balance"
           value={<CurrencyAmount value={userData.topupBalance} usdToBdtRate={usdToBdtRate} showSecondary={false} primaryClassName="text-[1.65rem] font-black leading-none dashboard-text-strong" />}
           subtext={lastTopupDate ? `Last approved on ${lastTopupDate}` : "No approved topup yet"}
           icon={BadgeDollarSign}
@@ -259,6 +260,7 @@ export default function OverviewPage() {
             />
           </>
         ) : null}
+        {/* Total Funds — temporarily hidden
         <MetricCard
           title="Total Funds"
           value={formatUsd(totalFunds)}
@@ -266,6 +268,7 @@ export default function OverviewPage() {
           icon={TrendingUp}
           tone="accent"
         />
+        */}
       </section>
 
       <MetaSpendingSummaryCardsPanel

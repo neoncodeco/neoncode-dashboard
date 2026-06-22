@@ -25,9 +25,11 @@ const matchesSearch = (item, query) => {
     item.title,
     item.description,
     item.userName,
+    item.userEmail,
     item.userId,
     item.status,
     item.type,
+    item.editedByAdmin ? "edited by admin" : "",
   ]
     .filter(Boolean)
     .join(" ")
@@ -35,6 +37,40 @@ const matchesSearch = (item, query) => {
 
   return haystack.includes(query);
 };
+
+function resolveUserId(item) {
+  return String(item.userUid || item.userId || item.user_id || "").trim();
+}
+
+async function loadUserMap(db, userIds) {
+  const unique = [...new Set(userIds.filter(Boolean))];
+  if (!unique.length) return new Map();
+
+  const users = await db
+    .collection("users")
+    .find({ userId: { $in: unique } }, { projection: { userId: 1, name: 1, email: 1 } })
+    .toArray();
+
+  return new Map(users.map((user) => [user.userId, user]));
+}
+
+function enrichActivityUser(item, userMap) {
+  const user = userMap.get(item.userId);
+  const userName = item.userName || user?.name || "";
+  const userEmail = item.userEmail || user?.email || "";
+
+  return {
+    ...item,
+    userName: userName || userEmail || "Unknown",
+    userEmail,
+  };
+}
+
+function paymentWasEditedByAdmin(item) {
+  if (item.lastAdminEditAt) return true;
+  if (Array.isArray(item.adminEditHistory) && item.adminEditHistory.length > 0) return true;
+  return false;
+}
 
 export async function GET(req) {
   try {
@@ -56,7 +92,7 @@ export async function GET(req) {
       db.collection("payments").find({}).sort({ updatedAt: -1 }).limit(300).toArray(),
       db.collection("referral_withdraw_requests").find({}).sort({ updatedAt: -1 }).limit(300).toArray(),
       db.collection("adAccountRequests").find({}).sort({ updatedAt: -1 }).limit(300).toArray(),
-      db.collection("ads_spending_limit_logs").find({}).sort({ updatedAt: -1 }).limit(300).toArray(),
+      db.collection("ads_spending_limit_logs").find({}).sort({ timestamp: -1 }).limit(300).toArray(),
       db.collection("users").find({}).sort({ createdAt: -1 }).limit(300).toArray(),
     ]);
 
@@ -66,21 +102,29 @@ export async function GET(req) {
       title: item.subject || "Support Ticket",
       description: `Ticket ${item.ticketId || String(item._id).slice(-6)} updated`,
       status: item.status || "open",
-      userId: item.userId || "",
+      userId: resolveUserId(item),
       userName: item.userName || "",
+      userEmail: item.userEmail || item.email || "",
       createdAt: item.updatedAt || item.createdAt,
+      editedByAdmin: false,
     }));
 
-    const paymentItems = payments.map((item) => ({
-      id: `payment-${String(item._id)}`,
-      type: "payment",
-      title: item.method === "bank_transfer" ? "Manual Payment Request" : "Payment",
-      description: `Amount ${item.amountBdt ?? item.amount ?? 0} ${item.currency || "BDT"}`,
-      status: item.status || "pending",
-      userId: item.userUid || item.userId || "",
-      userName: item.userName || "",
-      createdAt: item.updatedAt || item.createdAt,
-    }));
+    const paymentItems = payments.map((item) => {
+      const editedByAdmin = paymentWasEditedByAdmin(item);
+      return {
+        id: `payment-${String(item._id)}`,
+        type: "payment",
+        title: item.method === "bank_transfer" ? "Manual Payment Request" : "Payment",
+        description: `Amount ${item.amountBdt ?? item.amount ?? 0} ${item.currency || "BDT"}`,
+        status: item.status || "pending",
+        userId: resolveUserId(item),
+        userName: item.userName || "",
+        userEmail: item.userEmail || item.email || "",
+        createdAt: item.updatedAt || item.createdAt,
+        editedByAdmin,
+        adminEditedAt: item.lastAdminEditAt || null,
+      };
+    });
 
     const withdrawItems = withdraws.map((item) => ({
       id: `withdraw-${String(item._id)}`,
@@ -88,20 +132,24 @@ export async function GET(req) {
       title: "Affiliate Withdraw Request",
       description: `Amount ${item.amount ?? 0}`,
       status: item.status || "pending",
-      userId: item.userId || item.userUid || "",
+      userId: resolveUserId(item),
       userName: item.userName || "",
+      userEmail: item.userEmail || item.email || "",
       createdAt: item.updatedAt || item.createdAt,
+      editedByAdmin: false,
     }));
 
     const adRequestItems = adRequests.map((item) => ({
       id: `adreq-${String(item._id)}`,
       type: "ads",
       title: "Meta Ads Request",
-      description: `${item.adAccountName || item.adAccountId || "Ad Account"} budget ${item.monthlyBudget ?? 0}`,
+      description: `${item.accountName || item.adAccountName || item.adAccountId || "Ad Account"} budget ${item.monthlyBudget ?? 0}`,
       status: item.status || "pending",
-      userId: item.userId || item.userUid || "",
-      userName: item.userName || "",
+      userId: resolveUserId(item),
+      userName: item.userName || item.accountName || "",
+      userEmail: item.userEmail || item.email || "",
       createdAt: item.updatedAt || item.createdAt,
+      editedByAdmin: false,
     }));
 
     const budgetLogItems = budgetLogs.map((item) => ({
@@ -110,9 +158,11 @@ export async function GET(req) {
       title: "Spending Limit Updated",
       description: `${item.ad_account_id || "Account"} ${item.old_limit ?? 0} -> ${item.new_limit ?? 0}`,
       status: item.approved === false ? "failed" : "success",
-      userId: item.user_id || item.userId || "",
+      userId: resolveUserId(item),
       userName: item.userName || "",
+      userEmail: item.userEmail || "",
       createdAt: item.timestamp || item.updatedAt || item.createdAt,
+      editedByAdmin: false,
     }));
 
     const userItems = users.map((item) => ({
@@ -120,20 +170,31 @@ export async function GET(req) {
       type: "users",
       title: "New User Registration",
       description: item.email || item.phoneNumber || "New account created",
-      status: "active",
+      status: item.status || "active",
       userId: item.userId || "",
       userName: item.name || "",
+      userEmail: item.email || "",
       createdAt: item.createdAt,
+      editedByAdmin: false,
     }));
 
-    const merged = [
+    const rawItems = [
       ...ticketItems,
       ...paymentItems,
       ...withdrawItems,
       ...adRequestItems,
       ...budgetLogItems,
       ...userItems,
-    ]
+    ];
+
+    const userMap = await loadUserMap(
+      db,
+      rawItems.map((item) => item.userId)
+    );
+
+    const enrichedItems = rawItems.map((item) => enrichActivityUser(item, userMap));
+
+    const merged = enrichedItems
       .filter((item) => matchesType(item.type, type))
       .filter((item) => matchesSearch(item, query))
       .sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
@@ -145,7 +206,7 @@ export async function GET(req) {
     const data = merged.slice(start, start + limit);
 
     const counts = {
-      all: ticketItems.length + paymentItems.length + withdrawItems.length + adRequestItems.length + budgetLogItems.length + userItems.length,
+      all: enrichedItems.length,
       support: ticketItems.length,
       payment: paymentItems.length,
       withdraw: withdrawItems.length,

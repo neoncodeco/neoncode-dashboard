@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
+import { serializeMongoId } from "@/lib/serializeMongoId";
 
 export async function GET(req) {
   try {
@@ -37,10 +38,13 @@ export async function GET(req) {
     const userMap = new Map(users.map((item) => [item.userId, item]));
     const paymentsWithUser = payments.map((payment) => {
       const matchedUser = userMap.get(payment.userUid);
+      const adminEditHistory = Array.isArray(payment.adminEditHistory) ? payment.adminEditHistory : [];
       return {
         ...payment,
+        id: serializeMongoId(payment._id),
         userName: payment.userName || matchedUser?.name || "",
         userEmail: payment.userEmail || matchedUser?.email || "",
+        editHistoryCount: adminEditHistory.length,
       };
     });
 

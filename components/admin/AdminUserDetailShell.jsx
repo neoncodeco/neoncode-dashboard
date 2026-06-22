@@ -14,7 +14,7 @@ import {
   Save,
   Settings,
   User,
-  Shield,
+  History,
   UserCheck,
   UserX,
   Clock,
@@ -53,14 +53,14 @@ function statusBadge(status) {
 function BalanceTile({ label, value, icon: Icon, accent }) {
   return (
     <div
-      className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3"
-      style={{ borderLeftWidth: 3, borderLeftColor: accent }}
+      className="rounded-2xl border border-gray-200 bg-white/90 px-5 py-4 shadow-sm"
+      style={{ borderLeftWidth: 4, borderLeftColor: accent }}
     >
-      <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
-        <Icon size={14} style={{ color: accent }} />
+      <div className="mb-2.5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+        <Icon size={15} style={{ color: accent }} />
         {label}
       </div>
-      <p className="text-xl font-black tracking-tight text-gray-900">{formatUsd(value)}</p>
+      <p className="text-2xl font-black tracking-tight text-gray-900">{formatUsd(value)}</p>
     </div>
   );
 }
@@ -73,6 +73,7 @@ const TABS = [
   { slug: "transactions", label: "Transactions", icon: CreditCard },
   { slug: "activity", label: "Activity", icon: Activity },
   { slug: "settings", label: "Settings", icon: Settings },
+  { slug: "meta-ads-history", label: "Meta Ads History", icon: History },
 ];
 
 export default function AdminUserDetailShell({ children }) {
@@ -132,10 +133,11 @@ export default function AdminUserDetailShell({ children }) {
     topupBalance: Number(user?.topupBalance) || 0,
   };
 
-  const totalFunds = useMemo(
-    () => (Number(display.walletBalance) || 0) + (Number(display.topupBalance) || 0),
-    [display.walletBalance, display.topupBalance]
-  );
+  // Total funds (wallet + topup) — temporarily hidden
+  // const totalFunds = useMemo(
+  //   () => (Number(display.walletBalance) || 0) + (Number(display.topupBalance) || 0),
+  //   [display.walletBalance, display.topupBalance]
+  // );
 
   const basePath = `/admin-dashboard/users/${encodeURIComponent(userId)}`;
   const isSettings = pathname === `${basePath}/settings` || pathname.endsWith("/settings");
@@ -215,10 +217,10 @@ export default function AdminUserDetailShell({ children }) {
               </div>
             </div>
 
-            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 xl:max-w-xl">
+            <div className="grid w-full max-w-sm grid-cols-1 gap-3 sm:max-w-md sm:grid-cols-2 sm:gap-4">
               <BalanceTile label="Wallet" value={display.walletBalance} icon={Wallet} accent="#3b82f6" />
               <BalanceTile label="Topup" value={display.topupBalance} icon={CreditCard} accent="#8b5cf6" />
-              <BalanceTile label="Total funds" value={totalFunds} icon={Shield} accent="#10b981" />
+              {/* <BalanceTile label="Total funds" value={totalFunds} icon={Shield} accent="#10b981" /> */}
             </div>
           </div>
         </div>

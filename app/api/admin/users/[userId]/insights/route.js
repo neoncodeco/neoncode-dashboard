@@ -182,6 +182,24 @@ export async function GET(req, { params }) {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 40);
 
+    const limitLogs = adsLogs.map((log) => {
+      const oldLimit = Number(log.old_limit || 0);
+      const newLimit = Number(log.new_limit || 0);
+      const changeAmount =
+        log.change_amount !== undefined ? Number(log.change_amount || 0) : newLimit - oldLimit;
+
+      return {
+        id: serializeMongoId(log._id),
+        adAccountId: String(log.ad_account_id || ""),
+        oldLimit,
+        newLimit,
+        changeAmount,
+        walletBefore: log.wallet_before != null ? Number(log.wallet_before) : null,
+        walletAfter: log.wallet_after != null ? Number(log.wallet_after) : null,
+        timestamp: log.timestamp || log.createdAt || log.updatedAt || null,
+      };
+    });
+
     return NextResponse.json({
       ok: true,
       summary: {
@@ -189,10 +207,12 @@ export async function GET(req, { params }) {
         totalSpent,
         transactionCount: transactions.length,
         activityCount: activities.length,
+        limitChangeCount: limitLogs.length,
       },
       adAccounts,
       transactions,
       activities,
+      limitLogs,
     });
   } catch (err) {
     console.error("Admin user insights error:", err);
