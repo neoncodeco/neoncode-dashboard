@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import getDB from "@/lib/mongodb";
 import { verifyToken } from "@/lib/verifyToken";
+import { computeTotalAdAccountAvailableBalance } from "@/lib/metaAccountBalance";
 
 export async function GET(req) {
   try {
@@ -29,7 +30,7 @@ export async function GET(req) {
       dateQuery = { createdAt: { $gte: month } };
     }
 
-    const [counts, revenueData, withdrawData, budgetData, limitData, recentUsers, chartStats] = await Promise.all([
+    const [counts, revenueData, withdrawData, budgetData, limitData, adBalanceData, recentUsers, chartStats] = await Promise.all([
       // ১. কাউন্টস (ফিল্টার অনুযায়ী)
       Promise.all([
         db.collection("adAccountRequests").countDocuments(dateQuery),
@@ -68,6 +69,7 @@ export async function GET(req) {
         { $match: dateQuery },
         { $group: { _id: null, total: { $sum: "$change_amount" } } }
       ]).toArray(),
+      computeTotalAdAccountAvailableBalance(db),
       // ৬. রিসেন্ট ১০ জন ইউজার
       db.collection("users").find({}).sort({ createdAt: -1 }).limit(10).toArray(),
       // ৭. চার্ট ডাটা
@@ -86,7 +88,15 @@ export async function GET(req) {
       ok: true,
       data: {
         counts: { adAccountRequests: counts[0], spendingLogs: counts[1], payments: counts[2], withdraws: counts[3], tickets: counts[4], users: counts[5] },
-        metrics: { totalRevenue: revenueData[0]?.total || 0, totalWithdraw: withdrawData[0]?.total || 0, totalBudget: budgetData[0]?.total || 0, totalLimitChange: limitData[0]?.total || 0 },
+        metrics: {
+          totalRevenue: revenueData[0]?.total || 0,
+          totalWithdraw: withdrawData[0]?.total || 0,
+          totalBudget: budgetData[0]?.total || 0,
+          totalLimitChange: limitData[0]?.total || 0,
+          totalAvailableBalance: adBalanceData?.totalAvailableBalance || 0,
+          liveAdAccountCount: adBalanceData?.liveAccountCount || 0,
+          mappedAdAccountCount: adBalanceData?.mappedAccountCount || 0,
+        },
         recentUsers,
         chartData: formattedChartData,
       },

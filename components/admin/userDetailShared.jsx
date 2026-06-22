@@ -1,18 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Activity,
   ArrowDownLeft,
+  ArrowDownRight,
   ArrowUpRight,
+  Calendar,
   ChevronDown,
   ChevronRight,
   CreditCard,
+  History,
   Loader2,
   Megaphone,
   Plus,
   RefreshCw,
+  Search,
   Wallet,
 } from "lucide-react";
 import Swal from "sweetalert2";
@@ -557,5 +561,178 @@ export function UserActivityPanel({ insights }) {
         </ul>
       )}
     </SectionCard>
+  );
+}
+
+function LimitChangeBadge({ amount }) {
+  const value = Number(amount) || 0;
+  const isIncrease = value > 0;
+  const isDecrease = value < 0;
+  const Icon = isDecrease ? ArrowDownRight : ArrowUpRight;
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
+        isIncrease
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+          : isDecrease
+            ? "border-red-200 bg-red-50 text-red-600"
+            : "border-gray-200 bg-gray-50 text-gray-600"
+      }`}
+    >
+      <Icon size={12} />
+      {isIncrease ? "+" : ""}
+      {formatUsd(Math.abs(value))}
+      {isIncrease ? " increase" : isDecrease ? " decrease" : " no change"}
+    </span>
+  );
+}
+
+export function UserMetaAdsHistoryPanel({ insights }) {
+  const [search, setSearch] = useState("");
+  const logs = insights?.limitLogs || [];
+
+  const filteredLogs = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return logs;
+    return logs.filter((log) => String(log.adAccountId || "").toLowerCase().includes(q));
+  }, [logs, search]);
+
+  const stats = useMemo(() => {
+    const totalIncrease = logs.reduce((sum, log) => {
+      const change = Number(log.changeAmount) || 0;
+      return change > 0 ? sum + change : sum;
+    }, 0);
+    const totalDecrease = logs.reduce((sum, log) => {
+      const change = Number(log.changeAmount) || 0;
+      return change < 0 ? sum + Math.abs(change) : sum;
+    }, 0);
+    const uniqueAccounts = new Set(logs.map((log) => log.adAccountId).filter(Boolean)).size;
+
+    return {
+      totalChanges: logs.length,
+      totalIncrease,
+      totalDecrease,
+      uniqueAccounts,
+      lastChange: logs[0]?.timestamp || null,
+    };
+  }, [logs]);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total changes</p>
+          <p className="mt-1 text-2xl font-black text-gray-900">{stats.totalChanges}</p>
+          <p className="mt-0.5 text-xs text-gray-500">Limit updates recorded</p>
+        </div>
+        <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Ad accounts</p>
+          <p className="mt-1 text-2xl font-black text-gray-900">{stats.uniqueAccounts}</p>
+          <p className="mt-0.5 text-xs text-gray-500">Unique Meta IDs touched</p>
+        </div>
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-4 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Total increased</p>
+          <p className="mt-1 text-2xl font-black text-emerald-700">{formatUsd(stats.totalIncrease)}</p>
+          <p className="mt-0.5 text-xs text-emerald-600/80">Sum of limit raises</p>
+        </div>
+        <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Last change</p>
+          <p className="mt-1 text-sm font-bold text-gray-900">{stats.lastChange ? formatDate(stats.lastChange) : "—"}</p>
+          <p className="mt-0.5 text-xs text-gray-500">Most recent update</p>
+        </div>
+      </div>
+
+      <SectionCard
+        title="Meta Ads History"
+        icon={History}
+        action={
+          <div className="relative">
+            <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search Meta account ID…"
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-3 text-xs font-medium outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100 sm:w-48"
+            />
+          </div>
+        }
+      >
+        {filteredLogs.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/60 px-6 py-12 text-center">
+            <History size={32} className="mx-auto mb-3 text-gray-300" />
+            <p className="font-semibold text-gray-700">
+              {search ? "No matching limit changes" : "No Meta ad limit changes yet"}
+            </p>
+            <p className="mt-1 text-sm text-gray-500">
+              {search
+                ? "Try another Meta account ID."
+                : "When this user updates ad spending limits, each change will appear here with date, time, and amount."}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredLogs.map((log) => (
+              <div
+                key={log.id}
+                className="overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-r from-white to-sky-50/30 transition hover:border-sky-200 hover:shadow-sm"
+              >
+                <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
+                      <Megaphone size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-mono text-sm font-bold text-gray-900">{log.adAccountId || "—"}</p>
+                        <LimitChangeBadge amount={log.changeAmount} />
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-800">
+                        <span className="rounded-lg bg-gray-100 px-2.5 py-1 text-gray-500">{formatUsd(log.oldLimit)}</span>
+                        <ArrowUpRight size={14} className="text-sky-500" />
+                        <span className="rounded-lg border border-sky-100 bg-sky-50 px-2.5 py-1 text-sky-700">
+                          {formatUsd(log.newLimit)}
+                        </span>
+                      </div>
+                      {(log.walletBefore != null || log.walletAfter != null) && (
+                        <p className="mt-2 text-xs text-gray-500">
+                          Wallet: {formatUsd(log.walletBefore ?? 0)} → {formatUsd(log.walletAfter ?? 0)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 lg:min-w-[200px]">
+                    <Calendar size={16} className="shrink-0 text-gray-400" />
+                    <div>
+                      <p className="text-xs font-bold text-gray-900">
+                        {log.timestamp
+                          ? new Date(log.timestamp).toLocaleDateString(undefined, {
+                              weekday: "short",
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })
+                          : "—"}
+                      </p>
+                      <p className="text-[11px] text-gray-500">
+                        {log.timestamp
+                          ? new Date(log.timestamp).toLocaleTimeString(undefined, {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              second: "2-digit",
+                            })
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </SectionCard>
+    </div>
   );
 }

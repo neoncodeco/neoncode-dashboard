@@ -198,8 +198,27 @@ export default function AdminActivityPage() {
                       </span>
                     </td>
                     <td className="px-5 py-4 text-sm font-semibold text-[var(--dashboard-text-strong)]">{item.title || "--"}</td>
-                    <td className="px-5 py-4 text-sm text-[var(--dashboard-text-muted)]">
-                      {item.userName || "Unknown"} {item.userId ? `• ${String(item.userId).slice(-8)}` : ""}
+                    <td className="px-5 py-4">
+                      <div className="min-w-[180px]">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-semibold text-[var(--dashboard-text-strong)]">
+                            {item.userName || item.userEmail || "Unknown"}
+                          </span>
+                          {item.editedByAdmin ? (
+                            <span className="inline-flex rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-700">
+                              Edited by admin
+                            </span>
+                          ) : null}
+                        </div>
+                        {item.userId ? (
+                          <p className="mt-0.5 font-mono text-[11px] text-[var(--dashboard-text-faint)]">
+                            UID · {item.userId}
+                          </p>
+                        ) : null}
+                        {item.userEmail && item.userName ? (
+                          <p className="mt-0.5 text-[11px] text-[var(--dashboard-text-muted)]">{item.userEmail}</p>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-5 py-4 text-sm text-[var(--dashboard-text-muted)]">{item.description || "--"}</td>
                     <td className="px-5 py-4 text-center">

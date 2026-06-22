@@ -17,7 +17,11 @@ import useAppAuth from "@/hooks/useAppAuth";
 import IncreaseBudgetModal from "./IncreaseBudgetModal";
 import TopupModal from "./TopupModal";
 import CurrencyAmount from "./CurrencyAmount";
-import MetaSpendingOverview from "./MetaSpendingOverview";
+import {
+  MetaSpendingOverviewPanel,
+  MetaSpendingSummaryCardsPanel,
+  useMetaSpendingOverviewData,
+} from "./MetaSpendingOverview";
 import { formatUsd, resolveUsdToBdtRate, toSafeNumber } from "@/lib/currency";
 import { expandAdAccountRequests } from "@/lib/adAccountRequests";
 
@@ -404,6 +408,7 @@ export default function AdAccountUi({ onRequestNewAccount }) {
   }, [adAccounts]);
 
   const displayBdtConversionRate = assignedUsdToBdtRate > 0 ? assignedUsdToBdtRate : usdRate;
+  const spendingOverview = useMetaSpendingOverviewData();
 
   const handleRequestNewAccount = useCallback(() => {
     if (typeof onRequestNewAccount === "function") {
@@ -635,71 +640,85 @@ export default function AdAccountUi({ onRequestNewAccount }) {
           </div>
         </section>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          <div className={`${statCardBaseClass} !border-emerald-300/60 !bg-[linear-gradient(135deg,rgba(183,223,105,0.52),rgba(183,223,105,0.24)_48%,rgba(255,255,255,0.94))]`}>
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold dashboard-text-muted">Ready Accounts</p>
-                <p className="mt-2 text-[1.65rem] font-black leading-none dashboard-text-strong">{accountStats.ready}</p>
-                <p className="mt-2 text-sm dashboard-text-muted">Live Meta balances available</p>
-              </div>
-              <div className="dashboard-accent-surface flex h-11 w-11 flex-none items-center justify-center rounded-2xl text-white">
-                <ShieldCheck size={18} />
-              </div>
-            </div>
-            <div className="dashboard-chip inline-flex px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em]">
-              Ready for spend
-            </div>
+        <MetaSpendingSummaryCardsPanel
+          dataState={spendingOverview}
+          assignedUsdToBdtRate={assignedUsdToBdtRate}
+          profileUsdToBdtRate={userData?.currencyConfig?.usdToBdtRate ?? metaAdsConfig.usdRate}
+        />
+
+        <section className="space-y-4">
+          <div>
+            <h3 className="dashboard-text-strong text-lg font-black">Account readiness</h3>
+            <p className="dashboard-text-muted mt-1 text-sm">Quick status across your requested and active ad accounts.</p>
           </div>
 
-          <div className={`${statCardBaseClass} !border-sky-300/60 !bg-[linear-gradient(135deg,rgba(115,200,255,0.44),rgba(115,200,255,0.2)_50%,rgba(255,255,255,0.94))]`}>
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold dashboard-text-muted">Pending Setup</p>
-                <p className="mt-2 text-[1.65rem] font-black leading-none dashboard-text-strong">{accountStats.pending}</p>
-                <p className="mt-2 text-sm dashboard-text-muted">Need active account mapping</p>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <div className={`${statCardBaseClass} !border-emerald-300/60 !bg-[linear-gradient(135deg,rgba(183,223,105,0.52),rgba(183,223,105,0.24)_48%,rgba(255,255,255,0.94))]`}>
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold dashboard-text-muted">Ready Accounts</p>
+                  <p className="mt-2 text-[1.65rem] font-black leading-none dashboard-text-strong">{accountStats.ready}</p>
+                  <p className="mt-2 text-sm dashboard-text-muted">Live Meta balances available</p>
+                </div>
+                <div className="dashboard-accent-surface flex h-11 w-11 flex-none items-center justify-center rounded-2xl text-white">
+                  <ShieldCheck size={18} />
+                </div>
               </div>
-              <div className="dashboard-accent-surface flex h-11 w-11 flex-none items-center justify-center rounded-2xl text-white">
-                <AlertCircle size={18} />
+              <div className="dashboard-chip inline-flex px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em]">
+                Ready for spend
               </div>
             </div>
-            <div className="dashboard-chip inline-flex px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em]">
-              Setup required
-            </div>
-          </div>
 
-          <div className={`${statCardBaseClass} !border-amber-300/60 !bg-[linear-gradient(135deg,rgba(245,158,11,0.38),rgba(251,191,36,0.2)_50%,rgba(255,255,255,0.94))]`}>
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold dashboard-text-muted">Needs Attention</p>
-                <p className="mt-2 text-[1.65rem] font-black leading-none dashboard-text-strong">{accountStats.issue}</p>
-                <p className="mt-2 text-sm dashboard-text-muted">Token or balance sync issue</p>
+            <div className={`${statCardBaseClass} !border-sky-300/60 !bg-[linear-gradient(135deg,rgba(115,200,255,0.44),rgba(115,200,255,0.2)_50%,rgba(255,255,255,0.94))]`}>
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold dashboard-text-muted">Pending Setup</p>
+                  <p className="mt-2 text-[1.65rem] font-black leading-none dashboard-text-strong">{accountStats.pending}</p>
+                  <p className="mt-2 text-sm dashboard-text-muted">Need active account mapping</p>
+                </div>
+                <div className="dashboard-accent-surface flex h-11 w-11 flex-none items-center justify-center rounded-2xl text-white">
+                  <AlertCircle size={18} />
+                </div>
               </div>
-              <div className="dashboard-accent-surface flex h-11 w-11 flex-none items-center justify-center rounded-2xl text-white">
-                <RefreshCw size={18} />
+              <div className="dashboard-chip inline-flex px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em]">
+                Setup required
               </div>
             </div>
-            <div className="dashboard-chip inline-flex px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em]">
-              Review needed
-            </div>
-          </div>
 
-          <div className={`${statCardBaseClass} !border-indigo-300/55 !bg-[linear-gradient(135deg,rgba(103,163,255,0.42),rgba(103,163,255,0.18)_52%,rgba(255,255,255,0.94))]`}>
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold dashboard-text-muted">Total Remaining</p>
-                <p className="mt-2 text-[1.65rem] font-black leading-none dashboard-text-strong">{formatUsd(remainingDisplay)}</p>
-                <p className="mt-2 text-sm dashboard-text-muted">Across synced active accounts</p>
+            <div className={`${statCardBaseClass} !border-amber-300/60 !bg-[linear-gradient(135deg,rgba(245,158,11,0.38),rgba(251,191,36,0.2)_50%,rgba(255,255,255,0.94))]`}>
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold dashboard-text-muted">Needs Attention</p>
+                  <p className="mt-2 text-[1.65rem] font-black leading-none dashboard-text-strong">{accountStats.issue}</p>
+                  <p className="mt-2 text-sm dashboard-text-muted">Token or balance sync issue</p>
+                </div>
+                <div className="dashboard-accent-surface flex h-11 w-11 flex-none items-center justify-center rounded-2xl text-white">
+                  <RefreshCw size={18} />
+                </div>
               </div>
-              <div className="dashboard-accent-surface flex h-11 w-11 flex-none items-center justify-center rounded-2xl text-white">
-                <Wallet size={18} />
+              <div className="dashboard-chip inline-flex px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em]">
+                Review needed
               </div>
             </div>
-            <div className="dashboard-chip inline-flex px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em]">
-              Available budget
+
+            <div className={`${statCardBaseClass} !border-indigo-300/55 !bg-[linear-gradient(135deg,rgba(103,163,255,0.42),rgba(103,163,255,0.18)_52%,rgba(255,255,255,0.94))]`}>
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold dashboard-text-muted">Total Remaining</p>
+                  <p className="mt-2 text-[1.65rem] font-black leading-none dashboard-text-strong">{formatUsd(remainingDisplay)}</p>
+                  <p className="mt-2 text-sm dashboard-text-muted">Across synced active accounts</p>
+                </div>
+                <div className="dashboard-accent-surface flex h-11 w-11 flex-none items-center justify-center rounded-2xl text-white">
+                  <Wallet size={18} />
+                </div>
+              </div>
+              <div className="dashboard-chip inline-flex px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em]">
+                Available budget
+              </div>
             </div>
           </div>
-        </div>
+        </section>
+
         {listError && (
           <div className="flex items-start gap-3 rounded-2xl border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-danger-soft)] p-4 text-[#ff8b8b]">
             <AlertCircle size={18} className="mt-0.5 shrink-0" />
@@ -710,16 +729,7 @@ export default function AdAccountUi({ onRequestNewAccount }) {
           </div>
         )}
 
-        <div className="space-y-6">
-          <div className="hidden lg:block">
-            <MetaSpendingOverview
-              className="p-4 sm:p-6"
-              assignedUsdToBdtRate={assignedUsdToBdtRate}
-              profileUsdToBdtRate={userData?.currencyConfig?.usdToBdtRate ?? metaAdsConfig.usdRate}
-            />
-          </div>
-
-          <section className="rounded-[2rem]">
+        <section className="dashboard-subpanel rounded-[2rem] border border-white/10">
             <div className="px-1 py-1">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
@@ -1024,7 +1034,14 @@ export default function AdAccountUi({ onRequestNewAccount }) {
               )}
             </div>
           </section>
-        </div>
+
+        <MetaSpendingOverviewPanel
+          className="p-4 sm:p-6"
+          dataState={spendingOverview}
+          showSummaryCards={false}
+          assignedUsdToBdtRate={assignedUsdToBdtRate}
+          profileUsdToBdtRate={userData?.currencyConfig?.usdToBdtRate ?? metaAdsConfig.usdRate}
+        />
       </div>
 
       <IncreaseBudgetModal
