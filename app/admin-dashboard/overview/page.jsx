@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import {
   Users, DollarSign, Activity, Layers, ClipboardList,
-  Share2, Ticket, TrendingUp, Download, Filter,
+  Share2, Ticket, TrendingUp, Download, Filter, Wallet,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -11,14 +11,27 @@ import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
 import useAppAuth from "@/hooks/useAppAuth";
 import { AFFILIATE_UI_ENABLED } from "@/lib/featureFlags";
 import Link from "next/link";
+import AvailableBalanceBreakdownModal from "@/components/admin/AvailableBalanceBreakdownModal";
 
 const METRICS = (data) => [
   { label: "Total Deposits", val: data?.metrics?.totalRevenue, suffix: "Tk", icon: DollarSign, accent: "#10b981" },
   ...(AFFILIATE_UI_ENABLED
     ? [{ label: "Total Withdraw", val: data?.metrics?.totalWithdraw, suffix: "$", icon: Share2, accent: "#ef4444" }]
     : []),
-  { label: "Monthly Budget",  val: data?.metrics?.totalBudget,     suffix: "$",  icon: Layers,       accent: "#3b82f6" },
-  { label: "Limit Changes",   val: data?.metrics?.totalLimitChange, suffix: "$", icon: ClipboardList, accent: "#f59e0b" },
+  { label: "Monthly Budget", val: data?.metrics?.totalBudget, suffix: "$", icon: Layers, accent: "#3b82f6" },
+  { label: "Limit Changes", val: data?.metrics?.totalLimitChange, suffix: "$", icon: ClipboardList, accent: "#f59e0b" },
+  {
+    label: "Available Balance",
+    val: data?.metrics?.totalAvailableBalance,
+    suffix: "$",
+    icon: Wallet,
+    accent: "#8b5cf6",
+    hint: data?.metrics?.liveAdAccountCount
+      ? `${data.metrics.liveAdAccountCount} live ad account${data.metrics.liveAdAccountCount === 1 ? "" : "s"} · Click for details`
+      : "Click for details",
+    clickable: true,
+    action: "available-balance",
+  },
 ];
 
 const COUNTS = [
@@ -44,10 +57,14 @@ export default function AdminDashboard() {
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [range, setRange]     = useState("all");
+  const [balanceModalOpen, setBalanceModalOpen] = useState(false);
+  const [balanceDetails, setBalanceDetails] = useState(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
+  const [balanceError, setBalanceError] = useState("");
 
   useEffect(() => {
     if (!token) return;
-    const cacheKey = `admin-overview:${range}`;
+    const cacheKey = `admin-overview:v2:${range}`;
     const cached   = getCache(cacheKey);
     if (cached) { setData(cached); setLoading(false); return; }
 
@@ -67,7 +84,9 @@ export default function AdminDashboard() {
       ["Metric", "Value"],
       ["Total Deposits (BDT)", data.metrics.totalRevenue],
       ["Total Withdraw",       data.metrics.totalWithdraw],
-      ["Total Budget",         data.metrics.totalBudget],
+      ["Total Budget", data.metrics.totalBudget],
+      ["Limit Changes", data.metrics.totalLimitChange],
+      ["Available Balance (USD)", data.metrics.totalAvailableBalance],
       ["User Count",           data.counts.users],
       ["Range",                range],
       ["Generated",            new Date().toLocaleString()],
@@ -81,9 +100,37 @@ export default function AdminDashboard() {
   };
 
   const metrics = METRICS(data);
+  const metricGridClass = AFFILIATE_UI_ENABLED ? "xl:grid-cols-5" : "xl:grid-cols-4";
+
+  const openBalanceBreakdown = async () => {
+    if (!token) return;
+    setBalanceModalOpen(true);
+    setBalanceLoading(true);
+    setBalanceError("");
+    try {
+      const res = await fetch("/api/admin/stats/ad-account-balances", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) throw new Error(json.error || "Could not load ad account balances.");
+      setBalanceDetails(json);
+    } catch (err) {
+      setBalanceError(err.message || "Could not load ad account balances.");
+      setBalanceDetails(null);
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-5 md:space-y-6">
+      <AvailableBalanceBreakdownModal
+        open={balanceModalOpen}
+        onClose={() => setBalanceModalOpen(false)}
+        data={balanceDetails}
+        loading={balanceLoading}
+        error={balanceError}
+      />
 
       {/* ── Header ── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -119,13 +166,19 @@ export default function AdminDashboard() {
       </div>
 
       {/* ── Metric cards ── */}
-      <div className={`grid grid-cols-2 gap-3 ${AFFILIATE_UI_ENABLED ? "xl:grid-cols-4" : "xl:grid-cols-3"} xl:gap-4`}>
+      <div className={`grid grid-cols-2 gap-3 ${metricGridClass} xl:gap-4`}>
         {loading && !data
-          ? Array.from({ length: 4 }).map((_, i) => <SkeletonMetric key={i} />)
-          : metrics.map((item, i) => (
-              <div
+          ? Array.from({ length: metricGridClass.includes("5") ? 5 : 4 }).map((_, i) => <SkeletonMetric key={i} />)
+          : metrics.map((item, i) => {
+              const CardTag = item.clickable ? "button" : "div";
+              return (
+              <CardTag
                 key={i}
-                className="rounded-2xl border border-gray-200 bg-white p-5 transition-transform hover:-translate-y-0.5"
+                type={item.clickable ? "button" : undefined}
+                onClick={item.action === "available-balance" ? openBalanceBreakdown : undefined}
+                className={`rounded-2xl border border-gray-200 bg-white p-5 text-left transition-transform hover:-translate-y-0.5 ${
+                  item.clickable ? "cursor-pointer hover:border-violet-200 hover:shadow-md" : ""
+                }`}
                 style={{ borderLeft: `3px solid ${item.accent}` }}
               >
                 <div className="mb-3 flex items-center justify-between">
@@ -140,11 +193,17 @@ export default function AdminDashboard() {
                   {item.label}
                 </p>
                 <p className="mt-1 text-2xl font-black text-gray-900">
-                  {item.val?.toLocaleString() ?? "0"}
+                  {Number(item.val || 0).toLocaleString(undefined, {
+                    minimumFractionDigits: item.suffix === "$" ? 2 : 0,
+                    maximumFractionDigits: item.suffix === "$" ? 2 : 0,
+                  })}
                 </p>
-                <p className="mt-0.5 text-xs text-gray-400">{item.suffix} total</p>
-              </div>
-            ))}
+                <p className="mt-0.5 text-xs text-gray-400">
+                  {item.hint || `${item.suffix} total`}
+                </p>
+              </CardTag>
+            );
+            })}
       </div>
 
       {/* ── Count cards ── */}
