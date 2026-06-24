@@ -232,7 +232,7 @@ export default function OverviewPage() {
         <MetricCard
           title="Wallet Balance"
           value={<CurrencyAmount value={userData.walletBalance} usdToBdtRate={usdToBdtRate} showSecondary={false} primaryClassName="text-[1.65rem] font-black leading-none dashboard-text-strong" />}
-          subtext="Current cash available in your account"
+          subtext="Available balance"
           icon={Wallet}
           tone="accent"
         />
@@ -255,7 +255,7 @@ export default function OverviewPage() {
             <MetricCard
               title="Payout Total"
               value={formatUsd(totalPayout)}
-              subtext="Completed payout value"
+              subtext="Completed payouts"
               icon={CreditCard}
             />
           </>
@@ -278,11 +278,8 @@ export default function OverviewPage() {
 
       <section className="grid gap-4 xl:grid-cols-[1.5fr_0.9fr]">
         <div className="dashboard-subpanel rounded-[32px] border border-white/10 p-5 sm:p-6">
-          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-xl font-black tracking-tight dashboard-text-strong">Approved Topup Timeline</h2>
-              <p className="mt-1 text-sm dashboard-text-muted">Seven latest approved payment days, visualized as a smooth area trend.</p>
-            </div>
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-xl font-black tracking-tight dashboard-text-strong">Approved Topup Timeline</h2>
             <div className="flex items-center gap-2 rounded-2xl border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-soft)] px-3 py-2">
               <CalendarDays size={15} className="dashboard-text-muted" />
               <span className="text-xs font-bold dashboard-text-muted">Last 7 days</span>
@@ -359,8 +356,8 @@ export default function OverviewPage() {
             </div>
           ) : (
             <EmptyChartState
-              title="No approved topups yet"
-              message="Once a payment is approved, the timeline will populate here with the latest funding pattern."
+              title="No topups yet"
+              message="Shows after a payment is approved."
             />
           )}
         </div>
@@ -368,7 +365,6 @@ export default function OverviewPage() {
         <div className="dashboard-subpanel rounded-[32px] border border-white/10 p-5 sm:p-6">
           <div className="mb-5">
             <h2 className="text-xl font-black tracking-tight dashboard-text-strong">Fund Distribution</h2>
-            <p className="mt-1 text-sm dashboard-text-muted">How your money is currently split across key sources.</p>
           </div>
 
           {pieData.length > 0 ? (
@@ -417,8 +413,8 @@ export default function OverviewPage() {
             </>
           ) : (
             <EmptyChartState
-              title="Nothing to visualize yet"
-              message="Add wallet funds or approved topups to unlock this distribution chart."
+              title="No funds yet"
+              message="Add wallet balance or topup."
             />
           )}
         </div>
@@ -428,13 +424,10 @@ export default function OverviewPage() {
 
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="dashboard-subpanel rounded-[32px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-bg)] p-5 shadow-[0_20px_48px_rgba(15,23,42,0.16)] sm:p-6">
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <div>
-              <div className="dashboard-chip mb-2 inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em]">
-                <Users size={12} />
-                Quick Links
-              </div>
-              <h2 className="text-xl font-black tracking-tight dashboard-text-strong">Most-used actions</h2>
+          <div className="mb-5">
+            <div className="dashboard-chip inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em]">
+              <Users size={12} />
+              Quick Links
             </div>
           </div>
 
@@ -459,12 +452,10 @@ export default function OverviewPage() {
 
         <div className="dashboard-subpanel rounded-[32px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-panel-bg)] p-5 shadow-[0_20px_48px_rgba(15,23,42,0.16)] sm:p-6">
           <div className="mb-5">
-            <div className="dashboard-chip mb-2 inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em]">
+            <div className="dashboard-chip inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em]">
               <ShieldCheck size={12} />
               Account Snapshot
             </div>
-            <h2 className="text-xl font-black tracking-tight dashboard-text-strong">Profile health</h2>
-            <p className="mt-1 text-sm font-medium dashboard-text-muted">A concise status board for your account identity.</p>
           </div>
 
           <div className="space-y-2">
@@ -474,11 +465,9 @@ export default function OverviewPage() {
           </div>
 
           <div className="mt-5 rounded-[24px] border border-[var(--dashboard-frame-border)] bg-[var(--dashboard-success-soft)] p-4">
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] dashboard-text-muted">Status note</p>
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] dashboard-text-muted">Status</p>
             <p className="mt-2 text-sm leading-6 dashboard-text-strong">
-              {totalWallet > 0
-                ? "Your wallet has active balance available for current operations."
-                : "Your wallet is currently empty. A topup will unlock more actions and visibility."}
+              {totalWallet > 0 ? "Wallet has available balance." : "Wallet is empty. Top up to continue."}
             </p>
           </div>
         </div>

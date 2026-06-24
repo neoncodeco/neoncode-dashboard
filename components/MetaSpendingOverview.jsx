@@ -43,7 +43,7 @@ const resolveSummaryUsdToBdtRate = (assignedUsdToBdtRate, profileUsdToBdtRate) =
       rate: assigned,
       source: "assigned",
       meta: "Account rate",
-      helper: "Admin-set conversion for your assigned Meta ad account(s).",
+      helper: "Your account rate",
     };
   }
   const rate = resolveUsdToBdtRate(profileUsdToBdtRate);
@@ -274,14 +274,14 @@ export function MetaSpendingSummaryCardsPanel({
       <SpendingSummaryCard
         title="Total Spent"
         value={chartData.length ? formatUsd(summary.totalSpend) : formatUsd(0)}
-        helper="Live amount spent across synced accounts"
+        helper="Across synced accounts"
         icon={TrendingUp}
         tone="spend"
       />
       <SpendingSummaryCard
         title="Remaining"
         value={chartData.length ? formatUsd(summary.totalRemaining) : formatUsd(0)}
-        helper="Available budget still left to spend"
+        helper="Left to spend"
         icon={Wallet}
         tone="remaining"
       />
@@ -290,8 +290,8 @@ export function MetaSpendingSummaryCardsPanel({
         value={chartData.length ? summary.peakAccount?.name || "No data" : "No data"}
         helper={
           chartData.length && summary.peakAccount
-            ? `${formatUsd(summary.peakAccount[activeMetric])} on current metric`
-            : "Waiting for synced balances"
+            ? `${formatUsd(summary.peakAccount[activeMetric])}`
+            : "Awaiting sync"
         }
         icon={Building2}
         tone="peak"
@@ -356,14 +356,11 @@ export function MetaSpendingOverviewPanel({
         ) : chartData.length > 0 ? (
           <>
             <div className="mb-4 flex flex-col gap-4 border-b border-slate-200/80 pb-4 sm:flex-row sm:items-end sm:justify-between">
-              <div className="max-w-xl">
+              <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-sky-600">Spending Overview</p>
                 <h3 className="mt-2 text-[1.35rem] font-black tracking-tight text-slate-900 sm:text-[1.5rem]">
-                  Cap by ad account for the current billing cycle
+                  Ad account spending
                 </h3>
-                <p className="mt-1.5 text-sm leading-6 text-slate-500">
-                  Switch the metric to review spend, remaining budget, or cap across active accounts.
-                </p>
               </div>
               <div className="min-w-[180px]">
                 <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
@@ -385,19 +382,14 @@ export function MetaSpendingOverviewPanel({
             </div>
 
             <div className="rounded-[28px] border border-slate-200 bg-white/75 p-4 shadow-[0_16px_45px_rgba(15,23,42,0.06)] sm:p-5">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="h-2.5 w-2.5 rounded-full"
-                    style={{ backgroundColor: activeMetricStyle.stroke }}
-                  />
-                  <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
-                    {metricLabel} focus
-                  </span>
-                </div>
-                <p className="text-xs font-medium text-slate-400">
-                  Highlighting the strongest account in the selected metric
-                </p>
+              <div className="mb-4 flex items-center gap-2">
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: activeMetricStyle.stroke }}
+                />
+                <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+                  {metricLabel}
+                </span>
               </div>
 
               <div className="h-[290px] sm:h-[340px]">
@@ -462,11 +454,9 @@ export function MetaSpendingOverviewPanel({
               </div>
             </div>
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 px-1 text-xs text-slate-500">
+              <span className="font-semibold">{chartData.length} accounts</span>
               <span className="font-semibold">
-                Data points: {chartData.length} active accounts
-              </span>
-              <span className="font-semibold">
-                Top account: {chartData.find((item) => item.id === highlightedAccountId)?.name || "No data"}
+                Top: {chartData.find((item) => item.id === highlightedAccountId)?.name || "—"}
               </span>
             </div>
           </>
@@ -475,10 +465,8 @@ export function MetaSpendingOverviewPanel({
             <span className="dashboard-accent-surface inline-flex h-14 w-14 items-center justify-center rounded-2xl">
               <Building2 size={28} className="text-[var(--dashboard-accent-text)]" />
             </span>
-            <p className="mt-4 text-lg font-black text-slate-900">No account data available yet</p>
-            <p className="mt-2 max-w-xs text-sm text-slate-500">
-              Activate at least one Meta ad account with a valid account ID to see budget metrics here.
-            </p>
+            <p className="mt-4 text-lg font-black text-slate-900">No ad accounts</p>
+            <p className="mt-2 max-w-xs text-sm text-slate-500">Add a Meta ad account to see metrics.</p>
           </div>
         )}
       </div>
