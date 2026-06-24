@@ -22,7 +22,7 @@ const assertAdmin = async (req) => {
     return { error: "Forbidden", status: 403 };
   }
 
-  return { db };
+  return { db, user: admin };
 };
 
 const buildUpdateData = (payload) => {
@@ -76,7 +76,7 @@ export async function PUT(req) {
     if (auth.error) {
       return NextResponse.json({ message: auth.error }, { status: auth.status });
     }
-    const { db } = auth;
+    const { db, user: staffUser } = auth;
 
     const payload = await req.json();
     const id = serializeMongoId(payload.id ?? payload._id);
@@ -161,8 +161,12 @@ export async function PUT(req) {
       requestId: updatedDoc._id,
       userUid: updatedDoc.userUid,
       type: "Meta Account Updated",
-      title: updatedDoc.MetaAccountID || "",
+      title: updatedDoc.MetaAccountID || updatedDoc.accountName || "",
       status: updatedDoc.status,
+      staffUid: staffUser?.userId || "",
+      staffName: staffUser?.name || staffUser?.email || "Staff",
+      staffEmail: staffUser?.email || "",
+      staffRole: staffUser?.role || "admin",
       updatedAt: new Date(),
     });
 
@@ -182,7 +186,7 @@ export async function POST(req) {
     if (auth.error) {
       return NextResponse.json({ message: auth.error }, { status: auth.status });
     }
-    const { db } = auth;
+    const { db, user: staffUser } = auth;
 
     const body = await req.json();
     const userUid = body.userUid || body.assignedAccounts?.[0]?.userUid || "";
@@ -236,7 +240,7 @@ export async function DELETE(req) {
     if (auth.error) {
       return NextResponse.json({ message: auth.error }, { status: auth.status });
     }
-    const { db } = auth;
+    const { db, user: staffUser } = auth;
 
     const body = await req.json();
     const id = serializeMongoId(body.id ?? body._id);

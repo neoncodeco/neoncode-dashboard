@@ -13,6 +13,7 @@ import { AFFILIATE_UI_ENABLED } from "@/lib/featureFlags";
 import Link from "next/link";
 import AvailableBalanceBreakdownModal from "@/components/admin/AvailableBalanceBreakdownModal";
 import UserFundsOverviewPanel from "@/components/admin/UserFundsOverviewPanel";
+import AdminStaffLogsPanel from "@/components/admin/AdminStaffLogsPanel";
 
 const METRICS = (data) => [
   { label: "Total Deposits", val: data?.metrics?.totalRevenue, suffix: "Tk", icon: DollarSign, accent: "#10b981" },
@@ -212,6 +213,8 @@ export default function AdminDashboard() {
         pending={data?.pendingOverview}
         loading={loading && !data}
       />
+
+      <AdminStaffLogsPanel compactLimit={8} />
 
       {/* ── Count cards ── */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">

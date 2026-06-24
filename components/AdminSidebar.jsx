@@ -22,6 +22,7 @@ import {
   ClipboardList,
   Newspaper,
   Activity,
+  History,
   Sun,
   Moon,
   DollarSign,
@@ -71,6 +72,12 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
       name: "Activity",
       icon: Activity,
       href: "/admin-dashboard/activity",
+      public: true,
+    },
+    {
+      name: "Staff Logs",
+      icon: History,
+      href: "/admin-dashboard/staff-logs",
       public: true,
     },
     {
@@ -195,6 +202,7 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
       icon: Users,
       items: [
         findMenuItem("/admin-dashboard/activity"),
+        findMenuItem("/admin-dashboard/staff-logs"),
         findMenuItem("/admin-dashboard/users"),
         findMenuItem("/admin-dashboard/transactions"),
       ].filter(Boolean),
