@@ -112,11 +112,19 @@ export default function AdminNewsPage() {
       }
 
       resetForm();
+      const emailInfo = data?.notification?.emailDispatch;
+      const emailHint =
+        emailInfo?.status === "queued"
+          ? `Emails are being sent to ${emailInfo.total} user${emailInfo.total === 1 ? "" : "s"} (one every ${Math.round((emailInfo.delayMs || 5000) / 1000)} seconds).`
+          : emailInfo?.status === "skipped"
+          ? "In-app notification published. No user emails were queued."
+          : "Notification published successfully.";
+
       Swal.fire({
         icon: "success",
         title: isEditing ? "Updated" : "Published",
-        text: isEditing ? "Notification updated successfully." : "Notification published successfully.",
-        timer: 1600,
+        text: isEditing ? "Notification updated successfully." : emailHint,
+        timer: isEditing ? 1600 : 2800,
       });
     } catch (error) {
       Swal.fire({ icon: "error", title: "Save failed", text: error.message || "Could not save notification." });
@@ -286,6 +294,9 @@ export default function AdminNewsPage() {
                       <p className="mt-2 text-sm leading-7 text-[var(--dashboard-text-muted)]">{item.message}</p>
                       <p className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--dashboard-text-faint)]">
                         Published {formatDate(item.publishedAt)}
+                        {item.emailDispatch?.total
+                          ? ` · Email ${item.emailDispatch.sent || 0}/${item.emailDispatch.total} (${item.emailDispatch.status || "queued"})`
+                          : ""}
                       </p>
                     </div>
 

@@ -12,6 +12,7 @@ import useAppAuth from "@/hooks/useAppAuth";
 import { AFFILIATE_UI_ENABLED } from "@/lib/featureFlags";
 import Link from "next/link";
 import AvailableBalanceBreakdownModal from "@/components/admin/AvailableBalanceBreakdownModal";
+import UserFundsOverviewPanel from "@/components/admin/UserFundsOverviewPanel";
 
 const METRICS = (data) => [
   { label: "Total Deposits", val: data?.metrics?.totalRevenue, suffix: "Tk", icon: DollarSign, accent: "#10b981" },
@@ -64,7 +65,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!token) return;
-    const cacheKey = `admin-overview:v2:${range}`;
+    const cacheKey = `admin-overview:v3:${range}`;
     const cached   = getCache(cacheKey);
     if (cached) { setData(cached); setLoading(false); return; }
 
@@ -205,6 +206,12 @@ export default function AdminDashboard() {
             );
             })}
       </div>
+
+      <UserFundsOverviewPanel
+        funds={data?.userFunds}
+        pending={data?.pendingOverview}
+        loading={loading && !data}
+      />
 
       {/* ── Count cards ── */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
