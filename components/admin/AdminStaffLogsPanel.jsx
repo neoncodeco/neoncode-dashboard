@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Banknote,
   ClipboardList,
@@ -11,7 +11,8 @@ import {
   Shield,
   UserRound,
 } from "lucide-react";
-import useAppAuth from "@/hooks/useAppAuth";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import { queryKeys } from "@/lib/queryKeys";
 
 const CATEGORY_OPTIONS = [
   { key: "all", label: "All" },
@@ -94,50 +95,31 @@ function StaffLogRow({ item, compact = false }) {
 }
 
 export default function AdminStaffLogsPanel({ compactLimit = 8, showFilters = false, showSearch = false }) {
-  const { token } = useAppAuth();
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("all");
   const [queryInput, setQueryInput] = useState("");
   const [query, setQuery] = useState("");
-  const [counts, setCounts] = useState({ all: 0 });
+
+  const queryParams = useMemo(() => ({
+    page: "1",
+    limit: String(compactLimit),
+    category,
+    q: query,
+  }), [compactLimit, category, query]);
+
+  const { data, isLoading: loading } = useApiQuery(
+    queryKeys.admin.staffLogs(queryParams),
+    `/api/admin/staff-logs?${new URLSearchParams(queryParams).toString()}`,
+    { staleTime: 30_000 }
+  );
+
+  const visibleRows = data?.data || [];
+  const counts = data?.counts || { all: 0 };
 
   useEffect(() => {
     if (!showSearch) return;
     const timer = setTimeout(() => setQuery(queryInput.trim()), 300);
     return () => clearTimeout(timer);
   }, [queryInput, showSearch]);
-
-  const fetchLogs = useCallback(async () => {
-    if (!token) return;
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: "1",
-        limit: String(compactLimit),
-        category,
-        q: query,
-      });
-      const res = await fetch(`/api/admin/staff-logs?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const json = await res.json();
-      if (!res.ok || !json?.ok) throw new Error(json?.error || "Failed to load staff logs");
-      setRows(Array.isArray(json.data) ? json.data : []);
-      if (json.counts) setCounts(json.counts);
-    } catch (error) {
-      console.error("Staff logs fetch failed:", error);
-      setRows([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [token, compactLimit, category, query]);
-
-  useEffect(() => {
-    void fetchLogs();
-  }, [fetchLogs]);
-
-  const visibleRows = useMemo(() => rows, [rows]);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">

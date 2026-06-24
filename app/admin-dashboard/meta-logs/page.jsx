@@ -1,55 +1,33 @@
 "use client";
 
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { 
   History, Download, ArrowUpRight, Wallet, 
   Fingerprint, Calendar, Loader2, ChevronLeft, ChevronRight,
   Mail, User, Database, Activity, Search
 } from "lucide-react";
 import Image from "next/image";
-import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
-import useAppAuth from "@/hooks/useAppAuth";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import { queryKeys } from "@/lib/queryKeys";
 
 export default function BudgetLogsPage() {
-  const { token } = useAppAuth();
-  const { getCache, setCache } = useAdminDashboardCache();
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  
-  // Pagination States
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalLogs, setTotalLogs] = useState(0);
   const limit = 20;
 
-  const fetchLogs = useCallback(async (page) => {
-    const cacheKey = `admin-meta-logs:${page}:${limit}`;
-    const cachedLogs = getCache(cacheKey);
-    if (cachedLogs) {
-      setLogs(cachedLogs.logs || []);
-      setTotalLogs(cachedLogs.totalLogs || 0);
-      setLoading(false);
-      return;
+  const { data, isLoading: loading } = useApiQuery(
+    queryKeys.admin.metaLogs(currentPage, limit),
+    `/api/admin/ads-request/spending-logs?page=${currentPage}&limit=${limit}`,
+    {
+      select: (json) => ({
+        logs: json.success ? json.data || [] : [],
+        totalLogs: json.success ? json.total || 0 : 0,
+      }),
     }
+  );
 
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/admin/ads-request/spending-logs?page=${page}&limit=${limit}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const json = await res.json();
-      if (json.success) {
-        setLogs(json.data);
-        setTotalLogs(json.total);
-        setCache(cacheKey, { logs: json.data || [], totalLogs: json.total || 0 });
-      }
-    } catch (error) { console.error(error); }
-    finally { setLoading(false); }
-  }, [getCache, limit, setCache, token]);
-
-  useEffect(() => {
-    if (token) fetchLogs(currentPage);
-  }, [token, currentPage, fetchLogs]);
+  const logs = data?.logs || [];
+  const totalLogs = data?.totalLogs || 0;
   // --- Search Filtering (Front-end) ---
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {

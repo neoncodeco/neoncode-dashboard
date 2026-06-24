@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle,
@@ -24,7 +24,8 @@ import {
   Filter,
 } from "lucide-react";
 import { formatUsd } from "@/lib/currency";
-import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
+import { useApiQuery, useInvalidateApi } from "@/hooks/useApiQuery";
+import { queryKeys } from "@/lib/queryKeys";
 import useAppAuth from "@/hooks/useAppAuth";
 import { normalizeAssignedAccounts } from "@/lib/adAccountRequests";
 import { serializeMongoId } from "@/lib/serializeMongoId";
@@ -110,10 +111,15 @@ const inputClass =
 export default function AdminAdAccountApprove() {
   const router = useRouter();
   const { token } = useAppAuth();
-  const { getCache, setCache } = useAdminDashboardCache();
-  const [data, setData] = useState([]);
+  const invalidate = useInvalidateApi();
+
+  const { data = [], isLoading: initialLoading, refetch: load } = useApiQuery(
+    queryKeys.admin.metaAds(),
+    "/api/admin/ads-request/list",
+    { select: (json) => normalizeAdRequestRows(json.data || []) }
+  );
+
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showManualAdd, setShowManualAdd] = useState(true);
@@ -129,40 +135,6 @@ export default function AdminAdAccountApprove() {
       status: "active",
     },
   ]);
-
-  const load = useCallback(
-    async (options = {}) => {
-      if (!options.force) {
-        const cachedPayload = getCache("admin-meta-ads:data");
-        if (cachedPayload) {
-          setData(normalizeAdRequestRows(cachedPayload.data || []));
-          setInitialLoading(false);
-          return;
-        }
-      }
-
-      try {
-        const fetchOpts = { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" };
-        const listRes = await fetch("/api/admin/ads-request/list", fetchOpts);
-        const listJson = await listRes.json();
-        const nextPayload = {
-          data: listRes.ok ? normalizeAdRequestRows(listJson.data || []) : [],
-        };
-
-        if (listRes.ok) setData(nextPayload.data);
-        setCache("admin-meta-ads:data", nextPayload);
-      } catch (error) {
-        console.error("Error loading data:", error);
-      } finally {
-        setInitialLoading(false);
-      }
-    },
-    [getCache, setCache, token]
-  );
-
-  useEffect(() => {
-    if (token) load();
-  }, [token, load]);
 
   const openAccount = (row) => {
     const id = serializeMongoId(row?._id);
@@ -213,7 +185,8 @@ export default function AdminAdAccountApprove() {
       const json = await res.json().catch(() => ({}));
       const newId = serializeMongoId(json?.data?._id);
       setNewAccounts([createEmptyManualAccount()]);
-      load({ force: true });
+      load();
+      invalidate(queryKeys.admin.metaAds());
       if (newId) {
         router.push(`/admin-dashboard/meta-ads/${encodeURIComponent(newId)}`);
       } else {
@@ -282,7 +255,10 @@ export default function AdminAdAccountApprove() {
             />
           </div>
           <button
-            onClick={() => load({ force: true })}
+            onClick={() => {
+              load();
+              invalidate(queryKeys.admin.metaAds());
+            }}
             disabled={loading}
             className="admin-accent-button flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-60"
           >

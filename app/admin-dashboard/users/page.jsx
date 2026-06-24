@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Shield, Trash2, Download, UserCheck, UserX, Clock, Users } from "lucide-react";
-import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
+import { useApiQuery, useInvalidateApi } from "@/hooks/useApiQuery";
+import { queryKeys } from "@/lib/queryKeys";
 import useAppAuth from "@/hooks/useAppAuth";
 import Swal from "sweetalert2";
 
@@ -33,49 +34,25 @@ const roleColor = (role) => {
 export default function AllUsersPage() {
   const { token, user } = useAppAuth();
   const router = useRouter();
-  const { getCache, setCache } = useAdminDashboardCache();
+  const invalidate = useInvalidateApi();
 
-  const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
   const [deletingUserId, setDeletingUserId] = useState("");
+
+  const { data: users = [], isLoading: loading, refetch: loadUsers } = useApiQuery(
+    queryKeys.admin.users(),
+    "/api/admin/users-list",
+    {
+      select: (json) => (Array.isArray(json.users) ? json.users.filter((u) => u.userId) : []),
+    }
+  );
 
   const openUser = (targetUser) => {
     if (!targetUser?.userId) return;
     router.push(`/admin-dashboard/users/${encodeURIComponent(targetUser.userId)}`);
   };
 
-  /* ================= LOAD USERS ================= */
-  const loadUsers = useCallback(async (options = {}) => {
-    if (!token) return;
-    if (!options.force) {
-      const cachedUsers = getCache("admin-users:list");
-      if (cachedUsers) {
-        setUsers(cachedUsers);
-        setLoading(false);
-        return;
-      }
-    }
-    setLoading(true);
-    try {
-      const res = await fetch("/api/admin/users-list", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error || "Failed to load users");
-      const nextUsers = Array.isArray(json.users) ? json.users.filter((u) => u.userId) : [];
-      setUsers(nextUsers);
-      setCache("admin-users:list", nextUsers);
-    } catch (err) {
-      console.error("LOAD USERS ERROR:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [getCache, setCache, token]);
-
-  useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+  /* ================= LOAD USERS handled by TanStack Query ================= */
 
   /* ================= FILTER ================= */
   const filteredUsers = useMemo(() => {
@@ -145,7 +122,8 @@ export default function AllUsersPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "Failed to delete user");
 
-      await loadUsers({ force: true });
+      await loadUsers();
+      invalidate(queryKeys.admin.users());
       await Swal.fire({
         title: "User deleted",
         text: `${targetUser.email || targetUser.userId} was removed successfully.`,

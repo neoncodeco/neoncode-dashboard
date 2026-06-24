@@ -23,6 +23,7 @@ import {
   Newspaper,
   Activity,
   History,
+  Megaphone,
   Sun,
   Moon,
   DollarSign,
@@ -96,6 +97,12 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
       name: "Meta Ads",
       icon: FolderKanban,
       href: "/admin-dashboard/meta-ads",
+      permissionKey: "metaAdAccess",
+    },
+    {
+      name: "Available Ad Accounts",
+      icon: Megaphone,
+      href: "/admin-dashboard/available-ad-accounts",
       permissionKey: "metaAdAccess",
     },
     {
@@ -180,6 +187,7 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
       icon: FolderKanban,
       items: [
         findMenuItem("/admin-dashboard/meta-ads"),
+        findMenuItem("/admin-dashboard/available-ad-accounts"),
         findMenuItem("/admin-dashboard/meta-logs"),
         findMenuItem("/admin-dashboard/news"),
         findMenuItem("/admin-dashboard/payment-details"),
@@ -239,8 +247,8 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
     }
   };
 
-  const renderMenu = () => (
-    <nav className="space-y-2">
+  const renderMenu = (className = "") => (
+    <nav className={`space-y-2 ${className}`.trim()}>
       {visibleMenuItems.map((item) => {
         const isActive = pathname === item.href;
 
@@ -491,47 +499,53 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
           )
         : null}
 
-      <div className="sidebar-shell hidden min-h-screen flex-col justify-between border-r p-6 lg:flex lg:w-64 xl:w-72">
-        <div>
-          <div className="mb-10 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl shadow-lg">
-              <Image
-                src="/Neon-Studio-icon.png"
-                alt="Admin Logo"
-                width={24}
-                height={24}
-                priority
-              />
+      <aside className="hidden lg:block lg:w-64 lg:flex-shrink-0 xl:w-72">
+        <div className="sidebar-shell flex h-screen flex-col border-r p-6">
+          <div className="flex-none">
+            <div className="mb-8 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl shadow-lg">
+                <Image
+                  src="/Neon-Studio-icon.png"
+                  alt="Admin Logo"
+                  width={24}
+                  height={24}
+                  priority
+                />
+              </div>
+              <div>
+                <span className="block text-xl font-bold text-[var(--dashboard-text-strong)]">
+                  NEON ADMIN
+                </span>
+                <span className="admin-badge rounded px-2 py-0.5 text-[10px] uppercase tracking-widest">
+                  Control Panel
+                </span>
+              </div>
             </div>
-            <div>
-              <span className="block text-xl font-bold text-[var(--dashboard-text-strong)]">
-                NEON ADMIN
-              </span>
-              <span className="admin-badge rounded px-2 py-0.5 text-[10px] uppercase tracking-widest">
-                Control Panel
-              </span>
+
+            <div className="mb-5">
+              <DashboardThemeToggle theme={theme} toggleTheme={toggleTheme} />
             </div>
           </div>
 
-          <div className="mb-6">
-            <DashboardThemeToggle theme={theme} toggleTheme={toggleTheme} />
+          <div className="min-h-0 flex-1 overflow-hidden">
+            {renderMenu(
+              "h-full overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            )}
           </div>
 
-          {renderMenu()}
-        </div>
-
-        <div className="space-y-3 border-t border-[var(--dashboard-frame-border)] pt-6">
-          <div className="flex cursor-pointer items-center gap-3 px-4 text-sm text-[var(--dashboard-text-muted)] transition hover:text-[var(--dashboard-text-strong)]">
-            <ShieldCheck size={18} /> Admin Profile
-          </div>
-          <div
-            onClick={HandalLogOut}
-            className="flex cursor-pointer items-center gap-3 px-4 text-sm text-[var(--dashboard-text-muted)] transition hover:text-red-400"
-          >
-            <LogOut size={18} /> Logout
+          <div className="mt-4 flex-none space-y-3 border-t border-[var(--dashboard-frame-border)] pt-5">
+            <div className="flex cursor-pointer items-center gap-3 px-4 text-sm text-[var(--dashboard-text-muted)] transition hover:text-[var(--dashboard-text-strong)]">
+              <ShieldCheck size={18} /> Admin Profile
+            </div>
+            <div
+              onClick={HandalLogOut}
+              className="flex cursor-pointer items-center gap-3 px-4 text-sm text-[var(--dashboard-text-muted)] transition hover:text-red-400"
+            >
+              <LogOut size={18} /> Logout
+            </div>
           </div>
         </div>
-      </div>
+      </aside>
     </>
   );
 };

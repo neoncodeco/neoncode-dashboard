@@ -33,7 +33,8 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
+import { useApiQuery, useInvalidateApi } from "@/hooks/useApiQuery";
+import { queryKeys } from "@/lib/queryKeys";
 import useAppAuth from "@/hooks/useAppAuth";
 import { expandAdAccountRequests } from "@/lib/adAccountRequests";
 import { SectionCard, statusPill } from "@/components/admin/userDetailShared";
@@ -499,13 +500,38 @@ function AdAccountSearchPanel({ bmConfigs, clientRequests, onOpenBm }) {
 
 export default function SystemMasterPanel() {
   const { token } = useAppAuth();
-  const { getCache, setCache } = useAdminDashboardCache();
+  const invalidate = useInvalidateApi();
   const [bmConfigs, setBmConfigs] = useState([{ bmName: "", businessId: "", token: "", slots: [] }]);
   const [clientRequests, setClientRequests] = useState([]);
   const [selectedBmIndex, setSelectedBmIndex] = useState(null);
   const [detailTab, setDetailTab] = useState("overview");
   const [loading, setLoading] = useState(null);
-  const [initialLoading, setInitialLoading] = useState(true);
+
+  const { data: settingsData, isLoading: settingsLoading } = useApiQuery(
+    queryKeys.admin.settings(),
+    "/api/admin/settings",
+    { staleTime: 60_000 }
+  );
+
+  const { data: requestsData, isLoading: requestsLoading } = useApiQuery(
+    queryKeys.admin.metaAds(),
+    "/api/admin/ads-request/list",
+    { staleTime: 60_000, select: (json) => (json.ok ? json.data || [] : []) }
+  );
+
+  const initialLoading = settingsLoading || requestsLoading;
+
+  useEffect(() => {
+    if (settingsData?.bmConfigs) {
+      setBmConfigs(settingsData.bmConfigs);
+    }
+  }, [settingsData]);
+
+  useEffect(() => {
+    if (requestsData) {
+      setClientRequests(requestsData);
+    }
+  }, [requestsData]);
 
   const stats = useMemo(() => computeBmStats(bmConfigs, clientRequests), [bmConfigs, clientRequests]);
 
@@ -523,46 +549,11 @@ export default function SystemMasterPanel() {
   }, [selectedMetrics]);
 
   const loadSystemData = useCallback(async () => {
-    if (!token) return;
-    const cachedSettings = getCache("admin-settings:data");
-    if (cachedSettings) {
-      setBmConfigs(cachedSettings.bmConfigs || [{ bmName: "", businessId: "", token: "", slots: [] }]);
-      setClientRequests(cachedSettings.clientRequests || []);
-      setInitialLoading(false);
-      return;
-    }
-    try {
-      const [settingsRes, requestsRes] = await Promise.all([
-        fetch("/api/admin/settings", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("/api/admin/ads-request/list", { headers: { Authorization: `Bearer ${token}` } }),
-      ]);
-
-      const settingsData = await settingsRes.json();
-      const requestsData = await requestsRes.json();
-      const nextPayload = {
-        bmConfigs: settingsData.bmConfigs || [{ bmName: "", businessId: "", token: "", slots: [] }],
-        clientRequests: requestsData.ok ? requestsData.data || [] : [],
-      };
-
-      setBmConfigs(nextPayload.bmConfigs);
-      setClientRequests(nextPayload.clientRequests);
-      setCache("admin-settings:data", nextPayload);
-    } catch (err) {
-      console.error("Load Error:", err);
-      void Swal.fire({
-        icon: "error",
-        title: "Load failed",
-        text: err?.message || "Could not load System Master Panel data.",
-        ...SWAL_PRIMARY,
-      });
-    } finally {
-      setInitialLoading(false);
-    }
-  }, [getCache, setCache, token]);
-
-  useEffect(() => {
-    loadSystemData();
-  }, [loadSystemData]);
+    await Promise.all([
+      invalidate(queryKeys.admin.settings()),
+      invalidate(queryKeys.admin.metaAds()),
+    ]);
+  }, [invalidate]);
 
   const getAllClientsForMetaId = (metaId) => {
     const normalizedMetaId = metaId?.trim();
@@ -597,10 +588,10 @@ export default function SystemMasterPanel() {
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error || "Could not save settings.");
       setBmConfigs(nextConfigs);
-      setCache("admin-settings:data", { bmConfigs: nextConfigs, clientRequests });
+      invalidate(queryKeys.admin.settings());
       return json;
     },
-    [clientRequests, setCache, token]
+    [invalidate, token]
   );
 
   const handleAddBm = () => {

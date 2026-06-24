@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import useAppAuth from "@/hooks/useAppAuth";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import { queryKeys } from "@/lib/queryKeys";
 import {
   CATEGORY_OPTIONS,
   StaffLogRow,
@@ -10,21 +11,11 @@ import {
 } from "@/components/admin/AdminStaffLogsPanel";
 
 export default function AdminStaffLogsPage() {
-  const { token } = useAppAuth();
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("all");
   const [queryInput, setQueryInput] = useState("");
   const [query, setQuery] = useState("");
-  const [counts, setCounts] = useState({ all: 0 });
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 20,
-    totalItems: 0,
-    totalPages: 1,
-    hasPrev: false,
-    hasNext: false,
-  });
+  const [page, setPage] = useState(1);
+  const limit = 20;
 
   useEffect(() => {
     const timer = setTimeout(() => setQuery(queryInput.trim()), 300);
@@ -32,38 +23,35 @@ export default function AdminStaffLogsPage() {
   }, [queryInput]);
 
   useEffect(() => {
-    setPagination((prev) => ({ ...prev, page: 1 }));
+    setPage(1);
   }, [category, query]);
 
-  const fetchLogs = useCallback(async () => {
-    if (!token) return;
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: String(pagination.page),
-        limit: String(pagination.limit),
-        category,
-        q: query,
-      });
-      const res = await fetch(`/api/admin/staff-logs?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const json = await res.json();
-      if (!res.ok || !json?.ok) throw new Error(json?.error || "Failed to load staff logs");
-      setRows(Array.isArray(json.data) ? json.data : []);
-      if (json.counts) setCounts(json.counts);
-      if (json.pagination) setPagination(json.pagination);
-    } catch (error) {
-      console.error("Staff logs page fetch failed:", error);
-      setRows([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [token, pagination.page, pagination.limit, category, query]);
+  const staffLogParams = useMemo(
+    () => ({ page, limit, category, q: query }),
+    [page, limit, category, query]
+  );
 
-  useEffect(() => {
-    void fetchLogs();
-  }, [fetchLogs]);
+  const { data, isLoading: loading } = useApiQuery(
+    queryKeys.admin.staffLogs(staffLogParams),
+    `/api/admin/staff-logs?${new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+      category,
+      q: query,
+    }).toString()}`,
+    { staleTime: 30_000 }
+  );
+
+  const rows = data?.data || [];
+  const counts = data?.counts || { all: 0 };
+  const pagination = data?.pagination || {
+    page: 1,
+    limit,
+    totalItems: 0,
+    totalPages: 1,
+    hasPrev: false,
+    hasNext: false,
+  };
 
   const rangeLabel = useMemo(() => {
     if (pagination.totalItems === 0) return "0-0";
@@ -127,7 +115,7 @@ export default function AdminStaffLogsPage() {
             <button
               type="button"
               disabled={!pagination.hasPrev || loading}
-              onClick={() => setPagination((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
               className="flex items-center gap-1 rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold text-gray-700 disabled:opacity-40"
             >
               <ChevronLeft size={14} /> Prev
@@ -138,7 +126,7 @@ export default function AdminStaffLogsPage() {
             <button
               type="button"
               disabled={!pagination.hasNext || loading}
-              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
+              onClick={() => setPage((prev) => prev + 1)}
               className="flex items-center gap-1 rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold text-gray-700 disabled:opacity-40"
             >
               Next <ChevronRight size={14} />

@@ -2,6 +2,7 @@
 
 import { SessionProvider } from "next-auth/react";
 import { AppAuthProvider } from "@/hooks/useAppAuth";
+import QueryProvider from "@/components/QueryProvider";
 
 export default function AuthProvider({ children }) {
   return (
@@ -10,7 +11,9 @@ export default function AuthProvider({ children }) {
       refetchOnWindowFocus={false}
       refetchWhenOffline={false}
     >
-      <AppAuthProvider>{children}</AppAuthProvider>
+      <AppAuthProvider>
+        <QueryProvider>{children}</QueryProvider>
+      </AppAuthProvider>
     </SessionProvider>
   );
 }

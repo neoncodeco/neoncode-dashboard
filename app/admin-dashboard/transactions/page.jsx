@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useState } from "react";
 import { formatBdt, formatUsd } from "@/lib/currency";
 import { formatPaymentMethod } from "@/lib/displayFormatters";
 import {
@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import PaymentProofPreviewModal, { PaymentProofField } from "@/components/admin/PaymentProofPreviewModal";
 import AdminPaymentEditModal from "@/components/admin/AdminPaymentEditModal";
-import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
+import { useApiQuery, useInvalidateApi } from "@/hooks/useApiQuery";
+import { queryKeys } from "@/lib/queryKeys";
 import useAppAuth from "@/hooks/useAppAuth";
 import Swal from "sweetalert2";
 
@@ -41,37 +42,17 @@ function SkeletonRow() {
 
 export default function TransactionsPage() {
   const { token } = useAppAuth();
-  const { getCache, setCache } = useAdminDashboardCache();
+  const invalidate = useInvalidateApi();
 
-  const [payments, setPayments] = useState([]);
-  const [loading, setLoading]   = useState(true);
+  const { data: payments = [], isLoading: loading, refetch: loadPayments } = useApiQuery(
+    queryKeys.admin.transactions(),
+    "/api/admin/payments/list",
+    { select: (result) => (result.ok ? result.payments || [] : []) }
+  );
+
   const [search, setSearch]     = useState("");
   const [previewPayment, setPreviewPayment] = useState(null);
   const [editPayment, setEditPayment] = useState(null);
-
-  const loadPayments = useCallback(async (options = {}) => {
-    if (!token) return;
-    if (!options.force) {
-      const cached = getCache("admin-transactions:list:v2");
-      if (cached) { setPayments(cached); setLoading(false); return; }
-    }
-    setLoading(true);
-    try {
-      const res  = await fetch("/api/admin/payments/list", { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
-      if (data.ok) { setPayments(data.payments); setCache("admin-transactions:list:v2", data.payments || []); }
-    } catch (e) {
-      console.error("Fetch error:", e);
-    } finally {
-      setLoading(false);
-    }
-  }, [getCache, setCache, token]);
-
-  useEffect(() => {
-    if (!token) return;
-    const t = setTimeout(() => loadPayments(), 0);
-    return () => clearTimeout(t);
-  }, [token, loadPayments]);
 
   const handleAction = async (userUid, action) => {
     const confirmed = await Swal.fire({
@@ -100,7 +81,8 @@ export default function TransactionsPage() {
         confirmButtonColor: action === "approve" ? "#059669" : "#2563eb",
         background: "#ffffff", color: "#0f172a",
       });
-      loadPayments({ force: true });
+      loadPayments();
+      invalidate(queryKeys.admin.transactions());
     } else {
       await Swal.fire({ title: "Action failed", text: data.error || "Something went wrong.", icon: "error", confirmButtonColor: "#dc2626", background: "#ffffff", color: "#0f172a" });
     }
@@ -123,7 +105,10 @@ export default function TransactionsPage() {
           payment={editPayment}
           token={token}
           onClose={() => setEditPayment(null)}
-          onSaved={() => loadPayments({ force: true })}
+          onSaved={() => {
+            loadPayments();
+            invalidate(queryKeys.admin.transactions());
+          }}
         />
       ) : null}
 
