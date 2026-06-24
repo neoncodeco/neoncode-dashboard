@@ -3,6 +3,7 @@ import getDB from "@/lib/mongodb";
 import { parseJsonBody, requireAuth, requireRoles } from "@/lib/apiGuard";
 import { convertBdtToUsd, DEFAULT_USD_TO_BDT_RATE, resolveUsdToBdtRate } from "@/lib/currency";
 import { getAppBaseUrl, notifyUserPaymentStatus } from "@/lib/emailNotifications";
+import { recordAdminStaffLog } from "@/lib/adminStaffLogs";
 
 const REQUIRED_TOTAL = 2000;
 const ONE_TIME_COMMISSION = 10;
@@ -202,6 +203,18 @@ export async function POST(req) {
         baseUrl,
       }).catch((err) => console.error("User payment approval email error:", err));
 
+      void recordAdminStaffLog(db, {
+        category: "payment",
+        action: "payment_approved",
+        actionLabel: "Approved payment",
+        title: `${amountBdt} BDT payment`,
+        description: user?.email || userUid,
+        staffUser: access.user,
+        targetUserId: userUid,
+        href: "/admin-dashboard/transactions",
+        meta: { amountBdt, creditedUsdAmount, status: "approved" },
+      }).catch((err) => console.error("Staff log error:", err));
+
       return NextResponse.json({
         ok: true,
         message: "Payment approved and balances updated safely",
@@ -227,6 +240,18 @@ export async function POST(req) {
       status: "rejected",
       baseUrl,
     }).catch((err) => console.error("User payment rejection email error:", err));
+
+    void recordAdminStaffLog(db, {
+      category: "payment",
+      action: "payment_rejected",
+      actionLabel: "Rejected payment",
+      title: `Payment for ${user?.email || userUid}`,
+      description: "Manual payment request rejected",
+      staffUser: access.user,
+      targetUserId: userUid,
+      href: "/admin-dashboard/transactions",
+      meta: { status: "rejected" },
+    }).catch((err) => console.error("Staff log error:", err));
 
     return NextResponse.json({
       ok: true,

@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import { BellRing, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
-import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
+import { useApiQuery, useInvalidateApi } from "@/hooks/useApiQuery";
+import { queryKeys } from "@/lib/queryKeys";
 import useAppAuth from "@/hooks/useAppAuth";
 
 function formatDate(value) {
@@ -22,49 +23,21 @@ const emptyForm = { title: "", message: "" };
 
 export default function AdminNewsPage() {
   const { token } = useAppAuth();
-  const { getCache, setCache } = useAdminDashboardCache();
-  const [loading, setLoading] = useState(true);
+  const invalidate = useInvalidateApi();
   const [saving, setSaving] = useState(false);
-  const [notifications, setNotifications] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState("");
+
+  const { data: notifications = [], isLoading: loading, refetch } = useApiQuery(
+    queryKeys.admin.news(),
+    "/api/admin/notifications",
+    { select: (result) => result.notifications || [] }
+  );
 
   const editingItem = useMemo(
     () => notifications.find((item) => item.id === editingId) || null,
     [editingId, notifications]
   );
-
-  const loadNotifications = useCallback(async () => {
-    if (!token) return;
-    const cachedNotifications = getCache("admin-news:list");
-    if (cachedNotifications) {
-      setNotifications(cachedNotifications);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await fetch("/api/admin/notifications", {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data?.error || "Failed to load notifications");
-      }
-      setNotifications(data.notifications || []);
-      setCache("admin-news:list", data.notifications || []);
-    } catch (error) {
-      console.error("LOAD ADMIN NEWS ERROR:", error);
-      Swal.fire({ icon: "error", title: "Load failed", text: error.message || "Could not load news." });
-    } finally {
-      setLoading(false);
-    }
-  }, [getCache, setCache, token]);
-
-  useEffect(() => {
-    loadNotifications();
-  }, [loadNotifications]);
 
   const resetForm = () => {
     setForm(emptyForm);
@@ -97,26 +70,23 @@ export default function AdminNewsPage() {
         throw new Error(data?.error || "Save failed");
       }
 
-      if (isEditing) {
-        setNotifications((prev) => {
-          const nextNotifications = prev.map((item) => (item.id === editingId ? data.notification : item));
-          setCache("admin-news:list", nextNotifications);
-          return nextNotifications;
-        });
-      } else {
-        setNotifications((prev) => {
-          const nextNotifications = [data.notification, ...prev];
-          setCache("admin-news:list", nextNotifications);
-          return nextNotifications;
-        });
-      }
+      invalidate(queryKeys.admin.news());
+      await refetch();
 
       resetForm();
+      const emailInfo = data?.notification?.emailDispatch;
+      const emailHint =
+        emailInfo?.status === "queued"
+          ? `Emails are being sent to ${emailInfo.total} user${emailInfo.total === 1 ? "" : "s"} (one every ${Math.round((emailInfo.delayMs || 5000) / 1000)} seconds).`
+          : emailInfo?.status === "skipped"
+          ? "In-app notification published. No user emails were queued."
+          : "Notification published successfully.";
+
       Swal.fire({
         icon: "success",
         title: isEditing ? "Updated" : "Published",
-        text: isEditing ? "Notification updated successfully." : "Notification published successfully.",
-        timer: 1600,
+        text: isEditing ? "Notification updated successfully." : emailHint,
+        timer: isEditing ? 1600 : 2800,
       });
     } catch (error) {
       Swal.fire({ icon: "error", title: "Save failed", text: error.message || "Could not save notification." });
@@ -156,11 +126,8 @@ export default function AdminNewsPage() {
         throw new Error(data?.error || "Delete failed");
       }
 
-      setNotifications((prev) => {
-        const nextNotifications = prev.filter((entry) => entry.id !== item.id);
-        setCache("admin-news:list", nextNotifications);
-        return nextNotifications;
-      });
+      invalidate(queryKeys.admin.news());
+      await refetch();
       if (editingId === item.id) {
         resetForm();
       }
@@ -286,6 +253,9 @@ export default function AdminNewsPage() {
                       <p className="mt-2 text-sm leading-7 text-[var(--dashboard-text-muted)]">{item.message}</p>
                       <p className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--dashboard-text-faint)]">
                         Published {formatDate(item.publishedAt)}
+                        {item.emailDispatch?.total
+                          ? ` · Email ${item.emailDispatch.sent || 0}/${item.emailDispatch.total} (${item.emailDispatch.status || "queued"})`
+                          : ""}
                       </p>
                     </div>
 

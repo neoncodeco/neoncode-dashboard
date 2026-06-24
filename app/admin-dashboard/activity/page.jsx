@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import useAppAuth from "@/hooks/useAppAuth";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import { queryKeys } from "@/lib/queryKeys";
 import { AFFILIATE_UI_ENABLED } from "@/lib/featureFlags";
 import { Activity, Filter, Loader2, Search } from "lucide-react";
 
@@ -32,20 +33,9 @@ const statusClass = (status) => {
 };
 
 export default function AdminActivityPage() {
-  const { token } = useAppAuth();
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [type, setType] = useState("all");
   const [queryInput, setQueryInput] = useState("");
   const [query, setQuery] = useState("");
-  const [counts, setCounts] = useState({
-    all: 0,
-    support: 0,
-    payment: 0,
-    withdraw: 0,
-    ads: 0,
-    users: 0,
-  });
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 15,
@@ -55,40 +45,40 @@ export default function AdminActivityPage() {
     hasNext: false,
   });
 
-  useEffect(() => {
-    if (!token) return;
-    const timer = setTimeout(() => setQuery(queryInput.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [queryInput, token]);
+  const activityParams = useMemo(
+    () => ({ page: pagination.page, limit: pagination.limit, type, q: query }),
+    [pagination.page, pagination.limit, type, query]
+  );
+
+  const { data, isLoading: loading } = useApiQuery(
+    queryKeys.admin.activity(activityParams),
+    `/api/admin/activity?${new URLSearchParams({
+      page: String(pagination.page),
+      limit: String(pagination.limit),
+      type,
+      q: query,
+    }).toString()}`,
+    { staleTime: 30_000 }
+  );
+
+  const rows = data?.data || [];
+  const counts = data?.counts || {
+    all: 0,
+    support: 0,
+    payment: 0,
+    withdraw: 0,
+    ads: 0,
+    users: 0,
+  };
 
   useEffect(() => {
-    if (!token) return;
-    const fetchActivity = async () => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams({
-          page: String(pagination.page),
-          limit: String(pagination.limit),
-          type,
-          q: query,
-        });
-        const res = await fetch(`/api/admin/activity?${params.toString()}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const json = await res.json();
-        if (!res.ok || !json?.ok) throw new Error(json?.error || "Failed to load activity");
-        setRows(Array.isArray(json.data) ? json.data : []);
-        if (json.counts) setCounts(json.counts);
-        if (json.pagination) setPagination(json.pagination);
-      } catch (error) {
-        console.error("Activity fetch failed:", error);
-        setRows([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    void fetchActivity();
-  }, [token, pagination.page, pagination.limit, type, query]);
+    if (data?.pagination) setPagination(data.pagination);
+  }, [data?.pagination]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setQuery(queryInput.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [queryInput]);
 
   const rangeLabel = useMemo(() => {
     if (pagination.totalItems === 0) return "0-0";

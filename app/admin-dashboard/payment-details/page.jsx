@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Swal from "sweetalert2";
 import { Copy, ImagePlus, Landmark, Loader2, Plus, Save, Trash2 } from "lucide-react";
-import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
+import { useApiQuery, useInvalidateApi } from "@/hooks/useApiQuery";
+import { queryKeys } from "@/lib/queryKeys";
 import useAppAuth from "@/hooks/useAppAuth";
 import {
   createDefaultBankPaymentDetails,
@@ -25,51 +26,34 @@ const DETAIL_FIELDS = [
 
 export default function PaymentDetailsPage() {
   const { token } = useAppAuth();
-  const { getCache, setCache } = useAdminDashboardCache();
+  const invalidate = useInvalidateApi();
   const [bankPaymentDetails, setBankPaymentDetails] = useState(createDefaultBankPaymentDetails());
-  const [initialLoading, setInitialLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingLogoId, setUploadingLogoId] = useState("");
 
-  const loadPaymentDetails = useCallback(async () => {
-    if (!token) return;
-    const cachedDetails = getCache("admin-payment-details:list");
-    if (cachedDetails) {
-      setBankPaymentDetails(cachedDetails);
-      setInitialLoading(false);
-      return;
+  const { isLoading: initialLoading } = useApiQuery(
+    queryKeys.admin.paymentDetails(),
+    "/api/admin/settings",
+    {
+      staleTime: 60_000,
+      select: (data) =>
+        data.bankPaymentDetails?.length ? data.bankPaymentDetails : createDefaultBankPaymentDetails(),
     }
+  );
 
-    try {
-      const response = await fetch("/api/admin/settings", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.error || "Failed to load payment details.");
-      }
-
-      const nextDetails =
-        data.bankPaymentDetails?.length ? data.bankPaymentDetails : createDefaultBankPaymentDetails();
-
-      setBankPaymentDetails(nextDetails);
-      setCache("admin-payment-details:list", nextDetails);
-    } catch (error) {
-      console.error("Payment details load error:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Load failed",
-        text: "Could not load payment details right now.",
-      });
-    } finally {
-      setInitialLoading(false);
+  const { data: loadedDetails } = useApiQuery(
+    queryKeys.admin.paymentDetails(),
+    "/api/admin/settings",
+    {
+      staleTime: 60_000,
+      select: (data) =>
+        data.bankPaymentDetails?.length ? data.bankPaymentDetails : createDefaultBankPaymentDetails(),
     }
-  }, [getCache, setCache, token]);
+  );
 
   useEffect(() => {
-    loadPaymentDetails();
-  }, [loadPaymentDetails]);
+    if (loadedDetails) setBankPaymentDetails(loadedDetails);
+  }, [loadedDetails]);
 
   const addBankDetail = () => {
     setBankPaymentDetails((prev) => [...prev, createEmptyBankDetail()]);
@@ -174,7 +158,8 @@ export default function PaymentDetailsPage() {
         throw new Error(data?.error || "Failed to save payment details.");
       }
 
-      setCache("admin-payment-details:list", bankPaymentDetails);
+      invalidate(queryKeys.admin.paymentDetails());
+      invalidate(queryKeys.admin.settings());
 
       Swal.fire({
         icon: "success",

@@ -14,7 +14,8 @@ import {
   TrendingUp,
   Loader2
 } from "lucide-react";
-import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
+import { useApiQuery, useInvalidateApi } from "@/hooks/useApiQuery";
+import { queryKeys } from "@/lib/queryKeys";
 import useAppAuth from "@/hooks/useAppAuth";
 import Swal from "sweetalert2";
 
@@ -34,45 +35,17 @@ const getStatusClasses = (status) => {
 
 export default function AffiliatePayoutsPage() {
   const { token } = useAppAuth();
-  const { getCache, setCache } = useAdminDashboardCache();
+  const invalidate = useInvalidateApi();
 
-  const [requests, setRequests] = useState([]);
+  const { data: requests = [], isLoading: initialLoading, refetch: loadRequests } = useApiQuery(
+    queryKeys.admin.affiliates(),
+    "/api/admin/affiliate/list",
+    { select: (json) => json.requests || json.data || [] }
+  );
+
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-
-  // --- LOAD REQUESTS ---
-  const loadRequests = useCallback(async (options = {}) => {
-    if (!options.force) {
-      const cachedRequests = getCache("admin-affiliates:list");
-      if (cachedRequests) {
-        setRequests(cachedRequests);
-        setInitialLoading(false);
-        return;
-      }
-    }
-
-    try {
-      const res = await fetch("/api/admin/affiliate/list", {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const json = await res.json();
-      if (json.ok && json.data) {
-        setRequests(json.data);
-        setCache("admin-affiliates:list", json.data);
-      }
-    } catch (error) {
-      console.error("Error fetching requests:", error);
-    } finally {
-      setInitialLoading(false);
-    }
-  }, [getCache, setCache, token]);
-
-  useEffect(() => {
-    if (token) loadRequests();
-  }, [token, loadRequests]);
 
   // --- EXPORT CSV FUNCTION ---
   const handleExportCSV = () => {
@@ -120,7 +93,8 @@ export default function AffiliatePayoutsPage() {
 
       if (res.ok) {
         Swal.fire('Success', `Request has been ${actionText}d.`, 'success');
-        loadRequests({ force: true });
+        loadRequests();
+        invalidate(queryKeys.admin.affiliates());
       } else {
         const json = await res.json();
         Swal.fire('Error', json.message || "Failed to process request", 'error');

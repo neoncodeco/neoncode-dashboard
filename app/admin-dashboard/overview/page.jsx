@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Users, DollarSign, Activity, Layers, ClipboardList,
   Share2, Ticket, TrendingUp, Download, Filter, Wallet,
@@ -7,11 +7,12 @@ import {
 import {
   AreaChart, Area, XAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
-import { useAdminDashboardCache } from "@/hooks/useAdminDashboardCache";
-import useAppAuth from "@/hooks/useAppAuth";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import { queryKeys } from "@/lib/queryKeys";
 import { AFFILIATE_UI_ENABLED } from "@/lib/featureFlags";
 import Link from "next/link";
 import AvailableBalanceBreakdownModal from "@/components/admin/AvailableBalanceBreakdownModal";
+import UserFundsOverviewPanel from "@/components/admin/UserFundsOverviewPanel";
 
 const METRICS = (data) => [
   { label: "Total Deposits", val: data?.metrics?.totalRevenue, suffix: "Tk", icon: DollarSign, accent: "#10b981" },
@@ -52,31 +53,26 @@ function SkeletonMetric() {
 }
 
 export default function AdminDashboard() {
-  const { token } = useAppAuth();
-  const { getCache, setCache } = useAdminDashboardCache();
-  const [data, setData]       = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [range, setRange]     = useState("all");
+  const [range, setRange] = useState("all");
   const [balanceModalOpen, setBalanceModalOpen] = useState(false);
-  const [balanceDetails, setBalanceDetails] = useState(null);
-  const [balanceLoading, setBalanceLoading] = useState(false);
-  const [balanceError, setBalanceError] = useState("");
 
-  useEffect(() => {
-    if (!token) return;
-    const cacheKey = `admin-overview:v2:${range}`;
-    const cached   = getCache(cacheKey);
-    if (cached) { setData(cached); setLoading(false); return; }
+  const { data, isLoading: loading } = useApiQuery(
+    queryKeys.admin.stats(range),
+    `/api/admin/stats?range=${range}`,
+    { staleTime: 30_000, select: (result) => result.data }
+  );
 
-    setLoading(true);
-    fetch(`/api/admin/stats?range=${range}`, {
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    })
-      .then((r) => r.json())
-      .then((result) => { if (result.ok) { setData(result.data); setCache(cacheKey, result.data); } })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [getCache, range, setCache, token]);
+  const {
+    data: balanceDetails,
+    isLoading: balanceLoading,
+    error: balanceQueryError,
+  } = useApiQuery(queryKeys.admin.adAccountBalances(), "/api/admin/stats/ad-account-balances", {
+    enabled: balanceModalOpen,
+    staleTime: 20_000,
+    select: (result) => result,
+  });
+
+  const balanceError = balanceQueryError?.message || "";
 
   const handleDownload = () => {
     if (!data) return;
@@ -102,24 +98,8 @@ export default function AdminDashboard() {
   const metrics = METRICS(data);
   const metricGridClass = AFFILIATE_UI_ENABLED ? "xl:grid-cols-5" : "xl:grid-cols-4";
 
-  const openBalanceBreakdown = async () => {
-    if (!token) return;
+  const openBalanceBreakdown = () => {
     setBalanceModalOpen(true);
-    setBalanceLoading(true);
-    setBalanceError("");
-    try {
-      const res = await fetch("/api/admin/stats/ad-account-balances", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const json = await res.json();
-      if (!res.ok || !json.ok) throw new Error(json.error || "Could not load ad account balances.");
-      setBalanceDetails(json);
-    } catch (err) {
-      setBalanceError(err.message || "Could not load ad account balances.");
-      setBalanceDetails(null);
-    } finally {
-      setBalanceLoading(false);
-    }
   };
 
   return (
@@ -225,6 +205,12 @@ export default function AdminDashboard() {
           </div>
         ))}
       </div>
+
+      <UserFundsOverviewPanel
+        funds={data?.userFunds}
+        pending={data?.pendingOverview}
+        loading={loading && !data}
+      />
 
       {/* ── Chart ── */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
