@@ -1,0 +1,17 @@
+{
+  "name": "neon-vps-monitor-agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Contabo VPS monitoring agent for Neon Code admin dashboard",
+  "main": "agent.js",
+  "scripts": {
+    "start": "node agent.js",
+    "dev": "node agent.js"
+  },
+  "dependencies": {
+    "pidusage": "^4.0.1",
+    "pm2": "^6.0.14",
+    "systeminformation": "^5.27.14"
+  }
+}

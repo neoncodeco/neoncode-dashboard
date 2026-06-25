@@ -1,0 +1,16 @@
+[Unit]
+Description=Neon Code VPS Monitoring Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/neon-vps-monitor-agent
+EnvironmentFile=/opt/neon-vps-monitor-agent/.env
+ExecStart=/usr/bin/node /opt/neon-vps-monitor-agent/agent.js
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target
