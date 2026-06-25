@@ -28,6 +28,7 @@ import {
   Moon,
   DollarSign,
   UserCheck,
+  ServerCog,
 } from "lucide-react";
 import useAppAuth from "@/hooks/useAppAuth";
 import { AFFILIATE_UI_ENABLED } from "@/lib/featureFlags";
@@ -68,6 +69,12 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
       icon: LayoutDashboard,
       href: "/admin-dashboard/overview",
       public: true,
+    },
+    {
+      name: "VPS Monitoring",
+      icon: ServerCog,
+      href: "/admin-dashboard/vps-monitoring",
+      adminOnly: true,
     },
     {
       name: "Activity",
@@ -209,6 +216,7 @@ const AdminSidebar = ({ theme, toggleTheme }) => {
       label: "Manage",
       icon: Users,
       items: [
+        findMenuItem("/admin-dashboard/vps-monitoring"),
         findMenuItem("/admin-dashboard/activity"),
         findMenuItem("/admin-dashboard/staff-logs"),
         findMenuItem("/admin-dashboard/users"),
